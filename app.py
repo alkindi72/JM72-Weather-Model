@@ -194,4 +194,4 @@ with tab1:
     
     df_plot_storm = df_time[df_time["Storm Probability"] > 0].copy()
     if df_plot_storm.empty:
-        st.info("✅ Stable Sky Conditions: No convective storm development expected for this
+        st.info("✅ Stable Sky Conditions: No convective storm development expected for this specific hour.")

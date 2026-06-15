@@ -13,7 +13,6 @@ import math
 # 1. PLATFORM SETTINGS & STRICT CSS FIXES
 # ==========================================
 st.set_page_config(page_title="JM72 AI Weather Model", layout="wide")
-# Auto-refresh every 15 minutes to pull new operational runs
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 
 st.markdown("""
@@ -26,9 +25,6 @@ st.markdown("""
     button[data-baseweb="tab"][aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
     button[data-baseweb="tab"][aria-selected="true"] p { color: #FFFFFF !important; }
 
-    .emirati-banner { background-color: #082F49; padding: 20px; border-radius: 12px; text-align: center; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 25px; border-bottom: 3px solid #D4AF37;}
-    .emirati-banner h1 { margin: 0 0 0 20px !important; color: #FFFFFF !important; font-weight: 900 !important; font-size: 32px !important; letter-spacing: 1px; }
-    
     .alert-banner { background-color: #FEF2F2; color: #991B1B !important; padding: 15px; border-left: 6px solid #EF4444; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     .sys-success { background-color: #F0FDF4; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; }
     .sys-warning { background-color: #FEF9C3; color: #854D0E !important; padding: 15px; border-left: 6px solid #EAB308; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; }
@@ -39,13 +35,18 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# IDENTITY LOGO
+# IDENTITY LOGO & BANNER (Forced White Text Inline)
 jm72_logo_svg = """<svg width="130" height="65" viewBox="0 0 130 65" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="desertGold" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FDE047" /><stop offset="50%" stop-color="#D4AF37" /><stop offset="100%" stop-color="#9A3412" /></linearGradient><linearGradient id="seaSky" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38BDF8" /><stop offset="100%" stop-color="#0369A1" /></linearGradient><linearGradient id="bgDark" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#0F172A" /><stop offset="100%" stop-color="#082F49" /></linearGradient></defs><rect width="130" height="65" rx="12" fill="url(#bgDark)" stroke="url(#desertGold)" stroke-width="2"/><path d="M0,65 Q35,40 65,65 T130,55 L130,65 L0,65 Z" fill="url(#seaSky)" opacity="0.5"/><path d="M0,65 Q25,48 55,65 T130,58 L130,65 L0,65 Z" fill="url(#desertGold)" opacity="0.8"/><text x="65" y="44" font-family="'Segoe UI', Tahoma, sans-serif" font-weight="900" font-size="32" text-anchor="middle" letter-spacing="2"><tspan fill="#FFFFFF">J</tspan><tspan fill="url(#seaSky)">M</tspan><tspan fill="url(#desertGold)">72</tspan></text></svg>"""
 
-st.markdown(f'<div class="emirati-banner">{jm72_logo_svg}<h1>JM72 AI Weather Model</h1></div>', unsafe_allow_html=True)
+st.markdown(f'''
+<div style="background-color: #082F49; padding: 20px; border-radius: 12px; text-align: center; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 25px; border-bottom: 3px solid #D4AF37;">
+    {jm72_logo_svg}
+    <h1 style="margin: 0 0 0 20px !important; color: #FFFFFF !important; font-weight: 900 !important; font-size: 32px !important; letter-spacing: 1px;">JM72 AI Weather Model</h1>
+</div>
+''', unsafe_allow_html=True)
 
 # ==========================================
-# 2. REST-API LIVE DATA AGENT
+# 2. REST-API LIVE DATA AGENT & UAE TIMEZONE
 # ==========================================
 stations = {
     "Al Hajar Mountains": {"lat": 25.3, "lon": 56.1, "type": "Mountains"},
@@ -55,7 +56,9 @@ stations = {
     "Abu Dhabi": {"lat": 24.45, "lon": 54.37, "type": "Coast"}
 }
 
-base_date = datetime.now().replace(minute=0, second=0, microsecond=0)
+# FIX 3: Set timezone explicitly to UAE (UTC+4)
+uae_time = datetime.utcnow() + timedelta(hours=4)
+base_date = uae_time.replace(minute=0, second=0, microsecond=0)
 timeline = [base_date + timedelta(hours=i*3) for i in range(8 * 5)]
 timeline_str = [dt.strftime('%d %b - %H:%M') for dt in timeline]
 
@@ -96,24 +99,19 @@ if fetch_success and type(live_data) is list:
                 rh_700 = station_data["relative_humidity_700hPa"][closest_idx] or 0
                 wind_dir = station_data["winddirection_10m"][closest_idx] or 0
                 
-                # --- THE STRICT CLIMATOLOGICAL FILTER (ANTI-FALSE ALERTS) ---
-                # 1. Base Unstability Calculation
                 prob = (cape_val / 2000) * 100
                 
-                # 2. Atmospheric Filter: Relative Humidity at Mid-levels (700hPa)
                 if rh_700 < 45: 
-                    prob *= 0.05  # Severe suppression if air is dry (Prevents fake summer coast storms)
+                    prob *= 0.05
                 elif rh_700 < 55:
                     prob *= 0.3
                     
-                # 3. Orographic & Regional Dynamics
                 if coords["type"] == "Mountains":
-                    if 90 <= wind_dir <= 180: # Kaus Flow interaction with eastern slopes
+                    if 90 <= wind_dir <= 180:
                         prob *= 1.4
-                    if temp_c > 38: # Orographic thermal low lift
+                    if temp_c > 38:
                         prob *= 1.2
                 else:
-                    # Penalize areas lacking orographic lift mechanisms during summer months
                     prob *= 0.15
                 
                 storm_prob = np.clip(prob, 0, 100)
@@ -161,12 +159,13 @@ cols = st.columns(len(unique_dates))
 for i, date in enumerate(unique_dates):
     daily_max = df_all[df_all["DateOnly"] == date]["Storm Probability"].max()
     with cols[i]:
+        # FIX 2: Show only percentages instead of text
         if daily_max >= 75:
-            st.error(f"🔴 **{date}**\n\nخطر روايح شديد: {daily_max}%")
+            st.error(f"🔴 **{date}**\n\n### {daily_max}%")
         elif daily_max >= 40:
-            st.warning(f"🟡 **{date}**\n\nتكونات محلية محتملة: {daily_max}%")
+            st.warning(f"🟡 **{date}**\n\n### {daily_max}%")
         else:
-            st.success(f"🟢 **{date}**\n\nالاستقرار سيد الموقف")
+            st.success(f"🟢 **{date}**\n\n### {daily_max}%")
 
 st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
 st.markdown('<h4 style="color:#082F49; font-weight:900;">⏱️ محدد الخط الزمني التفاعلي للتنبؤ الهجين:</h4>', unsafe_allow_html=True)
@@ -195,9 +194,10 @@ with tab1:
         st.plotly_chart(fig1, use_container_width=True)
         
     st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ البث الحي للأقمار الاصطناعية وسيرفر الرادار المباشر</h3>', unsafe_allow_html=True)
+    # FIX 4: Changed Windy embed overlay from 'satellite' to 'radar'
     components.html("""
         <div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #1E293B;">
-            <iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe>
+            <iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=radar&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe>
             <div style="position: absolute; bottom: 0px; right: 0px; width: 150px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;">
                 <span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">⚡ JM72 RADAR LIVE</span>
             </div>

@@ -39,32 +39,28 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# FIXED HEADER: Modern Curved Semicircle Title Perfectly Centered Over Logo
+# BULLETPROOF HEADER: Solid Colors to prevent browser stripping, perfectly curved text.
 st.markdown('''
 <div style="text-align: center; margin-top: 20px; margin-bottom: 30px; width: 100%; display: flex; justify-content: center;">
-    <svg width="550" height="240" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; height: auto;">
-        <defs>
-            <linearGradient id="uaeDesertGold" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#C5A059" />
-                <stop offset="100%" stop-color="#E3C16F" />
-            </linearGradient>
-            <linearGradient id="uaeSeaAzure" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#0284C7" />
-                <stop offset="100%" stop-color="#0369A1" />
-            </linearGradient>
-            <path id="textArcPath" d="M 30,125 Q 200,25 370,125" fill="none" />
-        </defs>
+    <svg width="600" height="220" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; height: auto;">
+        <!-- Mathematical arc path for the text -->
+        <path id="textArcPath" d="M 50,140 Q 300,10 550,140" fill="transparent" />
         
-        <text font-family="'Segoe UI Black', 'Arial Black', sans-serif" font-weight="900">
-            <textPath href="#textArcPath" startOffset="50%" text-anchor="middle" font-size="26" fill="#082F49">
+        <!-- Curved Title Component -->
+        <text font-family="'Segoe UI Black', 'Arial Black', sans-serif" font-weight="900" font-size="32" fill="#082F49">
+            <textPath href="#textArcPath" startOffset="50%" text-anchor="middle">
                 JM72 AI Weather Model
             </textPath>
         </text>
         
-        <g transform="translate(110, 105)">
-            <path d="M25,65 L55,25 L85,50 L115,15 L145,65 Z" fill="url(#uaeDesertGold)" />
-            <path d="M10,65 Q45,55 75,65 T145,65 Q160,70 165,65 L165,72 L10,72 Z" fill="url(#uaeSeaAzure)" opacity="0.85" />
-            <text x="88" y="46" font-family="'Segoe UI', Arial, sans-serif" font-weight="900" font-size="18" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
+        <!-- Logo Positioned Harmoniously underneath the Curve using SOLID COLORS -->
+        <g transform="translate(225, 100)">
+            <!-- Hajar Mountains Representation (Solid Gold) -->
+            <path d="M 10,70 L 40,30 L 70,55 L 100,20 L 130,70 Z" fill="#D4AF37" />
+            <!-- Coastal Waves Profile (Solid Azure) -->
+            <path d="M -5,70 Q 35,60 70,70 T 145,70 L 145,80 L -5,80 Z" fill="#0284C7" />
+            <!-- Core Code Signature -->
+            <text x="70" y="50" font-family="'Segoe UI Black', Arial, sans-serif" font-weight="900" font-size="22" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
         </g>
     </svg>
 </div>

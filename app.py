@@ -190,4 +190,16 @@ unique_dates = df_all["DateOnly"].unique()[:5]
 cols = st.columns(len(unique_dates))
 
 for i, date in enumerate(unique_dates):
-    daily_data = df_all[df_all
+   st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Operational Forecast Briefing</h4>', unsafe_allow_html=True)
+unique_dates = df_all["DateOnly"].unique()[:5]
+cols = st.columns(len(unique_dates))
+for i, date in enumerate(unique_dates):
+    # السطر المكتمل هنا:
+    daily_max = df_all[df_all["DateOnly"] == date]["Storm Probability"].max()
+    with cols[i]:
+        if daily_max >= 75:
+            st.error(f"🔴 **{date}**\n\n**Severe Convective Risk**\nخطر روايح شديد\n\n### {daily_max}%")
+        elif daily_max >= 40:
+            st.warning(f"🟡 **{date}**\n\n**Localized Convection**\nتكونات محلية محتملة\n\n### {daily_max}%")
+        else:
+            st.success(f"🟢 **{date}**\n\n<br>\n\n### {daily_max}%")

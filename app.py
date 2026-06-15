@@ -159,6 +159,14 @@ if not weather_data:
             base_storm = 75 if (is_afternoon and coords["type"] == "Mountains") else 0
             temp = 42 + np.random.uniform(-3, 4)
             weather_data.append({
+                        "Time": dt_str,
+                        "DateOnly": dt.strftime('%d %b'),
+                        "Station": name,
+                        "Latitude": coords["lat"],
+                        "Longitude": coords["lon"],
+                        "Storm Probability": round(storm_prob),
+                        "Temperature": round(temp_c, 1)
+                    })
                 "Time": dt_str,
                 "DateOnly": dt.strftime('%d %b'),
                 "Station": name,

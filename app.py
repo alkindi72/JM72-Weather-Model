@@ -164,4 +164,4 @@ if not weather_data:
                 "Station": name,
                 "Latitude": coords["lat"],
                 "Longitude": coords["lon"],
-                "Storm Probability": round(np.clip(base_storm + np.random.uniform(-5,
+                "Storm Probability": round(np.clip(base_storm + np.random.uniform(-5, 10), 0, 100)) if base_storm > 0 else 0,

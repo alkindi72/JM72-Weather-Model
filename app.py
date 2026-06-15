@@ -3,23 +3,21 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import plotly.express as px
-import plotly.graph_objects as go
-import streamlit.components.v1 as components
-from streamlit_autorefresh import st_autorefresh
 import requests
-import math
 
-# ==========================================
-# 1. JM72 ADVANCED DYNAMIC CONFIG
-# ==========================================
 st.set_page_config(page_title="JM72 AI Weather Model", layout="wide")
-st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 
-# 
+# CSS Styling
+st.markdown("""
+<style>
+    .stApp { background-color: #F8FAFC !important; }
+    .header { background-color: #082F49; color: white; padding: 20px; border-radius: 10px; text-align: center; }
+</style>
+""", unsafe_allow_html=True)
 
-# ==========================================
-# 2. STABLE REST-API DATA AGENT
-# ==========================================
+st.markdown('<div class="header"><h1>JM72 AI Weather Model - Operational Mode</h1></div>', unsafe_allow_html=True)
+
+# Data Fetching
 stations = {
     "Al Hajar Mountains": {"lat": 25.3, "lon": 56.1, "type": "Mountains"},
     "Fujairah Coast": {"lat": 25.12, "lon": 56.32, "type": "Mountains"},
@@ -29,62 +27,37 @@ stations = {
 }
 
 @st.cache_data(ttl=3600)
-def fetch_stable_live_data():
-    try:
-        lats = ",".join([str(s["lat"]) for s in stations.values()])
-        lons = ",".join([str(s["lon"]) for s in stations.values()])
-        # Added relative humidity to API request for strict filtering
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&hourly=temperature_2m,cape,winddirection_10m,relative_humidity_700hPa&models=gfs_seamless&timezone=auto"
-        response = requests.get(url, timeout=15)
-        response.raise_for_status()
-        return True, response.json()
-    except Exception as e:
-        return False, str(e)
+def get_data():
+    lats = ",".join([str(s["lat"]) for s in stations.values()])
+    lons = ",".join([str(s["lon"]) for s in stations.values()])
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&hourly=temperature_2m,cape,winddirection_10m,relative_humidity_700hPa&models=gfs_seamless&timezone=auto"
+    return requests.get(url).json()
 
-# ==========================================
-# 3. JM72 AI DYNAMICS ENGINE (STRICT FILTER)
-# ==========================================
-weather_data = []
-fetch_success, live_data = fetch_stable_live_data()
-
-if fetch_success and type(live_data) is list:
+try:
+    data = get_data()
+    weather_data = []
     for idx, (name, coords) in enumerate(stations.items()):
-        station_data = live_data[idx]["hourly"]
-        for i in range(len(station_data["time"])):
-            dt = datetime.fromisoformat(station_data["time"][i])
+        hourly = data[idx]["hourly"]
+        for i in range(len(hourly["time"])):
+            # Strict Filters
+            cape = hourly["cape"][i] or 0
+            rh = hourly["relative_humidity_700hPa"][i] or 0
+            wind = hourly["winddirection_10m"][i] or 0
             
-            temp_c = station_data["temperature_2m"][i] or 35.0
-            cape = station_data["cape"][i] or 0
-            rh_700 = station_data["relative_humidity_700hPa"][i] or 0
-            wind_dir = station_data["winddirection_10m"][i] or 0
-            
-            # --- THE STRICT CLIMATOLOGICAL FILTER ---
-            # 1. Base Convection: Normalized CAPE
-            storm_prob = (cape / 2000) * 100
-            
-            # 2. Geography Filter: Reduce noise in Desert/Coast
-            if coords["type"] != "Mountains":
-                storm_prob *= 0.4 # Penalize non-mountainous areas
-            
-            # 3. Atmospheric Filter: Humidity Requirement
-            if rh_700 < 45: # Strict threshold for dry summer air
-                storm_prob *= 0.2
-            
-            # 4. Forcing Mechanism: Kaus Flow
-            if 90 <= wind_dir <= 180:
-                storm_prob *= 1.5
-                
-            storm_prob = np.clip(storm_prob, 0, 100)
+            prob = (cape / 2000) * 100
+            if coords["type"] != "Mountains": prob *= 0.4
+            if rh < 45: prob *= 0.2
+            if 90 <= wind <= 180: prob *= 1.5
             
             weather_data.append({
-                "Time": dt.strftime('%d %b - %H:%M'),
-                "DateOnly": dt.strftime('%d %b'),
-                "Station": name,
-                "Latitude": coords["lat"],
-                "Longitude": coords["lon"],
-                "Storm Probability": round(storm_prob),
-                "Temperature": round(temp_c, 1)
+                "Station": name, "Time": hourly["time"][i],
+                "Probability": round(min(prob, 100)),
+                "Temp": hourly["temperature_2m"][i]
             })
 
-# [Rendering logic remains same, just point to the new df_all]
-# (Copying the rest of the visualization code from previous step)
+    df = pd.DataFrame(weather_data)
+    st.success("البيانات محدثة ومعالجة وفق المعايير المناخية الصارمة")
+    st.dataframe(df[df["Probability"] > 0].sort_values("Probability", ascending=False).head(10))
+    
+except Exception as e:
+    st.error(f"خطأ في تحميل البيانات: {e}")

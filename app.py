@@ -169,24 +169,11 @@ if not weather_data:
             })
 
 df_all = pd.DataFrame(weather_data)
-
-# ==========================================
-# 4. GLOBAL CONTROLS & BRIEFINGS
-# ==========================================
-st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Operational Forecast Briefing</h4>', unsafe_allow_html=True)
 unique_dates = df_all["DateOnly"].unique()[:5]
-cols = st.columns(len(unique_dates))
-for i, date in enumerate(unique_dates):
-    daily_max = df_all[df_all["DateOnly"] == date]["Storm Probability"].max()
-    with cols[i]:
-        if daily_max >= 75:
-            st.error(f"🔴 **{date}**\n\n**Severe Convective Risk**\nخطر روايح شديد\n\n### {daily_max}%")
-        elif daily_max >= 40:
-            st.warning(f"🟡 **{date}**\n\n**Localized Convection**\nتكونات محلية محتملة\n\n### {daily_max}%")
-        else:
-            st.success(f"🟢 **{date}**\n\n\n### {daily_max}%")
 
-st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
+# ==========================================
+# 4. GLOBAL TIME CONTROLS
+# ==========================================
 st.markdown('<h4 style="color:#082F49; font-weight:900;">⏱️ Interactive Operational Forecast Timeline (UAE Local Time):</h4>', unsafe_allow_html=True)
 selected_time = st.select_slider("Select Time Check", options=timeline_str, label_visibility="collapsed")
 df_time = df_all[df_all["Time"] == selected_time].copy()
@@ -198,6 +185,20 @@ st.markdown("<br>", unsafe_allow_html=True)
 tab1, tab2, tab3 = st.tabs(["🌩️ Orographic Thunderstorms (Radar)", "🔥 Heat Dome Tracker", "📋 Live Data & Model Matrix"])
 
 with tab1:
+    # 5-Day Forecast FOR STORMS ONLY
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Convective Forecast Briefing</h4>', unsafe_allow_html=True)
+    cols_t1 = st.columns(len(unique_dates))
+    for i, date in enumerate(unique_dates):
+        daily_max_storm = df_all[df_all["DateOnly"] == date]["Storm Probability"].max()
+        with cols_t1[i]:
+            if daily_max_storm >= 75:
+                st.error(f"🔴 **{date}**\n\n**Severe Convective Risk**\nخطر روايح شديد\n\n### {daily_max_storm}%")
+            elif daily_max_storm >= 40:
+                st.warning(f"🟡 **{date}**\n\n**Localized Convection**\nتكونات محلية محتملة\n\n### {daily_max_storm}%")
+            else:
+                st.success(f"🟢 **{date}**\n\n\n### {daily_max_storm}%")
+    st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
+
     max_storm = df_time["Storm Probability"].max()
     if max_storm >= 75:
         target = df_time.loc[df_time["Storm Probability"].idxmax(), "Station"]
@@ -209,15 +210,9 @@ with tab1:
         ''', unsafe_allow_html=True)
     
     df_plot_storm = df_time[df_time["Storm Probability"] > 0].copy()
-    
     if df_plot_storm.empty:
         fig1 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
-        fig1.update_layout(
-            mapbox_style="open-street-map", 
-            mapbox_zoom=6,
-            mapbox_center={"lat": 24.4, "lon": 54.6},
-            margin={"r":0,"t":0,"l":0,"b":0}
-        )
+        fig1.update_layout(mapbox_style="open-street-map", mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True)
     else:
         df_plot_storm["Marker Size"] = df_plot_storm["Storm Probability"]
@@ -238,8 +233,23 @@ with tab1:
     """, height=520)
 
 with tab2:
+    # 5-Day Forecast FOR MIN/MAX TEMPERATURE ONLY
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal (Min/Max) Forecast</h4>', unsafe_allow_html=True)
+    cols_t2 = st.columns(len(unique_dates))
+    for i, date in enumerate(unique_dates):
+        daily_max_t = df_all[df_all["DateOnly"] == date]["Temperature"].max()
+        daily_min_t = df_all[df_all["DateOnly"] == date]["Temperature"].min()
+        with cols_t2[i]:
+            if daily_max_t >= 48.0:
+                st.error(f"🔴 **{date}**\n\n**Extreme Heat**\nشديد الحرارة\n\n### ⬆ {daily_max_t}° | ⬇ {daily_min_t}°")
+            elif daily_max_t >= 40.0:
+                st.warning(f"🟡 **{date}**\n\n**High Heat**\nحار جداً\n\n### ⬆ {daily_max_t}° | ⬇ {daily_min_t}°")
+            else:
+                st.success(f"🟢 **{date}**\n\n**Moderate**\nمعتدل\n\n### ⬆ {daily_max_t}° | ⬇ {daily_min_t}°")
+    st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
+
     max_temp = df_time["Temperature"].max()
-    if max_temp >= 46.0:
+    if max_temp >= 50.0:
         target_heat = df_time.loc[df_time["Temperature"].idxmax(), "Station"]
         st.markdown(f'''
         <div class="alert-banner">
@@ -248,13 +258,20 @@ with tab2:
         </div>
         ''', unsafe_allow_html=True)
 
-    df_plot_heat = df_time.copy()
-    df_plot_heat["Node Size"] = np.clip((df_plot_heat["Temperature"] - 30) * 2, 5, 45)
+    # فلترة البقع: لا تظهر على الخريطة إلا إذا كانت الحرارة 50 أو أكثر
+    df_plot_heat = df_time[df_time["Temperature"] >= 50].copy()
     
-    fig2 = px.scatter_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", color="Temperature", size="Node Size",
-                            mapbox_style="open-street-map", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[30, 50])
-    fig2.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-    st.plotly_chart(fig2, use_container_width=True)
+    if df_plot_heat.empty:
+        # إذا كانت أقل من 50، نرسم خريطة فارغة تماماً (بدون بقع)
+        fig2 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
+        fig2.update_layout(mapbox_style="open-street-map", mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
+        st.plotly_chart(fig2, use_container_width=True)
+    else:
+        df_plot_heat["Node Size"] = np.clip((df_plot_heat["Temperature"] - 30) * 2, 5, 45)
+        fig2 = px.scatter_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", color="Temperature", size="Node Size",
+                                mapbox_style="open-street-map", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
+        fig2.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+        st.plotly_chart(fig2, use_container_width=True)
 
 with tab3:
     st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Station Telemetry Readings at {selected_time}</h3>", unsafe_allow_html=True)

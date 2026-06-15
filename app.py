@@ -41,7 +41,7 @@ st.markdown("""
     .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 12px; text-align: center; }
     .custom-table td { padding: 12px; border: 1px solid #e2e8f0; color: #1e293b !important; font-weight: bold; text-align: center; }
 </style>
-""", unsafe_allow_html=True), unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # BULLETPROOF HEADER: Encoding the Curved SVG to Base64 to bypass Streamlit sanitization
 svg_code = """

@@ -39,12 +39,32 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# HEADER FIX: Clean text without background box with premium distinct typography
+# PREMIUM BOLD TYPOGRAPHY & EMBEDDED GEOGRAPHICAL LOGO (NO BACKGROUND BOX)
 st.markdown('''
-<div style="text-align: center; margin-top: 10px; margin-bottom: 35px; width: 100%;">
-    <h1 style="color: #082F49 !important; font-weight: 900 !important; font-size: 46px !important; margin: 0; font-family: 'Segoe UI', Arial, sans-serif; letter-spacing: 1px;">
-        <span style="color: #D4AF37 !important; font-family: 'Segoe UI Black', sans-serif;">JM72</span> AI Weather Model
+<div style="text-align: center; margin-top: 15px; margin-bottom: 40px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    <div style="margin-bottom: 10px;">
+        <svg width="180" height="75" viewBox="0 0 180 75" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="uaeDesertGold" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#C5A059" />
+                    <stop offset="100%" stop-color="#E3C16F" />
+                </linearGradient>
+                <linearGradient id="uaeSeaAzure" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#0284C7" />
+                    <stop offset="100%" stop-color="#0369A1" />
+                </linearGradient>
+            </defs>
+            <path d="M25,65 L55,25 L85,50 L115,15 L145,65 Z" fill="url(#uaeDesertGold)" />
+            <path d="M10,65 Q45,55 75,65 T145,65 Q160,70 165,65 L165,72 L10,72 Z" fill="url(#uaeSeaAzure)" opacity="0.85" />
+            <text x="88" y="46" font-family="'Segoe UI', Arial, sans-serif" font-weight="900" font-size="20" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
+        </svg>
+    </div>
+    <h1 style="color: #082F49 !important; font-weight: 900 !important; font-size: 54px !important; margin: 0; font-family: 'Segoe UI Black', 'Arial Black', sans-serif; letter-spacing: -1px; line-height: 1.1;">
+        <span style="background: linear-gradient(135deg, #D4AF37, #C5A059); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">JM72</span> 
+        <span style="color: #0284C7 !important;">AI</span> 
+        <span style="color: #0F172A !important;">Weather Model</span>
     </h1>
+    <div style="width: 80px; height: 4px; background: #D4AF37; margin-top: 15px; border-radius: 2px;"></div>
 </div>
 ''', unsafe_allow_html=True)
 
@@ -188,7 +208,7 @@ with tab1:
         </div>
         ''', unsafe_allow_html=True)
     
-    # FIXED: Map always renders now using full df_time so it never disappears!
+    # Map renders continuously using full df_time grid matrix
     df_time["Marker Size"] = df_time["Storm Probability"] + 15
     fig1 = px.scatter_mapbox(df_time, lat="Latitude", lon="Longitude", color="Storm Probability", size="Marker Size",
                             mapbox_style="open-street-map", zoom=6, 

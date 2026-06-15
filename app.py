@@ -169,4 +169,4 @@ df_all = pd.DataFrame(weather_data)
 # ==========================================
 # 4. GLOBAL CONTROLS & BRIEFINGS
 # ==========================================
-st.markdown('<h4 style="color:#082F49
+st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Operational Forecast Briefing</h4>', unsafe_allow_html=True)

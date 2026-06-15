@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import streamlit.components.v1 as components
 from streamlit_autorefresh import st_autorefresh
 import requests
+import base64
 
 # ==========================================
 # 1. PLATFORM SETTINGS & RIGID LIGHT-THEME CSS
@@ -39,30 +40,27 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# BULLETPROOF HEADER: Solid Colors to prevent browser stripping, perfectly curved text.
-st.markdown('''
-<div style="text-align: center; margin-top: 20px; margin-bottom: 30px; width: 100%; display: flex; justify-content: center;">
-    <svg width="600" height="220" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%; height: auto;">
-        <!-- Mathematical arc path for the text -->
-        <path id="textArcPath" d="M 50,140 Q 300,10 550,140" fill="transparent" />
-        
-        <!-- Curved Title Component -->
-        <text font-family="'Segoe UI Black', 'Arial Black', sans-serif" font-weight="900" font-size="32" fill="#082F49">
-            <textPath href="#textArcPath" startOffset="50%" text-anchor="middle">
-                JM72 AI Weather Model
-            </textPath>
-        </text>
-        
-        <!-- Logo Positioned Harmoniously underneath the Curve using SOLID COLORS -->
-        <g transform="translate(225, 100)">
-            <!-- Hajar Mountains Representation (Solid Gold) -->
-            <path d="M 10,70 L 40,30 L 70,55 L 100,20 L 130,70 Z" fill="#D4AF37" />
-            <!-- Coastal Waves Profile (Solid Azure) -->
-            <path d="M -5,70 Q 35,60 70,70 T 145,70 L 145,80 L -5,80 Z" fill="#0284C7" />
-            <!-- Core Code Signature -->
-            <text x="70" y="50" font-family="'Segoe UI Black', Arial, sans-serif" font-weight="900" font-size="22" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
-        </g>
-    </svg>
+# BULLETPROOF HEADER: Encoding the Curved SVG to Base64 to bypass Streamlit sanitization
+svg_code = """
+<svg width="600" height="240" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+    <path id="textArcPath" d="M 70,160 Q 300,0 530,160" fill="transparent" />
+    <text font-family="'Arial Black', 'Segoe UI Black', sans-serif" font-weight="900" font-size="36" fill="#082F49">
+        <textPath href="#textArcPath" startOffset="50%" text-anchor="middle">
+            JM72 AI Weather Model
+        </textPath>
+    </text>
+    <g transform="translate(230, 110)">
+        <path d="M 10,70 L 40,25 L 70,55 L 100,15 L 130,70 Z" fill="#D4AF37" />
+        <path d="M -5,70 Q 35,55 70,70 T 145,70 L 145,85 L -5,85 Z" fill="#0284C7" />
+        <text x="70" y="55" font-family="'Arial Black', sans-serif" font-weight="900" font-size="24" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
+    </g>
+</svg>
+"""
+b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
+
+st.markdown(f'''
+<div style="text-align: center; margin-top: 10px; margin-bottom: 30px; width: 100%;">
+    <img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 100%; height: auto;" alt="JM72 AI Weather Model Logo" />
 </div>
 ''', unsafe_allow_html=True)
 
@@ -238,29 +236,4 @@ with tab2:
     df_plot_heat["Node Size"] = np.clip((df_plot_heat["Temperature"] - 30) * 2, 5, 45)
     
     fig2 = px.scatter_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", color="Temperature", size="Node Size",
-                            mapbox_style="open-street-map", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[30, 50])
-    fig2.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-    st.plotly_chart(fig2, use_container_width=True)
-
-with tab3:
-    st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Station Telemetry Readings at {selected_time}</h3>", unsafe_allow_html=True)
-    display_df = df_time[["Station", "Temperature", "Storm Probability"]].sort_values(by="Storm Probability", ascending=False)
-    
-    html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Expected Temp (°C)</th><th>Storm Probability (%)</th></tr>"
-    for _, row in display_df.iterrows():
-        s_val = row['Storm Probability']
-        t_val = row['Temperature']
-        s_color = "#EF4444" if s_val >= 75 else "#1E293B"
-        html_table += f"<tr><td>{row['Station']}</td><td>{t_val}°C</td><td style='color:{s_color};'>{s_val}%</td></tr>"
-    html_table += "</table>"
-    st.markdown(html_table, unsafe_allow_html=True)
-
-    st.markdown("<h3 style='color:#082F49; font-weight:900;'>🔬 Statistical Verification & Model Calibration Matrix</h3>", unsafe_allow_html=True)
-    st.markdown("""
-    <table class="custom-table">
-        <tr style="background-color:#E0F2FE;"><th>Model Node / Processing Engine</th><th>Probability of Detection (POD)</th><th>False Alarm Rate (FAR)</th></tr>
-        <tr style="border: 2px solid #D4AF37; background-color: #FFFBEB;"><td style="color:#082F49; font-weight:bold;">🏆 JM72 Expert AI Weather Model</td><td style="color:#082F49; font-weight:bold;">0.96</td><td style="color:#10B981; font-weight:bold;">0.04</td></tr>
-        <tr><td>German ICON Model (7km)</td><td>0.85</td><td>0.11</td></tr>
-        <tr><td>European ECMWF Consensus (9km)</td><td>0.82</td><td>0.14</td></tr>
-    </table>
-    """, unsafe_allow_html=True)
+                            mapbox_style="open-street-map", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=

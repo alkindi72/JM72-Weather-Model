@@ -8,6 +8,9 @@ import streamlit.components.v1 as components
 from streamlit_autorefresh import st_autorefresh
 import requests
 import base64
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # ==========================================
 # 1. PLATFORM SETTINGS & RIGID LIGHT-THEME CSS
@@ -201,22 +204,33 @@ df_all = pd.DataFrame(weather_data)
 unique_dates = df_all["DateOnly"].unique()[:5]
 
 # ==========================================
-# 4. ADMIN CONTROL ROOM (TELEGRAM ALERTS)
+# 4. ADMIN CONTROL ROOM (DUAL DISPATCH ALERTS)
 # ==========================================
 with st.sidebar:
-    st.markdown("### 🚨 JM72 Telegram Alerts")
-    st.markdown("Instantly push critical weather warnings directly to your mobile phone via Telegram API.")
+    st.markdown("### 🚨 JM72 Alert Control Room")
+    st.markdown("Dispatch urgent early warnings directly to mobile phones and/or emails.")
     
-    with st.form("telegram_form"):
-        bot_token = st.text_input("Telegram Bot Token", type="password", placeholder="e.g., 123456:ABC-DEF1234ghIkl-zyx...")
-        chat_id = st.text_input("Target Chat ID", placeholder="e.g., 123456789")
+    with st.form("alert_form"):
+        st.markdown("#### 📱 Telegram Gateway")
+        bot_token = st.text_input("Telegram Bot Token", type="password", placeholder="123456:ABC-DEF...")
+        chat_id = st.text_input("Target Chat IDs", placeholder="ID1, ID2, ID3... (Comma separated)")
         
         st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+        
+        st.markdown("#### 📧 Email Gateway")
+        sender_email = st.text_input("System Email (Sender)", placeholder="jm72.weather@gmail.com")
+        app_password = st.text_input("App Password", type="password", help="16-letter App Password")
+        target_email = st.text_input("Target Emails", placeholder="user1@gmail.com, user2@yahoo.com")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
         scan_button = st.form_submit_button("🔍 Run Scan & Dispatch Alerts")
 
     if scan_button:
-        if not bot_token or not chat_id:
-            st.error("❌ Missing Credentials. Please enter Bot Token and Chat ID.")
+        tel_ready = bool(bot_token and chat_id)
+        eml_ready = bool(sender_email and app_password and target_email)
+        
+        if not tel_ready and not eml_ready:
+            st.error("❌ Please configure at least one gateway (Telegram or Email) completely.")
         else:
             current_time_str = timeline_str[0]
             df_now = df_all[df_all["Time"] == current_time_str]
@@ -238,31 +252,57 @@ with st.sidebar:
                 critical_alerts.append(f"🌪️ *DUST STORM ALERT:* High sandstorm probability ({max_dust_now}%) over {d_station}.")
 
             if not critical_alerts:
-                st.success("🟢 System Scan Complete: No immediate critical threats detected. No message sent.")
+                st.success("🟢 System Scan Complete: No immediate critical threats detected. No messages sent.")
             else:
-                with st.spinner("Dispatching Telegram warning..."):
-                    try:
-                        # Constructing the Markdown formatted message
-                        message_text = "🚨 *JM72 AUTOMATED WEATHER INTELLIGENCE*\n==================================\n\n"
-                        message_text += "\n\n".join(critical_alerts)
-                        message_text += "\n\n🌐 _Please check the JM72 Dashboard for live radar and telemetry._"
-                        
-                        # Telegram API Request
-                        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-                        payload = {
-                            "chat_id": chat_id,
-                            "text": message_text,
-                            "parse_mode": "Markdown"
-                        }
-                        
-                        response = requests.post(url, json=payload)
-                        
-                        if response.status_code == 200:
-                            st.success("✅ Urgent alerts successfully dispatched to your Telegram Mobile App!")
-                        else:
-                            st.error(f"❌ Dispatch Failed. Check Token/Chat ID. Error Code: {response.status_code}")
-                    except Exception as e:
-                        st.error(f"❌ API Communication Error: {e}")
+                with st.spinner("Dispatching urgent warnings..."):
+                    
+                    # 1. Dispatch via Telegram (Multiple IDs)
+                    if tel_ready:
+                        try:
+                            message_text = "🚨 *JM72 AUTOMATED WEATHER INTELLIGENCE*\n==================================\n\n"
+                            message_text += "\n\n".join(critical_alerts)
+                            message_text += "\n\n🌐 _Please check the JM72 Dashboard for live telemetry._"
+                            
+                            chat_ids_list = [cid.strip() for cid in chat_id.split(",") if cid.strip()]
+                            success_count_tel = 0
+                            url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+                            
+                            for cid in chat_ids_list:
+                                payload = {"chat_id": cid, "text": message_text, "parse_mode": "Markdown"}
+                                response = requests.post(url, json=payload)
+                                if response.status_code == 200: success_count_tel += 1
+                                
+                            st.success(f"📱 Telegram: Dispatched to {success_count_tel} phone(s).")
+                        except Exception as e:
+                            st.error(f"❌ Telegram Error: {e}")
+                            
+                    # 2. Dispatch via Email (Multiple Emails)
+                    if eml_ready:
+                        try:
+                            target_emails_list = [email.strip() for email in target_email.split(",") if email.strip()]
+                            
+                            msg = MIMEMultipart()
+                            msg['From'] = sender_email
+                            msg['To'] = ", ".join(target_emails_list)
+                            msg['Subject'] = "🚨 JM72 WEATHER ALERT NOTIFICATION"
+                            
+                            # Standard text for email
+                            body_text = "JM72 AUTOMATED INTELLIGENCE REPORT\n====================================\n\n"
+                            for alert in critical_alerts:
+                                body_text += alert.replace("*", "") + "\n\n" # Clean markdown stars for email
+                            body_text += "Please check the JM72 Dashboard for live radar and telemetry."
+                            
+                            msg.attach(MIMEText(body_text, 'plain'))
+                            
+                            server = smtplib.SMTP('smtp.gmail.com', 587)
+                            server.starttls()
+                            server.login(sender_email, app_password)
+                            server.sendmail(sender_email, target_emails_list, msg.as_string())
+                            server.quit()
+                            
+                            st.success(f"📧 Email: Dispatched to {len(target_emails_list)} recipient(s).")
+                        except Exception as e:
+                            st.error(f"❌ Email Error: Check App Password. Error: {e}")
 
 # Esri World Topographical Tile Server Configuration
 esri_topo_layer = [{

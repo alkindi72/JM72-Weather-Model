@@ -432,7 +432,7 @@ with tab6:
                 submit_login = st.form_submit_button("Authenticate")
                 
                 if submit_login:
-                    if admin_pin == "JM72":
+                    if admin_pin == "Ahmed19990102@":
                         st.session_state["admin_logged_in"] = True
                         st.rerun() 
                     else:

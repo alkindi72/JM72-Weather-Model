@@ -223,12 +223,12 @@ with tab1:
     df_plot_storm = df_time[df_time["Storm Probability"] > 0].copy()
     if df_plot_storm.empty:
         fig1 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
-        fig1.update_layout(mapbox_style="carto-positron", mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
+        fig1.update_layout(mapbox_style="carto-darkmatter", mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_empty")
     else:
         df_plot_storm["Marker Size"] = df_plot_storm["Storm Probability"] + 10
         fig1 = px.scatter_mapbox(df_plot_storm, lat="Latitude", lon="Longitude", color="Storm Probability", size="Marker Size",
-                                mapbox_style="carto-positron", zoom=6, color_continuous_scale=["#10B981", "#F59E0B", "#EF4444", "#7F1D1D"], range_color=[0, 100])
+                                mapbox_style="carto-darkmatter", zoom=6, color_continuous_scale=["#10B981", "#F59E0B", "#EF4444", "#7F1D1D"], range_color=[0, 100])
         fig1.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_data")
         
@@ -262,12 +262,12 @@ with tab2:
     df_plot_heat = df_time[df_time["Temperature"] >= 50].copy()
     if df_plot_heat.empty:
         fig2 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
-        fig2.update_layout(mapbox_style="carto-positron", mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
+        fig2.update_layout(mapbox_style="carto-darkmatter", mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")
     else:
         df_plot_heat["Node Size"] = np.clip((df_plot_heat["Temperature"] - 30) * 2, 5, 45)
         fig2 = px.scatter_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", color="Temperature", size="Node Size",
-                                mapbox_style="carto-positron", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
+                                mapbox_style="carto-darkmatter", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
         fig2.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
 
@@ -285,7 +285,7 @@ with tab3:
     df_time["Dust Node"] = df_time["Dust Probability"] + 10
     fig3 = px.scatter_mapbox(df_time, lat="Latitude", lon="Longitude", color="Dust Probability", size="Dust Node",
                             hover_data={"Station": True, "Wind Speed": True, "Visibility": True, "Latitude": False, "Longitude": False, "Dust Node": False},
-                            mapbox_style="carto-positron", zoom=6, 
+                            mapbox_style="carto-darkmatter", zoom=6, 
                             color_continuous_scale=["#FEF3C7", "#FCD34D", "#D97706", "#78350F"], range_color=[0, 100])
     fig3.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     st.plotly_chart(fig3, use_container_width=True, key="dust_map_data")

@@ -68,14 +68,33 @@ st.markdown(f'''
 ''', unsafe_allow_html=True)
 
 # ==========================================
-# 2. REST-API LIVE DATA AGENT & UAE TIMEZONE
+# 2. REST-API LIVE DATA AGENT & UAE TIMEZONE (EXPANDED STATION MATRIX)
 # ==========================================
 stations = {
-    "Al Hajar Mountains": {"lat": 25.3, "lon": 56.1, "type": "Mountains"},
+    # --- Mountain Zone ---
+    "Jebel Jais Peak": {"lat": 25.94, "lon": 56.16, "type": "Mountains"},
+    "Al Hajar Mountains": {"lat": 25.30, "lon": 56.10, "type": "Mountains"},
+    "Hatta Region": {"lat": 24.81, "lon": 56.12, "type": "Mountains"},
+    
+    # --- Coastal & Urban Zone ---
+    "Abu Dhabi City": {"lat": 24.45, "lon": 54.37, "type": "Coast"},
+    "Dubai Coastline": {"lat": 25.20, "lon": 55.27, "type": "Coast"},
+    "Sharjah Coast": {"lat": 25.35, "lon": 55.40, "type": "Coast"},
+    "Ajman Center": {"lat": 25.41, "lon": 55.44, "type": "Coast"},
+    "Umm Al Quwain": {"lat": 25.56, "lon": 55.55, "type": "Coast"},
+    "Ras Al Khaimah Coast": {"lat": 25.79, "lon": 55.94, "type": "Coast"},
     "Fujairah Coast": {"lat": 25.12, "lon": 56.32, "type": "Mountains"},
-    "Al Ain": {"lat": 24.19, "lon": 55.76, "type": "Inland"},
-    "Al Dhafra": {"lat": 23.65, "lon": 53.70, "type": "Desert"},
-    "Abu Dhabi": {"lat": 24.45, "lon": 54.37, "type": "Coast"}
+    
+    # --- Desert & Inland Zone ---
+    "Al Ain Oasis": {"lat": 24.19, "lon": 55.76, "type": "Inland"},
+    "Sweihan Inland": {"lat": 24.46, "lon": 55.34, "type": "Inland"},
+    "Al Dhafra Hub": {"lat": 23.65, "lon": 53.70, "type": "Desert"},
+    "Liwa Deep Desert": {"lat": 23.13, "lon": 53.76, "type": "Desert"},
+    
+    # --- Western Maritime & Islands Zone ---
+    "Ruwais Coast": {"lat": 24.11, "lon": 52.73, "type": "Coast"},
+    "Sir Bani Yas Island": {"lat": 24.33, "lon": 52.61, "type": "Coast"},
+    "Dalma Island": {"lat": 24.50, "lon": 52.31, "type": "Coast"}
 }
 
 uae_time = datetime.utcnow() + timedelta(hours=4)
@@ -95,7 +114,7 @@ def fetch_stable_live_data():
     except Exception as e:
         return False, str(e)
 
-with st.spinner("🤖 Ingesting and analyzing live atmospheric data runs..."):
+with st.spinner("🤖 Dynamically compiling live metrics across 17 geographical UAE nodes..."):
     fetch_success, live_data = fetch_stable_live_data()
 
 # ==========================================
@@ -217,7 +236,7 @@ with tab1:
         fig1.update_layout(mapbox_style="open-street-map", mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_empty")
     else:
-        df_plot_storm["Marker Size"] = df_plot_storm["Storm Probability"]
+        df_plot_storm["Marker Size"] = df_plot_storm["Storm Probability"] + 10
         fig1 = px.scatter_mapbox(df_plot_storm, lat="Latitude", lon="Longitude", color="Storm Probability", size="Marker Size",
                                 mapbox_style="open-street-map", zoom=6, 
                                 color_continuous_scale=["#10B981", "#F59E0B", "#EF4444", "#7F1D1D"], range_color=[0, 100])

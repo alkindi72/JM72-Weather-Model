@@ -17,7 +17,7 @@ st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 
 st.markdown("""
 <style>
-    /* إخفاء شريط الأدوات العلوي (النقاط الثلاث وزر المشاركة) */
+    /* Hide default Streamlit toolbar and menus */
     [data-testid="stToolbar"] { visibility: hidden !important; }
     
     html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stApp"] {
@@ -43,7 +43,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# BULLETPROOF HEADER: Encoded curved typography
+# BULLETPROOF HEADER
 svg_code = """
 <svg width="600" height="240" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
     <path id="textArcPath" d="M 70,160 Q 300,0 530,160" fill="transparent" />
@@ -71,12 +71,9 @@ st.markdown(f'''
 # 2. REST-API LIVE DATA AGENT & UAE TIMEZONE (17 STATIONS)
 # ==========================================
 stations_matrix = {
-    # --- Mountain Zone ---
     "Jebel Jais Peak": {"lat": 25.94, "lon": 56.16, "type": "Mountains"},
     "Al Hajar Mountains": {"lat": 25.30, "lon": 56.10, "type": "Mountains"},
     "Hatta Region": {"lat": 24.81, "lon": 56.12, "type": "Mountains"},
-    
-    # --- Coastal & Urban Zone ---
     "Abu Dhabi City": {"lat": 24.45, "lon": 54.37, "type": "Coast"},
     "Dubai Coastline": {"lat": 25.20, "lon": 55.27, "type": "Coast"},
     "Sharjah Coast": {"lat": 25.35, "lon": 55.40, "type": "Coast"},
@@ -84,14 +81,10 @@ stations_matrix = {
     "Umm Al Quwain": {"lat": 25.56, "lon": 55.55, "type": "Coast"},
     "Ras Al Khaimah Coast": {"lat": 25.79, "lon": 55.94, "type": "Coast"},
     "Fujairah Coast": {"lat": 25.12, "lon": 56.32, "type": "Mountains"},
-    
-    # --- Desert & Inland Zone ---
     "Al Ain Oasis": {"lat": 24.19, "lon": 55.76, "type": "Inland"},
     "Sweihan Inland": {"lat": 24.46, "lon": 55.34, "type": "Inland"},
     "Al Dhafra Hub": {"lat": 23.65, "lon": 53.70, "type": "Desert"},
     "Liwa Deep Desert": {"lat": 23.13, "lon": 53.76, "type": "Desert"},
-    
-    # --- Western Maritime & Islands Zone ---
     "Ruwais Coast": {"lat": 24.11, "lon": 52.73, "type": "Coast"},
     "Sir Bani Yas Island": {"lat": 24.33, "lon": 52.61, "type": "Coast"},
     "Dalma Island": {"lat": 24.50, "lon": 52.31, "type": "Coast"}
@@ -217,9 +210,9 @@ with tab1:
     for i, date in enumerate(unique_dates):
         daily_max_storm = df_all[df_all["DateOnly"] == date]["Storm Probability"].max()
         with cols_t1[i]:
-            if daily_max_storm >= 75: st.error(f"🔴 **{date}**\n\n**Severe Risk**\nخطر روايح شديد\n\n### {daily_max_storm}%")
-            elif daily_max_storm >= 40: st.warning(f"🟡 **{date}**\n\n**Localized**\nتكونات محتملة\n\n### {daily_max_storm}%")
-            else: st.success(f"🟢 **{date}**\n\n**Stable**\nمستقر\n\n### {daily_max_storm}%")
+            if daily_max_storm >= 75: st.error(f"🔴 **{date}**\n\n**Severe Risk**\nHigh convective potential\n\n### {daily_max_storm}%")
+            elif daily_max_storm >= 40: st.warning(f"🟡 **{date}**\n\n**Localized**\nPossible convection\n\n### {daily_max_storm}%")
+            else: st.success(f"🟢 **{date}**\n\n**Stable**\nClear conditions\n\n### {daily_max_storm}%")
     st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
 
     max_storm = df_time["Storm Probability"].max()
@@ -238,6 +231,16 @@ with tab1:
                                 mapbox_style="open-street-map", zoom=6, color_continuous_scale=["#10B981", "#F59E0B", "#EF4444", "#7F1D1D"], range_color=[0, 100])
         fig1.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_data")
+        
+    st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery & Streams</h3>', unsafe_allow_html=True)
+    components.html("""
+        <div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #1E293B;">
+            <iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe>
+            <div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;">
+                <span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ JM72 SATELLITE LIVE</span>
+            </div>
+        </div>
+    """, height=520)
 
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Forecast</h4>', unsafe_allow_html=True)
@@ -246,9 +249,9 @@ with tab2:
         d_max_t = df_all[df_all["DateOnly"] == date]["Temperature"].max()
         d_min_t = df_all[df_all["DateOnly"] == date]["Temperature"].min()
         with cols_t2[i]:
-            if d_max_t >= 48.0: st.error(f"🔴 **{date}**\n\n**Extreme**\nشديد الحرارة\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
-            elif d_max_t >= 40.0: st.warning(f"🟡 **{date}**\n\n**High Heat**\nحار جداً\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
-            else: st.success(f"🟢 **{date}**\n\n**Moderate**\nمعتدل\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
+            if d_max_t >= 48.0: st.error(f"🔴 **{date}**\n\n**Extreme Heat**\nCritical thresholds\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
+            elif d_max_t >= 40.0: st.warning(f"🟡 **{date}**\n\n**High Heat**\nElevated profiles\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
+            else: st.success(f"🟢 **{date}**\n\n**Moderate**\nNormal baseline\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
     st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
 
     max_temp = df_time["Temperature"].max()
@@ -260,62 +263,4 @@ with tab2:
     if df_plot_heat.empty:
         fig2 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
         fig2.update_layout(mapbox_style="open-street-map", mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")
-    else:
-        df_plot_heat["Node Size"] = np.clip((df_plot_heat["Temperature"] - 30) * 2, 5, 45)
-        fig2 = px.scatter_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", color="Temperature", size="Node Size",
-                                mapbox_style="open-street-map", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
-        fig2.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
-
-with tab3:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">🌪️ Active Wind & Sandstorm Tracker</h4>', unsafe_allow_html=True)
-    max_dust = df_time["Dust Probability"].max()
-    if max_dust >= 60:
-        target_dust = df_time.loc[df_time["Dust Probability"].idxmax(), "Station"]
-        st.markdown(f'''
-        <div class="alert-banner" style="background-color: #FFFBEB; color: #92400E !important; border-left-color: #D97706;">
-            <strong>⚠️ DUST ALERT:</strong> High probability of sandstorms ({max_dust}%) and low visibility over {target_dust}!<br>
-            <strong>⚠️ إنذار غبار:</strong> رصد رياح نشطة واحتمالية عواصف رملية ({max_dust}%) فوق {target_dust}!
-        </div>
-        ''', unsafe_allow_html=True)
-
-    df_time["Dust Node"] = df_time["Dust Probability"] + 10
-    fig3 = px.scatter_mapbox(df_time, lat="Latitude", lon="Longitude", color="Dust Probability", size="Dust Node",
-                            hover_data={"Station": True, "Wind Speed": True, "Visibility": True, "Latitude": False, "Longitude": False, "Dust Node": False},
-                            mapbox_style="open-street-map", zoom=6, 
-                            color_continuous_scale=["#FEF3C7", "#FCD34D", "#D97706", "#78350F"], range_color=[0, 100])
-    fig3.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-    st.plotly_chart(fig3, use_container_width=True, key="dust_map_data")
-
-with tab4:
-    st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 17-Station Matrix at {selected_time}</h3>", unsafe_allow_html=True)
-    display_df = df_time.sort_values(by="Temperature", ascending=False)
-    
-    html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Temp (°C)</th><th>Wind (km/h)</th><th>Visibility (km)</th><th>Dust (%)</th><th>Storm (%)</th></tr>"
-    for _, row in display_df.iterrows():
-        t_val = row['Temperature']
-        w_val = row['Wind Speed']
-        vis_val = row['Visibility']
-        d_val = row['Dust Probability']
-        s_val = row['Storm Probability']
-        
-        s_color = "#EF4444" if s_val >= 75 else "#1E293B"
-        d_color = "#D97706" if d_val >= 50 else "#1E293B"
-        vis_color = "#991B1B" if vis_val <= 2.0 else "#1E293B"
-        
-        html_table += f"<tr><td>{row['Station']}</td><td>{t_val}°C</td><td>{w_val} km/h</td><td style='color:{vis_color};'>{vis_val} km</td><td style='color:{d_color};'>{d_val}%</td><td style='color:{s_color};'>{s_val}%</td></tr>"
-    html_table += "</table>"
-    st.markdown(html_table, unsafe_allow_html=True)
-
-      # UPDATED BLOCK: Statistical Verification Matrix including American GFS Model
-    st.markdown("<hr><h3 style='color:#082F49; font-weight:900;'>🔬 Statistical Verification & Model Calibration Matrix</h3>", unsafe_allow_html=True)
-    st.markdown("""
-    <table class="custom-table">
-        <tr style="background-color:#E0F2FE;"><th>Model Node / Processing Engine</th><th>Probability of Detection (POD)</th><th>False Alarm Rate (FAR)</th></tr>
-        <tr style="border: 2px solid #D4AF37; background-color: #FFFBEB;"><td style="color:#082F49; font-weight:bold;">🏆 JM72 Expert AI Weather Model</td><td style="color:#082F49; font-weight:bold;">0.96</td><td style="color:#10B981; font-weight:bold;">0.04</td></tr>
-        <tr><td>German ICON Model (7km)</td><td>0.85</td><td>0.11</td></tr>
-        <tr><td>European ECMWF Consensus (9km)</td><td>0.82</td><td>0.14</td></tr>
-        <tr style="background-color:#F8FAFC;"><td>American GFS Model (22km)</td><td>0.78</td><td>0.18</td></tr>
-    </table>
-    """, unsafe_allow_html=True)
+        st.plotly_chart(fig2, use_container_

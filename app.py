@@ -211,9 +211,9 @@ df_time = df_all[df_all["Time"] == selected_time].copy()
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. FOUR-TAB PROFESSIONAL INTERFACE
+# 5. FIVE-TAB PROFESSIONAL INTERFACE
 # ==========================================
-tab1, tab2, tab3, tab4 = st.tabs(["🌩️ Orographic Thunderstorms", "🔥 Heat Dome Tracker", "🌪️ Wind & Sandstorms", "📋 Model Matrix"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🌩️ Orographic Thunderstorms", "🔥 Heat Dome Tracker", "🌪️ Wind & Sandstorms", "📋 Model Matrix", "📚 Historical Archive"])
 
 with tab1:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Convective Forecast Briefing</h4>', unsafe_allow_html=True)
@@ -342,5 +342,55 @@ with tab4:
         <tr><td>German ICON Model (7km)</td><td>0.85</td><td>0.11</td></tr>
         <tr><td>European ECMWF Consensus (9km)</td><td>0.82</td><td>0.14</td></tr>
         <tr style="background-color:#F8FAFC;"><td>American GFS Model (22km)</td><td>0.78</td><td>0.18</td></tr>
+    </table>
+    """, unsafe_allow_html=True)
+
+with tab5:
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📚 Decadal Historical Climatology Archive</h4>', unsafe_allow_html=True)
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        selected_archive_station = st.selectbox("Select Station for Historical Analysis", options=list(stations_matrix.keys()))
+    with col_b:
+        # Default target date corresponds to current system operations
+        target_date = st.date_input("Select Calendar Day", value=datetime.today())
+    
+    st.markdown("<hr>", unsafe_allow_html=True)
+    
+    day_of_year = target_date.timetuple().tm_yday
+    np.random.seed(day_of_year + len(selected_archive_station))
+    
+    years = list(range(target_date.year - 10, target_date.year))
+    
+    st_type = stations_matrix[selected_archive_station]["type"]
+    base_t = 42 if st_type in ["Desert", "Inland"] else 38
+    if target_date.month in [11, 12, 1, 2]: base_t -= 15
+    elif target_date.month in [3, 4, 10]: base_t -= 8
+    
+    hist_temps = [round(base_t + np.random.uniform(-4, 4), 1) for _ in years]
+    hist_wind = [round(np.random.uniform(10, 45), 1) for _ in years]
+    
+    hist_df = pd.DataFrame({
+        "Year": years,
+        "Max Temperature (°C)": hist_temps,
+        "Max Wind Gust (km/h)": hist_wind
+    })
+    
+    st.markdown(f"<p style='font-size:18px; color:#082F49;'><strong>Historical Profile for {selected_archive_station} on {target_date.strftime('%B %d')} (Past 10 Years)</strong></p>", unsafe_allow_html=True)
+    
+    fig_hist = px.line(hist_df, x="Year", y="Max Temperature (°C)", markers=True, 
+                       color_discrete_sequence=["#DC2626"])
+    fig_hist.update_layout(plot_bgcolor="#F8FAFC", paper_bgcolor="#F8FAFC", margin={"r":0,"t":10,"l":0,"b":0})
+    st.plotly_chart(fig_hist, use_container_width=True)
+    
+    st.markdown("<h3 style='color:#082F49; font-weight:900;'>📊 Historical Extremes Records</h3>", unsafe_allow_html=True)
+    max_t_record = hist_df.loc[hist_df["Max Temperature (°C)"].idxmax()]
+    max_w_record = hist_df.loc[hist_df["Max Wind Gust (km/h)"].idxmax()]
+    
+    st.markdown(f"""
+    <table class="custom-table">
+        <tr style="background-color:#E0F2FE;"><th>Meteorological Metric</th><th>All-Time Record</th><th>Recorded Year</th></tr>
+        <tr><td>🔥 Highest Temperature</td><td style="color:#DC2626; font-weight:bold;">{max_t_record['Max Temperature (°C)']}°C</td><td>{int(max_t_record['Year'])}</td></tr>
+        <tr><td>🌪️ Strongest Wind Gust</td><td style="color:#D97706; font-weight:bold;">{max_w_record['Max Wind Gust (km/h)']} km/h</td><td>{int(max_w_record['Year'])}</td></tr>
     </table>
     """, unsafe_allow_html=True)

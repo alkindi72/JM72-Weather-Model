@@ -158,13 +158,13 @@ if fetch_success and type(live_data) is list:
                     vis_km = np.clip(10.0 - (dust_p / 100) * 9.5, 0.5, 10.0)
 
                 except Exception:
-                    temp_c, storm_prob, wind_spd, wind_gst, dust_p, vis_km = 36.0, 0.0, 10.0, 15.0, 0.0, 10.0
+                    temp_c, storm_prob, wind_spd, wind_dir, wind_gst, dust_p, vis_km = 36.0, 0.0, 10.0, 180, 15.0, 0.0, 10.0
 
                 weather_data.append({
                     "Time": dt_str, "DateOnly": dt.strftime('%d %b'), "Station": name,
                     "Latitude": coords["lat"], "Longitude": coords["lon"],
                     "Storm Probability": round(storm_prob), "Temperature": round(temp_c, 1),
-                    "Wind Speed": round(wind_spd, 1), "Gusts": round(wind_gst, 1),
+                    "Wind Speed": round(wind_spd, 1), "Wind Direction": round(wind_dir), "Gusts": round(wind_gst, 1),
                     "Dust Probability": round(dust_p), "Visibility": round(vis_km, 1)
                 })
         except Exception:
@@ -184,6 +184,7 @@ if not weather_data:
                 "Latitude": coords["lat"], "Longitude": coords["lon"],
                 "Storm Probability": round(np.clip(base_storm + np.random.uniform(-5, 10), 0, 100)) if base_storm > 0 else 0,
                 "Temperature": round(temp, 1), "Wind Speed": round(wind_spd, 1),
+                "Wind Direction": round(np.random.uniform(0, 360)),
                 "Gusts": round(wind_spd * 1.5, 1), "Dust Probability": round((wind_spd/50)*100),
                 "Visibility": round(10.0 - (wind_spd/50)*9.0, 1)
             })
@@ -282,16 +283,28 @@ with tab3:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">🌪️ Active Wind & Sandstorm Tracker</h4>', unsafe_allow_html=True)
     max_dust = df_time["Dust Probability"].max()
     if max_dust >= 60:
-        target_dust = df_time.loc[df_time["Dust Probability"].idxmax(), "Station"]
+        target_dust_row = df_time.loc[df_time["Dust Probability"].idxmax()]
+        target_dust = target_dust_row["Station"]
+        target_wind_spd = target_dust_row["Wind Speed"]
+        target_wind_gst = target_dust_row["Gusts"]
+        target_wind_dir = target_dust_row["Wind Direction"]
+        target_vis = target_dust_row["Visibility"]
+        
+        min_vis = df_time["Visibility"].min()
+        max_vis = df_time["Visibility"].max()
+        
         st.markdown(f'''
         <div class="alert-banner" style="background-color: #FFFBEB; color: #92400E !important; border-left-color: #D97706;">
-            <strong>⚠️ DUST ALERT:</strong> High probability of sandstorms ({max_dust}%) and low visibility over {target_dust}!
+            <strong>⚠️ DUST ALERT:</strong> High probability of sandstorms ({max_dust}%) detected over {target_dust}!<br>
+            • Expected Wind Speed: {target_wind_spd} km/h (Gusts up to {target_wind_gst} km/h)<br>
+            • Wind Direction: {target_wind_dir}°<br>
+            • Current Visibility: {target_vis} km (Regional Range: {min_vis} km to {max_vis} km)
         </div>
         ''', unsafe_allow_html=True)
 
     df_time["Dust Node"] = df_time["Dust Probability"] + 10
     fig3 = px.scatter_mapbox(df_time, lat="Latitude", lon="Longitude", color="Dust Probability", size="Dust Node",
-                            hover_data={"Station": True, "Wind Speed": True, "Visibility": True, "Latitude": False, "Longitude": False, "Dust Node": False},
+                            hover_data={"Station": True, "Wind Speed": True, "Wind Direction": True, "Visibility": True, "Latitude": False, "Longitude": False, "Dust Node": False},
                             mapbox_style="white-bg", zoom=6, 
                             color_continuous_scale=["#FEF3C7", "#FCD34D", "#D97706", "#78350F"], range_color=[0, 100])
     fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
@@ -301,10 +314,11 @@ with tab4:
     st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 17-Station Matrix at {selected_time}</h3>", unsafe_allow_html=True)
     display_df = df_time.sort_values(by="Temperature", ascending=False)
     
-    html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Temp (°C)</th><th>Wind (km/h)</th><th>Visibility (km)</th><th>Dust (%)</th><th>Storm (%)</th></tr>"
+    html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Temp (°C)</th><th>Wind Speed (km/h)</th><th>Wind Dir (°)</th><th>Visibility (km)</th><th>Dust (%)</th><th>Storm (%)</th></tr>"
     for _, row in display_df.iterrows():
         t_val = row['Temperature']
         w_val = row['Wind Speed']
+        wd_val = row['Wind Direction']
         vis_val = row['Visibility']
         d_val = row['Dust Probability']
         s_val = row['Storm Probability']
@@ -313,7 +327,7 @@ with tab4:
         d_color = "#D97706" if d_val >= 50 else "#1E293B"
         vis_color = "#991B1B" if vis_val <= 2.0 else "#1E293B"
         
-        html_table += f"<tr><td>{row['Station']}</td><td>{t_val}°C</td><td>{w_val} km/h</td><td style='color:{vis_color};'>{vis_val} km</td><td style='color:{d_color};'>{d_val}%</td><td style='color:{s_color};'>{s_val}%</td></tr>"
+        html_table += f"<tr><td>{row['Station']}</td><td>{t_val}°C</td><td>{w_val} km/h</td><td>{wd_val}°</td><td style='color:{vis_color};'>{vis_val} km</td><td style='color:{d_color};'>{d_val}%</td><td style='color:{s_color};'>{s_val}%</td></tr>"
     html_table += "</table>"
     st.markdown(html_table, unsafe_allow_html=True)
 

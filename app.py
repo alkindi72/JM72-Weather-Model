@@ -256,20 +256,22 @@ with st.sidebar:
             else:
                 with st.spinner("Dispatching urgent warnings..."):
                     
+                    platform_url = "https://jm72-weather-model.streamlit.app/" # User can update URL here
+                    
                     # 1. Dispatch via Telegram (Multiple IDs)
                     if tel_ready:
                         try:
                             message_text = "🚨 *JM72 AUTOMATED WEATHER INTELLIGENCE*\n==================================\n\n"
                             message_text += "\n\n".join(critical_alerts)
-                            message_text += "\n\n🌐 _Please check the JM72 Dashboard for live telemetry._"
+                            message_text += f"\n\n🌐 _Please check the [JM72 Dashboard]({platform_url}) for live telemetry._"
                             
                             chat_ids_list = [cid.strip() for cid in chat_id.split(",") if cid.strip()]
                             success_count_tel = 0
-                            url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+                            url_api = f"https://api.telegram.org/bot{bot_token}/sendMessage"
                             
                             for cid in chat_ids_list:
-                                payload = {"chat_id": cid, "text": message_text, "parse_mode": "Markdown"}
-                                response = requests.post(url, json=payload)
+                                payload = {"chat_id": cid, "text": message_text, "parse_mode": "Markdown", "disable_web_page_preview": False}
+                                response = requests.post(url_api, json=payload)
                                 if response.status_code == 200: success_count_tel += 1
                                 
                             st.success(f"📱 Telegram: Dispatched to {success_count_tel} phone(s).")
@@ -286,11 +288,10 @@ with st.sidebar:
                             msg['To'] = ", ".join(target_emails_list)
                             msg['Subject'] = "🚨 JM72 WEATHER ALERT NOTIFICATION"
                             
-                            # Standard text for email
                             body_text = "JM72 AUTOMATED INTELLIGENCE REPORT\n====================================\n\n"
                             for alert in critical_alerts:
-                                body_text += alert.replace("*", "") + "\n\n" # Clean markdown stars for email
-                            body_text += "Please check the JM72 Dashboard for live radar and telemetry."
+                                body_text += alert.replace("*", "") + "\n\n" 
+                            body_text += f"Please check the JM72 Dashboard for live radar and telemetry:\n{platform_url}"
                             
                             msg.attach(MIMEText(body_text, 'plain'))
                             

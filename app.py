@@ -143,10 +143,8 @@ if fetch_success and type(live_data) is list:
                     wind_spd = station_data.get("windspeed_10m", [0]*len(api_times))[closest_idx] or 0
                     wind_gst = station_data.get("windgusts_10m", [0]*len(api_times))[closest_idx] or 0
                     
-                    # JM72 PHYSICS FILTER: Ensure gusts are strictly higher than sustained wind speed
                     wind_gst = max(wind_gst, wind_spd * 1.35)
                     
-                    # Storm Logic
                     prob = (cape_val / 2000) * 100
                     if rh_700 < 45: prob *= 0.05
                     elif rh_700 < 55: prob *= 0.3
@@ -157,10 +155,8 @@ if fetch_success and type(live_data) is list:
                         prob *= 0.15
                     storm_prob = np.clip(prob, 0, 100)
                     
-                    # Live Rain Estimation based on Storm Dynamics
                     live_rain = round(np.random.uniform(5.0, 35.0), 1) if storm_prob > 65 else 0.0
                     
-                    # Wind & Dust Logic
                     dust_p = 0
                     if coords["type"] == "Desert":
                         dust_p = (wind_spd / 35) * 100
@@ -216,8 +212,9 @@ with st.sidebar:
     
     with st.form("alert_form"):
         sender_email = st.text_input("System Email (Sender Gmail)", placeholder="e.g., jm72.weather@gmail.com")
-        app_password = st.text_input("App Password (16 Letters)", type="password", help="Use Google App Password, NOT your regular password.")
-        target_email = st.text_input("Target Email (Receiver)", placeholder="e.g., your_phone@gmail.com")
+        app_password = st.text_input("App Password (16 Letters)", type="password", help="Use Google App Password.")
+        # Updated Placeholder to show multiple emails
+        target_email = st.text_input("Target Emails (Comma Separated)", placeholder="user1@gmail.com, user2@yahoo.com")
         
         st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
         scan_button = st.form_submit_button("🔍 Run Scan & Dispatch Alerts")
@@ -226,8 +223,7 @@ with st.sidebar:
         if not sender_email or not app_password or not target_email:
             st.error("❌ Missing SMTP Credentials. Please fill all fields.")
         else:
-            # Smart Scan Logic
-            current_time_str = timeline_str[0] # Scan current immediate hour
+            current_time_str = timeline_str[0]
             df_now = df_all[df_all["Time"] == current_time_str]
             
             critical_alerts = []
@@ -247,13 +243,16 @@ with st.sidebar:
                 critical_alerts.append(f"🌪️ DUST STORM: High sandstorm probability ({max_dust_now}%) over {d_station}.")
 
             if not critical_alerts:
-                st.success("🟢 System Scan Complete: No immediate critical threats detected. No email sent.")
+                st.success("🟢 System Scan Complete: No immediate critical threats detected.")
             else:
                 with st.spinner("Dispatching urgent warning..."):
                     try:
+                        # Logic to handle multiple emails seamlessly
+                        target_emails_list = [email.strip() for email in target_email.split(",") if email.strip()]
+                        
                         msg = MIMEMultipart()
                         msg['From'] = sender_email
-                        msg['To'] = target_email
+                        msg['To'] = ", ".join(target_emails_list)
                         msg['Subject'] = "🚨 JM72 WEATHER ALERT NOTIFICATION"
                         
                         body = "JM72 AUTOMATED INTELLIGENCE REPORT\n====================================\n\n"
@@ -262,14 +261,14 @@ with st.sidebar:
                         
                         msg.attach(MIMEText(body, 'plain'))
                         
-                        # Send email via Google SMTP
                         server = smtplib.SMTP('smtp.gmail.com', 587)
                         server.starttls()
                         server.login(sender_email, app_password)
-                        server.send_message(msg)
+                        # Sending to multiple recipients securely
+                        server.sendmail(sender_email, target_emails_list, msg.as_string())
                         server.quit()
                         
-                        st.success("✅ Urgent alerts successfully dispatched to your device!")
+                        st.success(f"✅ Urgent alerts successfully dispatched to {len(target_emails_list)} recipient(s)!")
                     except Exception as e:
                         st.error(f"❌ SMTP Dispatch Failed. Check App Password or Security Settings. Error: {e}")
 
@@ -449,7 +448,6 @@ with tab5:
     hist_temps = [round(base_t + np.random.uniform(-4, 4), 1) for _ in years]
     hist_wind = [round(np.random.uniform(10, 45), 1) for _ in years]
     
-    # Orographic/Mountain stations receive physical preference for higher rain records
     rain_scale = 45 if st_type == "Mountains" else 15
     hist_rain = [round(np.random.exponential(scale=rain_scale) if np.random.rand() > 0.4 else 0.0, 1) for _ in years]
     
@@ -471,7 +469,6 @@ with tab5:
     max_w_record = hist_df.loc[hist_df["Max Wind Gust (km/h)"].idxmax()]
     max_r_record = hist_df.loc[hist_df["Max Rainfall (mm)"].idxmax()]
     
-    # If simulated max rain is 0, provide a robust historical baseline record placeholder
     if max_r_record["Max Rainfall (mm)"] == 0:
         max_r_val, max_r_yr = round(np.random.uniform(12.0, 55.0), 1), years[4]
     else:

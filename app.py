@@ -135,6 +135,9 @@ if fetch_success and type(live_data) is list:
                     wind_spd = station_data.get("windspeed_10m", [0]*len(api_times))[closest_idx] or 0
                     wind_gst = station_data.get("windgusts_10m", [0]*len(api_times))[closest_idx] or 0
                     
+                    # JM72 PHYSICS FILTER: Ensure gusts are strictly higher than sustained wind speed
+                    wind_gst = max(wind_gst, wind_spd * 1.35)
+                    
                     # Storm Logic
                     prob = (cape_val / 2000) * 100
                     if rh_700 < 45: prob *= 0.05

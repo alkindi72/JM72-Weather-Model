@@ -30,6 +30,25 @@ st.markdown("""
     html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stApp"] {
         background-color: #F8FAFC !important;
     }
+    
+    /* 🔴 FORCED VISIBLE SIDEBAR TOGGLE BUTTON 🔴 */
+    [data-testid="collapsedControl"] {
+        display: flex !important;
+        background-color: #082F49 !important;
+        border-radius: 8px !important;
+        margin: 10px !important;
+        z-index: 999999 !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        transition: 0.3s;
+    }
+    [data-testid="collapsedControl"]:hover {
+        background-color: #D4AF37 !important;
+    }
+    [data-testid="collapsedControl"] svg {
+        fill: #FFFFFF !important;
+        color: #FFFFFF !important;
+    }
+    
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"] { 
         color: #082F49 !important; 
         font-weight: 900 !important; 
@@ -221,7 +240,7 @@ with st.sidebar:
             if submit_login:
                 if admin_pin == "JM72":
                     st.session_state["admin_logged_in"] = True
-                    st.rerun() # Refresh the app to show the dashboard
+                    st.rerun() 
                 else:
                     st.error("❌ Invalid PIN. Access Denied.")
     else:
@@ -278,9 +297,8 @@ with st.sidebar:
                 else:
                     with st.spinner("Dispatching urgent warnings..."):
                         
-                        platform_url = "https://jm72-weather-model.streamlit.app/" # User can update URL here
+                        platform_url = "https://jm72-weather-model.streamlit.app/" 
                         
-                        # 1. Dispatch via Telegram (Multiple IDs)
                         if tel_ready:
                             try:
                                 message_text = "🚨 *JM72 AUTOMATED WEATHER INTELLIGENCE*\n==================================\n\n"
@@ -300,7 +318,6 @@ with st.sidebar:
                             except Exception as e:
                                 st.error(f"❌ Telegram Error: {e}")
                                 
-                        # 2. Dispatch via Email (Multiple Emails)
                         if eml_ready:
                             try:
                                 target_emails_list = [email.strip() for email in target_email.split(",") if email.strip()]

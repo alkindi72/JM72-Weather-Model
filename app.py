@@ -8,11 +8,14 @@ import streamlit.components.v1 as components
 from streamlit_autorefresh import st_autorefresh
 import requests
 import base64
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # ==========================================
 # 1. PLATFORM SETTINGS & RIGID LIGHT-THEME CSS
 # ==========================================
-st.set_page_config(page_title="JM72 AI Weather Model", layout="wide")
+st.set_page_config(page_title="JM72 AI Weather Model", layout="wide", initial_sidebar_state="expanded")
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 
 st.markdown("""
@@ -40,6 +43,11 @@ st.markdown("""
     .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 12px; text-align: center; }
     .custom-table td { padding: 12px; border: 1px solid #e2e8f0; color: #1e293b !important; font-weight: bold; text-align: center; }
+    
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] { background-color: #1E293B !important; }
+    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label { color: #F8FAFC !important; }
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: #D4AF37 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -199,6 +207,72 @@ if not weather_data:
 df_all = pd.DataFrame(weather_data)
 unique_dates = df_all["DateOnly"].unique()[:5]
 
+# ==========================================
+# 4. ADMIN CONTROL ROOM (SIDEBAR ALERTS)
+# ==========================================
+with st.sidebar:
+    st.markdown("### 🚨 JM72 Alert Control Room")
+    st.markdown("Configure SMTP Gateway to dispatch urgent early warnings directly to your phone/email.")
+    
+    with st.form("alert_form"):
+        sender_email = st.text_input("System Email (Sender Gmail)", placeholder="e.g., jm72.weather@gmail.com")
+        app_password = st.text_input("App Password (16 Letters)", type="password", help="Use Google App Password, NOT your regular password.")
+        target_email = st.text_input("Target Email (Receiver)", placeholder="e.g., your_phone@gmail.com")
+        
+        st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+        scan_button = st.form_submit_button("🔍 Run Scan & Dispatch Alerts")
+
+    if scan_button:
+        if not sender_email or not app_password or not target_email:
+            st.error("❌ Missing SMTP Credentials. Please fill all fields.")
+        else:
+            # Smart Scan Logic
+            current_time_str = timeline_str[0] # Scan current immediate hour
+            df_now = df_all[df_all["Time"] == current_time_str]
+            
+            critical_alerts = []
+            max_storm_now = df_now["Storm Probability"].max()
+            if max_storm_now >= 75:
+                s_station = df_now.loc[df_now["Storm Probability"].idxmax(), "Station"]
+                critical_alerts.append(f"🔴 RED ALERT: Severe Convective Storm Risk ({max_storm_now}%) over {s_station}.")
+                
+            max_heat_now = df_now["Temperature"].max()
+            if max_heat_now >= 48.0:
+                h_station = df_now.loc[df_now["Temperature"].idxmax(), "Station"]
+                critical_alerts.append(f"🔥 HEAT DOME ALERT: Extreme temperature ({max_heat_now}°C) detected at {h_station}.")
+                
+            max_dust_now = df_now["Dust Probability"].max()
+            if max_dust_now >= 60:
+                d_station = df_now.loc[df_now["Dust Probability"].idxmax(), "Station"]
+                critical_alerts.append(f"🌪️ DUST STORM: High sandstorm probability ({max_dust_now}%) over {d_station}.")
+
+            if not critical_alerts:
+                st.success("🟢 System Scan Complete: No immediate critical threats detected. No email sent.")
+            else:
+                with st.spinner("Dispatching urgent warning..."):
+                    try:
+                        msg = MIMEMultipart()
+                        msg['From'] = sender_email
+                        msg['To'] = target_email
+                        msg['Subject'] = "🚨 JM72 WEATHER ALERT NOTIFICATION"
+                        
+                        body = "JM72 AUTOMATED INTELLIGENCE REPORT\n====================================\n\n"
+                        body += "\n".join(critical_alerts)
+                        body += "\n\nPlease check the JM72 Dashboard for live radar and satellite feeds."
+                        
+                        msg.attach(MIMEText(body, 'plain'))
+                        
+                        # Send email via Google SMTP
+                        server = smtplib.SMTP('smtp.gmail.com', 587)
+                        server.starttls()
+                        server.login(sender_email, app_password)
+                        server.send_message(msg)
+                        server.quit()
+                        
+                        st.success("✅ Urgent alerts successfully dispatched to your device!")
+                    except Exception as e:
+                        st.error(f"❌ SMTP Dispatch Failed. Check App Password or Security Settings. Error: {e}")
+
 # Esri World Topographical Tile Server Configuration
 esri_topo_layer = [{
     "below": 'traces',
@@ -207,7 +281,7 @@ esri_topo_layer = [{
 }]
 
 # ==========================================
-# 4. GLOBAL TIME CONTROLS
+# 5. GLOBAL TIME CONTROLS
 # ==========================================
 st.markdown('<h4 style="color:#082F49; font-weight:900;">⏱️ Interactive Operational Forecast Timeline (UAE Local Time):</h4>', unsafe_allow_html=True)
 selected_time = st.select_slider("Select Time Check", options=timeline_str, label_visibility="collapsed")
@@ -215,7 +289,7 @@ df_time = df_all[df_all["Time"] == selected_time].copy()
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. FIVE-TAB PROFESSIONAL INTERFACE
+# 6. FIVE-TAB PROFESSIONAL INTERFACE
 # ==========================================
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["🌩️ Orographic Thunderstorms", "🔥 Heat Dome Tracker", "🌪️ Wind & Sandstorms", "📋 Model Matrix", "📚 Historical Archive"])
 

@@ -18,6 +18,10 @@ from email.mime.multipart import MIMEMultipart
 st.set_page_config(page_title="JM72 AI Weather Model", layout="wide", initial_sidebar_state="expanded")
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 
+# Initialize Session State for Authentication
+if "admin_logged_in" not in st.session_state:
+    st.session_state["admin_logged_in"] = False
+
 st.markdown("""
 <style>
     /* Hide default Streamlit toolbar and menus */
@@ -204,15 +208,23 @@ df_all = pd.DataFrame(weather_data)
 unique_dates = df_all["DateOnly"].unique()[:5]
 
 # ==========================================
-# 4. SECURE ADMIN CONTROL ROOM (SIDEBAR)
+# 4. SECURE ADMIN CONTROL ROOM (SESSION STATE)
 # ==========================================
 with st.sidebar:
-    st.markdown("### 🔒 System Access")
-    # This acts as the lock. Only entering "JM72" reveals the tools.
-    admin_pin = st.text_input("Enter Admin PIN:", type="password", placeholder="PIN required for alerts")
-    
-    if admin_pin == "JM72":
-        st.markdown("<hr style='margin: 10px 0;'>", unsafe_allow_html=True)
+    if not st.session_state["admin_logged_in"]:
+        st.markdown("### 🔒 System Login")
+        st.markdown("Authorized personnel only.")
+        with st.form("login_form"):
+            admin_pin = st.text_input("Admin PIN", type="password", placeholder="Enter PIN to unlock")
+            submit_login = st.form_submit_button("Authenticate")
+            
+            if submit_login:
+                if admin_pin == "JM72":
+                    st.session_state["admin_logged_in"] = True
+                    st.rerun() # Refresh the app to show the dashboard
+                else:
+                    st.error("❌ Invalid PIN. Access Denied.")
+    else:
         st.markdown("### 🚨 Alert Control Room")
         st.markdown("Dispatch urgent early warnings directly to mobile phones and/or emails.")
         
@@ -230,6 +242,10 @@ with st.sidebar:
             
             st.markdown("<br>", unsafe_allow_html=True)
             scan_button = st.form_submit_button("🔍 Run Scan & Dispatch Alerts")
+
+        if st.button("🚪 Secure Logout"):
+            st.session_state["admin_logged_in"] = False
+            st.rerun()
 
         if scan_button:
             tel_ready = bool(bot_token and chat_id)
@@ -310,8 +326,6 @@ with st.sidebar:
                                 st.success(f"📧 Email: Dispatched to {len(target_emails_list)} recipient(s).")
                             except Exception as e:
                                 st.error(f"❌ Email Error: Check App Password. Error: {e}")
-    elif admin_pin != "":
-        st.error("❌ Invalid PIN. Access Denied.")
 
 # Esri World Topographical Tile Server Configuration
 esri_topo_layer = [{

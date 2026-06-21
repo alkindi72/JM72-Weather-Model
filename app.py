@@ -238,7 +238,7 @@ with tab1:
     df_plot_storm = df_time[df_time["Storm Probability"] > 0].copy()
     if df_plot_storm.empty:
         fig1 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
-        fig1.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,-t":0,"l":0,"b":0})
+        fig1.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_empty")
     else:
         df_plot_storm["Marker Size"] = df_plot_storm["Storm Probability"] + 10

@@ -43,7 +43,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# BULLETPROOF HEADER
+# BULLETPROOF HEADER: Encoded curved typography
 svg_code = """
 <svg width="600" height="240" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
     <path id="textArcPath" d="M 70,160 Q 300,0 530,160" fill="transparent" />
@@ -102,7 +102,6 @@ base_date = uae_time.replace(minute=0, second=0, microsecond=0)
 timeline = [base_date + timedelta(hours=i*3) for i in range(8 * 5)]
 timeline_str = [dt.strftime('%d %b - %H:%M') for dt in timeline]
 
-# إجبار الذاكرة المؤقتة على التحديث عند تغيير المحطات
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
     try:
@@ -154,7 +153,7 @@ if fetch_success and type(live_data) is list:
                         prob *= 0.15
                     storm_prob = np.clip(prob, 0, 100)
                     
-                    # Wind & Dust Logic (JM72 Physics)
+                    # Wind & Dust Logic
                     dust_p = 0
                     if coords["type"] == "Desert":
                         dust_p = (wind_spd / 35) * 100
@@ -281,7 +280,6 @@ with tab3:
         </div>
         ''', unsafe_allow_html=True)
 
-    # خريطة الغبار والرياح
     df_time["Dust Node"] = df_time["Dust Probability"] + 10
     fig3 = px.scatter_mapbox(df_time, lat="Latitude", lon="Longitude", color="Dust Probability", size="Dust Node",
                             hover_data={"Station": True, "Wind Speed": True, "Visibility": True, "Latitude": False, "Longitude": False, "Dust Node": False},
@@ -309,3 +307,6 @@ with tab4:
         html_table += f"<tr><td>{row['Station']}</td><td>{t_val}°C</td><td>{w_val} km/h</td><td style='color:{vis_color};'>{vis_val} km</td><td style='color:{d_color};'>{d_val}%</td><td style='color:{s_color};'>{s_val}%</td></tr>"
     html_table += "</table>"
     st.markdown(html_table, unsafe_allow_html=True)
+
+    # UPDATED BLOCK: Statistical Verification Matrix including American GFS Model
+    st.markdown("<hr

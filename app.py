@@ -31,22 +31,35 @@ st.markdown("""
         background-color: #F8FAFC !important;
     }
     
-    /* 🔴 FORCED VISIBLE SIDEBAR TOGGLE BUTTON 🔴 */
-    [data-testid="collapsedControl"] {
-        display: flex !important;
+    /* 🔴 BULLETPROOF FORCED VISIBLE SIDEBAR TOGGLE BUTTON 🔴 */
+    [data-testid="collapsedControl"], 
+    [data-testid="stSidebarCollapsedControl"],
+    .stApp > header button {
+        display: inline-flex !important;
         background-color: #082F49 !important;
+        border: 2px solid #D4AF37 !important;
         border-radius: 8px !important;
+        padding: 5px !important;
         margin: 10px !important;
         z-index: 999999 !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
         transition: 0.3s;
     }
-    [data-testid="collapsedControl"]:hover {
+    [data-testid="collapsedControl"]:hover,
+    [data-testid="stSidebarCollapsedControl"]:hover {
         background-color: #D4AF37 !important;
+        border-color: #082F49 !important;
     }
-    [data-testid="collapsedControl"] svg {
+    [data-testid="collapsedControl"] svg, 
+    [data-testid="stSidebarCollapsedControl"] svg,
+    .stApp > header button svg {
         fill: #FFFFFF !important;
+        stroke: #FFFFFF !important;
         color: #FFFFFF !important;
+        width: 24px !important;
+        height: 24px !important;
     }
     
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"] { 

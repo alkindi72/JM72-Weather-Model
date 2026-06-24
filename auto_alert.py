@@ -48,7 +48,7 @@ def send_alert():
         return
 
     # ⚠️ تنبيه هام جداً: ضع إيميلك الحقيقي باللغة الإنجليزية فقط هنا بدون أي حروف عربية
-    sender = "اكتب_إيميلك_الحقيقي_هنا@gmail.com" 
+    sender = "اjumah72@gmail.com" 
     password = os.environ.get('APP_PASSWORD')
     
     # إعداد الرسالة بترميز utf-8

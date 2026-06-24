@@ -8,14 +8,11 @@ def apply_terrain_correction(temp, altitude):
     return temp - (altitude / 100) * 0.65
 
 def get_email_list(filename="email_list.txt"):
-    # دالة ذكية لقراءة الإيميلات من الملف النصي
     try:
         with open(filename, "r") as file:
-            # تقرأ الأسطر، تزيل المسافات الفارغة، وتتجاهل الأسطر الخالية
             emails = [line.strip() for line in file if line.strip()]
         return emails
     except FileNotFoundError:
-        print(f"⚠️ تحذير: ملف {filename} غير موجود.")
         return []
 
 def check_for_storms():
@@ -43,26 +40,27 @@ def check_for_storms():
             corrected_temp = apply_terrain_correction(raw_temp, alt)
             
             if cape > 300:
-                alerts.append(f"📍 {name}: طاقة العاصفة={cape} J/kg، الحرارة المصححة={corrected_temp:.1f}°C")
+                probability = min(100, int((cape / 1500) * 100))
                 
-    except KeyError as e:
-        print(f"❌ حدث خطأ: الروبوت لم يجد العمود المسمى {e}")
-        return
+                en_alert = f"🚨 RED ALERT: Severe Convective Storm Risk ({probability}%) detected over {name}!"
+                ar_alert = f"🚨 إنذار أحمر: خطر عواصف ركامية شديدة بنسبة ({probability}%) مرصودة فوق منطقة {name}!"
+                weather_info = f"📍 المنطقة المعرضة للحدث: {name} | درجة الحرارة: {corrected_temp:.1f}°C"
+                
+                full_alert = f"{en_alert}\n{ar_alert}\n{weather_info}\n{'-'*50}"
+                alerts.append(full_alert)
+                
     except Exception as e:
-        print(f"❌ خطأ غير متوقع: {e}")
+        print(f"❌ حدث خطأ أثناء الفحص: {e}")
         return
 
     if alerts:
-        # هنا يقوم الروبوت بسحب قائمة الإيميلات من الملف
         recipients = get_email_list("email_list.txt")
-        
         if recipients:
-            send_email("🚨 تحذير JM72: رصد ظروف غير مستقرة", "\n".join(alerts), recipients)
-            print(f"✅ تم إرسال الإيميل بنجاح إلى {len(recipients)} مستلم/مستلمين!")
-        else:
-            print("❌ لم يتم الإرسال: ملف email_list.txt فارغ أو غير موجود.")
+            final_message = "تحذير من نظام JM72 للأرصاد الجوية:\n\n" + "\n\n".join(alerts)
+            send_email("🚨 JM72 RED ALERT - إنذار جوي عالي الأهمية", final_message, recipients)
+            print(f"✅ تم إرسال الإنذار الأحمر بنجاح!")
     else:
-        print("✅ تم الفحص: الوضع الجوي مستقر ولا توجد عواصف حالياً.")
+        print("✅ تم الفحص: لا توجد سحب ركامية خطرة حالياً.")
 
 def send_email(subject, body, recipients):
     sender = "jm72.weather@gmail.com" # ضع إيميلك المرسل هنا
@@ -71,7 +69,6 @@ def send_email(subject, body, recipients):
     msg = MIMEText(body)
     msg['Subject'] = subject
     msg['From'] = sender
-    # دمج قائمة الإيميلات ليتم إرسالها دفعة واحدة
     msg['To'] = ", ".join(recipients)
     
     try:

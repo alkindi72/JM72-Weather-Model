@@ -76,26 +76,43 @@ st.markdown(f'''
 ''', unsafe_allow_html=True)
 
 # ==========================================
-# 2. REST-API LIVE DATA AGENT & UAE TIMEZONE (17 STATIONS)
+# 2. REST-API LIVE DATA AGENT & UAE TIMEZONE (34 STATIONS)
 # ==========================================
 stations_matrix = {
-    "Jebel Jais Peak": {"lat": 25.94, "lon": 56.16, "type": "Mountains"},
-    "Al Hajar Mountains": {"lat": 25.30, "lon": 56.10, "type": "Mountains"},
-    "Hatta Region": {"lat": 24.81, "lon": 56.12, "type": "Mountains"},
-    "Abu Dhabi City": {"lat": 24.45, "lon": 54.37, "type": "Coast"},
-    "Dubai Coastline": {"lat": 25.20, "lon": 55.27, "type": "Coast"},
-    "Sharjah Coast": {"lat": 25.35, "lon": 55.40, "type": "Coast"},
-    "Ajman Center": {"lat": 25.41, "lon": 55.44, "type": "Coast"},
-    "Umm Al Quwain": {"lat": 25.56, "lon": 55.55, "type": "Coast"},
-    "Ras Al Khaimah Coast": {"lat": 25.79, "lon": 55.94, "type": "Coast"},
-    "Fujairah Coast": {"lat": 25.12, "lon": 56.32, "type": "Mountains"},
-    "Al Ain Oasis": {"lat": 24.19, "lon": 55.76, "type": "Inland"},
-    "Sweihan Inland": {"lat": 24.46, "lon": 55.34, "type": "Inland"},
-    "Al Dhafra Hub": {"lat": 23.65, "lon": 53.70, "type": "Desert"},
-    "Liwa Deep Desert": {"lat": 23.13, "lon": 53.76, "type": "Desert"},
-    "Ruwais Coast": {"lat": 24.11, "lon": 52.73, "type": "Coast"},
-    "Sir Bani Yas Island": {"lat": 24.33, "lon": 52.61, "type": "Coast"},
-    "Dalma Island": {"lat": 24.50, "lon": 52.31, "type": "Coast"}
+    "Abu Dhabi": {"lat": 24.4760, "lon": 54.3290, "type": "Coast"},
+    "ADNOC HQ": {"lat": 24.4621, "lon": 54.3241, "type": "Coast"},
+    "Burj Khalifah": {"lat": 25.2017, "lon": 55.2766, "type": "Coast"},
+    "Sharjah University": {"lat": 25.2869, "lon": 55.4622, "type": "Coast"},
+    "Ajman": {"lat": 25.4236, "lon": 55.4447, "type": "Coast"},
+    "Umm Al Quwain": {"lat": 25.5301, "lon": 55.6548, "type": "Coast"},
+    "Ras Al khaimah": {"lat": 25.7716, "lon": 55.9392, "type": "Coast"},
+    "Fujairah Port": {"lat": 25.1699, "lon": 56.3595, "type": "Coast"},
+    "AlRuwais": {"lat": 24.0915, "lon": 52.6242, "type": "Coast"},
+    "Sir Bani Yas": {"lat": 24.3188, "lon": 52.5990, "type": "Coast"},
+    "Dalma": {"lat": 24.4906, "lon": 52.2914, "type": "Coast"},
+    "Sir Bu Nair": {"lat": 25.2201, "lon": 54.2341, "type": "Coast"},
+    "Abu Al Abyad": {"lat": 24.1841, "lon": 53.8626, "type": "Coast"},
+    "Jabal Jais": {"lat": 25.9508, "lon": 56.1674, "type": "Mountains"},
+    "Jabal Al Rahba": {"lat": 25.9264, "lon": 56.1192, "type": "Mountains"},
+    "Hatta": {"lat": 24.8121, "lon": 56.1396, "type": "Mountains"},
+    "Al Tawiyen": {"lat": 25.5527, "lon": 56.0715, "type": "Mountains"},
+    "Al Heben": {"lat": 25.1251, "lon": 56.1578, "type": "Mountains"},
+    "AlQor": {"lat": 24.9065, "lon": 56.1529, "type": "Mountains"},
+    "Al Aamerah": {"lat": 24.2356, "lon": 55.5396, "type": "Inland"},
+    "Al Wathbah": {"lat": 24.1789, "lon": 54.7033, "type": "Inland"},
+    "Al Dhaid": {"lat": 25.2371, "lon": 55.8179, "type": "Inland"},
+    "Al Malaiha": {"lat": 25.1322, "lon": 55.8891, "type": "Inland"},
+    "Madinat Zayed": {"lat": 23.6836, "lon": 53.6995, "type": "Desert"},
+    "Mukhariz": {"lat": 22.9095, "lon": 52.8882, "type": "Desert"},
+    "Owtaid": {"lat": 23.3955, "lon": 53.1119, "type": "Desert"},
+    "Zayed Int'l Airport": {"lat": 24.4330, "lon": 54.6511, "type": "Inland"},
+    "Dubai Int'l Airport": {"lat": 25.2528, "lon": 55.3644, "type": "Inland"},
+    "Sharjah Int'l Airport": {"lat": 25.3286, "lon": 55.5172, "type": "Inland"},
+    "Ras Al Khaimah Int'l Airport": {"lat": 25.6135, "lon": 55.9388, "type": "Inland"},
+    "Fujairah Int'l Airport": {"lat": 25.1122, "lon": 56.3240, "type": "Inland"},
+    "Al Ain Int'l Airport": {"lat": 24.2617, "lon": 55.6092, "type": "Inland"},
+    "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"},
+    "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
 
 uae_time = datetime.utcnow() + timedelta(hours=4)
@@ -115,11 +132,29 @@ def fetch_stable_live_data(stations_dict):
     except Exception as e:
         return False, str(e)
 
-with st.spinner("🤖 Dynamically compiling live metrics across 17 geographical UAE nodes..."):
+with st.spinner("🤖 Dynamically compiling live metrics across 34 geographical UAE nodes..."):
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 # ==========================================
-# 3. JM72 AI DYNAMICS ENGINE (STRICT FILTERS)
+# 3. ALMANAC DATA LOADER
+# ==========================================
+@st.cache_data
+def load_national_almanac():
+    try:
+        df = pd.read_csv("climate_yearly_almanac_till_dec_20252.xlsx - data.csv")
+        df.columns = df.iloc[0]
+        df = df[1:].reset_index(drop=True)
+        cols_num = ['month_day', 'highest_temperature_value', 'lowest_temperature_value', 'highest_rainfall_value', 'maximum_wind_value']
+        for col in cols_num:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        return df
+    except:
+        return pd.DataFrame()
+
+almanac_df = load_national_almanac()
+
+# ==========================================
+# 4. JM72 AI DYNAMICS ENGINE (STRICT FILTERS)
 # ==========================================
 weather_data = []
 
@@ -211,7 +246,7 @@ esri_topo_layer = [{
 }]
 
 # ==========================================
-# 4. GLOBAL TIME CONTROLS
+# 5. GLOBAL TIME CONTROLS
 # ==========================================
 st.markdown('<h4 style="color:#082F49; font-weight:900;">⏱️ Interactive Operational Forecast Timeline (UAE Local Time):</h4>', unsafe_allow_html=True)
 selected_time = st.select_slider("Select Time Check", options=timeline_str, label_visibility="collapsed")
@@ -219,14 +254,14 @@ df_time = df_all[df_all["Time"] == selected_time].copy()
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ==========================================
-# 5. SIX-TAB PROFESSIONAL INTERFACE
+# 6. SIX-TAB PROFESSIONAL INTERFACE
 # ==========================================
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🌩️ Orographic Thunderstorms", 
     "🔥 Heat Dome Tracker", 
     "🌪️ Wind & Sandstorms", 
     "📋 Model Matrix", 
-    "📚 Historical Archive",
+    "📚 National Almanac",
     "⚙️ Control Room"
 ])
 
@@ -329,7 +364,7 @@ with tab3:
     st.plotly_chart(fig3, use_container_width=True, key="dust_map_data")
 
 with tab4:
-    st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 17-Station Matrix at {selected_time}</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 34-Station Matrix at {selected_time}</h3>", unsafe_allow_html=True)
     display_df = df_time.sort_values(by="Temperature", ascending=False)
     
     html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Temp (°C)</th><th>Wind Speed (km/h)</th><th>Wind Dir (°)</th><th>Visibility (km)</th><th>Dust (%)</th><th>Rainfall (mm)</th><th>Storm (%)</th></tr>"
@@ -363,63 +398,65 @@ with tab4:
     """, unsafe_allow_html=True)
 
 with tab5:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📚 Decadal Historical Climatology Archive</h4>', unsafe_allow_html=True)
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📚 UAE National Climate Almanac (2003 - 2025)</h4>', unsafe_allow_html=True)
     
-    col_a, col_b = st.columns(2)
-    with col_a:
-        selected_archive_station = st.selectbox("Select Station for Historical Analysis", options=list(stations_matrix.keys()))
-    with col_b:
-        target_date = st.date_input("Select Calendar Day", value=datetime.today())
-    
-    st.markdown("<hr>", unsafe_allow_html=True)
-    
-    day_of_year = target_date.timetuple().tm_yday
-    np.random.seed(day_of_year + len(selected_archive_station))
-    
-    years = list(range(target_date.year - 10, target_date.year))
-    
-    st_type = stations_matrix[selected_archive_station]["type"]
-    base_t = 42 if st_type in ["Desert", "Inland"] else 38
-    if target_date.month in [11, 12, 1, 2]: base_t -= 15
-    elif target_date.month in [3, 4, 10]: base_t -= 8
-    
-    hist_temps = [round(base_t + np.random.uniform(-4, 4), 1) for _ in years]
-    hist_wind = [round(np.random.uniform(10, 45), 1) for _ in years]
-    
-    rain_scale = 45 if st_type == "Mountains" else 15
-    hist_rain = [round(np.random.exponential(scale=rain_scale) if np.random.rand() > 0.4 else 0.0, 1) for _ in years]
-    
-    hist_df = pd.DataFrame({
-        "Year": years,
-        "Max Temperature (°C)": hist_temps,
-        "Max Wind Gust (km/h)": hist_wind,
-        "Max Rainfall (mm)": hist_rain
-    })
-    
-    st.markdown(f"<p style='font-size:18px; color:#082F49;'><strong>Historical Profile for {selected_archive_station} on {target_date.strftime('%B %d')} (Past 10 Years)</strong></p>", unsafe_allow_html=True)
-    
-    fig_hist = px.line(hist_df, x="Year", y="Max Temperature (°C)", markers=True, color_discrete_sequence=["#DC2626"])
-    fig_hist.update_layout(plot_bgcolor="#F8FAFC", paper_bgcolor="#F8FAFC", margin={"r":0,"t":10,"l":0,"b":0})
-    st.plotly_chart(fig_hist, use_container_width=True)
-    
-    st.markdown("<h3 style='color:#082F49; font-weight:900;'>📊 Historical Extremes Records</h3>", unsafe_allow_html=True)
-    max_t_record = hist_df.loc[hist_df["Max Temperature (°C)"].idxmax()]
-    max_w_record = hist_df.loc[hist_df["Max Wind Gust (km/h)"].idxmax()]
-    max_r_record = hist_df.loc[hist_df["Max Rainfall (mm)"].idxmax()]
-    
-    if max_r_record["Max Rainfall (mm)"] == 0:
-        max_r_val, max_r_yr = round(np.random.uniform(12.0, 55.0), 1), years[4]
+    if almanac_df.empty:
+        st.error("⚠️ Error: The database file 'climate_yearly_almanac_till_dec_20252.xlsx - data.csv' could not be loaded. Please ensure it is uploaded to the root directory.")
     else:
-        max_r_val, max_r_yr = max_r_record["Max Rainfall (mm)"], int(max_r_record["Year"])
+        target_date = st.date_input("📅 Select a Calendar Day to view Historical National Extremes", value=datetime.today())
+        
+        target_month_name = target_date.strftime('%B')
+        target_day = target_date.day
+        
+        day_data = almanac_df[(almanac_df['month'] == target_month_name) & (almanac_df['month_day'] == target_day)]
+        
+        if not day_data.empty:
+            record = day_data.iloc[0]
+            st.markdown(f"<p style='font-size:18px; color:#082F49;'><strong>Historical Extremes recorded on {target_month_name} {target_day} across the UAE:</strong></p>", unsafe_allow_html=True)
+            
+            # Helper to handle NaNs in years gracefully
+            def format_year(y):
+                try:
+                    return str(int(y))
+                except:
+                    return "-"
 
-    st.markdown(f"""
-    <table class="custom-table">
-        <tr style="background-color:#E0F2FE;"><th>Meteorological Metric</th><th>All-Time Record</th><th>Recorded Year</th></tr>
-        <tr><td>🔥 Highest Temperature</td><td style="color:#DC2626; font-weight:bold;">{max_t_record['Max Temperature (°C)']}°C</td><td>{int(max_t_record['Year'])}</td></tr>
-        <tr><td>🌪️ Strongest Wind Gust</td><td style="color:#D97706; font-weight:bold;">{max_w_record['Max Wind Gust (km/h)']} km/h</td><td>{int(max_w_record['Year'])}</td></tr>
-        <tr><td>🌧️ Highest Rainfall</td><td style="color:#0284C7; font-weight:bold;">{max_r_val} mm</td><td>{max_r_yr}</td></tr>
-    </table>
-    """, unsafe_allow_html=True)
+            st.markdown(f"""
+            <table class="custom-table">
+                <tr style="background-color:#E0F2FE;">
+                    <th>Meteorological Metric</th>
+                    <th>All-Time Record</th>
+                    <th>Station / Location</th>
+                    <th>Recorded Year</th>
+                </tr>
+                <tr>
+                    <td>🔥 Highest Temperature</td>
+                    <td style="color:#DC2626; font-weight:bold;">{record['highest_temperature_value']} °C</td>
+                    <td>{record['highest_temperature_location_en']}</td>
+                    <td>{format_year(record['highest_temperature_year'])}</td>
+                </tr>
+                <tr>
+                    <td>❄️ Lowest Temperature</td>
+                    <td style="color:#0284C7; font-weight:bold;">{record['lowest_temperature_value']} °C</td>
+                    <td>{record['lowest_temperature_location_en']}</td>
+                    <td>{format_year(record['lowest_temperature_year'])}</td>
+                </tr>
+                <tr>
+                    <td>🌪️ Strongest Wind Gust</td>
+                    <td style="color:#D97706; font-weight:bold;">{record['maximum_wind_value']} km/h</td>
+                    <td>{record['maximum_wind_location_en']}</td>
+                    <td>{format_year(record['maximum_wind_year'])}</td>
+                </tr>
+                <tr>
+                    <td>🌧️ Highest Rainfall</td>
+                    <td style="color:#10B981; font-weight:bold;">{record['highest_rainfall_value']} mm</td>
+                    <td>{record['highest_rainfall_location_en']}</td>
+                    <td>{format_year(record['highest_rainfall_year'])}</td>
+                </tr>
+            </table>
+            """, unsafe_allow_html=True)
+        else:
+            st.info(f"No extreme records found in the database for {target_month_name} {target_day}.")
 
 with tab6:
     if not st.session_state["admin_logged_in"]:
@@ -432,7 +469,7 @@ with tab6:
                 submit_login = st.form_submit_button("Authenticate")
                 
                 if submit_login:
-                    if admin_pin == "Ahmed19990102@":
+                    if admin_pin == "JM72":
                         st.session_state["admin_logged_in"] = True
                         st.rerun() 
                     else:

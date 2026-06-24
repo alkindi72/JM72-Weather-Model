@@ -29,7 +29,7 @@ def send_alert_smart(status, area_name, is_severe=True):
     
     msg_body = (f"{alert_data['emoji']} إنذار: {alert_data['ar']}{intensity_ar}\n"
                 f"{alert_data['emoji']} Alert: {alert_data['en']}{intensity_en}\n\n"
-                f"📍 المنطقة المتأثرة / Affected Area: {area_name}\n"
+                f"📍 القطاعات / المناطق المتأثرة:\n{area_name}\n\n"
                 f"🕒 وقت الرصد / Time: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
     sender = os.environ.get('SENDER_EMAIL')
@@ -47,7 +47,11 @@ def send_alert_smart(status, area_name, is_severe=True):
     if sender and password and recipients:
         sender = sender.strip()
         msg = MIMEText(msg_body, 'plain', 'utf-8')
-        msg['Subject'] = Header(f"🚨 JM72 WEATHER ALERT - {alert_data['en']}", 'utf-8')
+        
+        # تضمين اسم القطاع في عنوان الرسالة بشكل ذكي
+        short_area = area_name if len(area_name) < 50 else area_name[:47] + "..."
+        msg['Subject'] = Header(f"🚨 JM72 ALERT - {alert_data['en']} | {short_area}", 'utf-8')
+        
         msg['From'] = sender
         msg['To'] = ", ".join(recipients)
         try:
@@ -117,7 +121,7 @@ st.markdown(f'''
 ''', unsafe_allow_html=True)
 
 # ==========================================
-# 2. REST-API LIVE DATA AGENT & UAE TIMEZONE (34 STATIONS)
+# 2. REST-API & GEOGRAPHICAL SECTORS (CLUSTERING)
 # ==========================================
 stations_matrix = {
     "Abu Dhabi": {"lat": 24.4760, "lon": 54.3290, "type": "Coast"},
@@ -156,6 +160,28 @@ stations_matrix = {
     "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
 
+# قاموس القطاعات لتجميع المناطق المتضررة
+SECTOR_MAP = {
+    "المنطقة الشرقية (Eastern Region)": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor"],
+    "المنطقة الوسطى (Central Region)": ["Al Dhaid", "Al Malaiha"],
+    "أبوظبي والظفرة (Abu Dhabi & Al Dhafra)": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
+    "مدينة العين (Al Ain Region)": ["Al Ain Int'l Airport", "Al Aamerah"],
+    "دبي والإمارات الشمالية (Dubai & Northern Emirates)": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
+}
+
+def get_clustered_sectors(station_list):
+    sectors = set()
+    for station in station_list:
+        found = False
+        for sector, stations in SECTOR_MAP.items():
+            if station in stations:
+                sectors.add(sector)
+                found = True
+                break
+        if not found:
+            sectors.add(station)
+    return list(sectors)
+
 uae_time = datetime.utcnow() + timedelta(hours=4)
 base_date = uae_time.replace(minute=0, second=0, microsecond=0)
 timeline = [base_date + timedelta(hours=i*3) for i in range(8 * 5)]
@@ -166,7 +192,6 @@ def fetch_stable_live_data(stations_dict):
     try:
         lats = ",".join([str(s["lat"]) for s in stations_dict.values()])
         lons = ",".join([str(s["lon"]) for s in stations_dict.values()])
-        # تم إضافة current=precipitation لجلب القراءات اللحظية للرادار
         url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&current=precipitation,weather_code&hourly=temperature_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_700hPa&models=gfs_seamless&timezone=auto"
         response = requests.get(url, timeout=15)
         response.raise_for_status()
@@ -217,11 +242,9 @@ if fetch_success and type(live_data) is list:
     
     for idx, (name, coords) in enumerate(stations_matrix.items()):
         try:
-            # 📡 Nowcasting Radar Verification (Z-R Relationship)
             current_precip = live_data[idx].get("current", {}).get("precipitation", 0.0)
             dbz = 0.0
             if current_precip > 0.1:
-                # Marshall-Palmer Equation Z = 200 * R^1.6
                 z_value = 200 * (current_precip ** 1.6)
                 dbz = round(10 * np.log10(z_value), 1)
             
@@ -346,14 +369,17 @@ with tab1:
 
     max_storm = df_time["Storm Probability"].max()
     if max_storm >= 75:
-        target = df_time.loc[df_time["Storm Probability"].idxmax(), "Station"]
-        # Radar Verification Status directly in the Alert Banner!
-        target_radar = df_time.loc[df_time["Storm Probability"].idxmax(), "Radar Verif"]
-        st.markdown(f'<div class="alert-banner"><strong>🚨 RED ALERT:</strong> Severe Convective Storm Risk ({max_storm}%) detected over {target}! <br> 📡 Radar Nowcast: {target_radar}</div>', unsafe_allow_html=True)
+        # استخدام دالة القطاعات
+        affected_stations = df_time[df_time["Storm Probability"] >= 75]["Station"].tolist()
+        clustered_sectors = get_clustered_sectors(affected_stations)
+        target_str = "، ".join(clustered_sectors)
         
-        alert_key = f"THUNDERSTORM_{target}_{selected_time}"
+        target_radar = df_time.loc[df_time["Storm Probability"].idxmax(), "Radar Verif"]
+        st.markdown(f'<div class="alert-banner"><strong>🚨 RED ALERT:</strong> Severe Convective Storm Risk ({max_storm}%) detected over:<br>📍 {target_str} <br><br> 📡 Radar Nowcast: {target_radar}</div>', unsafe_allow_html=True)
+        
+        alert_key = f"THUNDERSTORM_{target_str}_{selected_time}"
         if st.session_state["last_alert_sent"] != alert_key:
-            send_alert_smart("THUNDERSTORM", target, is_severe=True)
+            send_alert_smart("THUNDERSTORM", target_str, is_severe=True)
             st.session_state["last_alert_sent"] = alert_key
     
     df_plot_storm = df_time[df_time["Storm Probability"] > 0].copy()
@@ -362,7 +388,6 @@ with tab1:
         fig1.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_empty")
     else:
-        # خريطة حرارية (Density Map) للعواصف
         fig1 = px.density_mapbox(df_plot_storm, lat="Latitude", lon="Longitude", z="Storm Probability",
                                 radius=45, center=dict(lat=24.4, lon=54.6), zoom=6,
                                 mapbox_style="white-bg", opacity=0.75,
@@ -395,12 +420,15 @@ with tab2:
 
     max_temp = df_time["Temperature"].max()
     if max_temp >= 50.0:
-        target_heat = df_time.loc[df_time["Temperature"].idxmax(), "Station"]
-        st.markdown(f'<div class="alert-banner"><strong>🚨 HEAT ALERT:</strong> Extreme Thermal Heat Dome ({max_temp}°C) over {target_heat}!</div>', unsafe_allow_html=True)
+        affected_heat_stations = df_time[df_time["Temperature"] >= 50.0]["Station"].tolist()
+        clustered_heat_sectors = get_clustered_sectors(affected_heat_stations)
+        target_heat_str = "، ".join(clustered_heat_sectors)
         
-        alert_key_heat = f"HEAT_{target_heat}_{selected_time}"
+        st.markdown(f'<div class="alert-banner"><strong>🚨 HEAT ALERT:</strong> Extreme Thermal Heat Dome ({max_temp}°C) over:<br>📍 {target_heat_str}</div>', unsafe_allow_html=True)
+        
+        alert_key_heat = f"HEAT_{target_heat_str}_{selected_time}"
         if st.session_state["last_alert_sent"] != alert_key_heat:
-            send_alert_smart("HEAT", target_heat, is_severe=True)
+            send_alert_smart("HEAT", target_heat_str, is_severe=True)
             st.session_state["last_alert_sent"] = alert_key_heat
 
     df_plot_heat = df_time[df_time["Temperature"] >= 50].copy()
@@ -409,7 +437,6 @@ with tab2:
         fig2.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")
     else:
-        # خريطة حرارية (Density Map) للحرارة
         fig2 = px.density_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", z="Temperature",
                                 radius=50, center=dict(lat=24.4, lon=54.6), zoom=6,
                                 mapbox_style="white-bg", opacity=0.7,
@@ -422,31 +449,27 @@ with tab3:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">🌪️ Active Wind & Sandstorm Tracker</h4>', unsafe_allow_html=True)
     max_dust = df_time["Dust Probability"].max()
     if max_dust >= 60:
+        affected_dust_stations = df_time[df_time["Dust Probability"] >= 60]["Station"].tolist()
+        clustered_dust_sectors = get_clustered_sectors(affected_dust_stations)
+        target_dust_str = "، ".join(clustered_dust_sectors)
+        
         target_dust_row = df_time.loc[df_time["Dust Probability"].idxmax()]
-        target_dust = target_dust_row["Station"]
         target_wind_spd = target_dust_row["Wind Speed"]
         target_wind_gst = target_dust_row["Gusts"]
-        target_wind_dir = target_dust_row["Wind Direction"]
-        target_vis = target_dust_row["Visibility"]
-        
-        min_vis = df_time["Visibility"].min()
-        max_vis = df_time["Visibility"].max()
         
         st.markdown(f'''
         <div class="alert-banner" style="background-color: #FFFBEB; color: #92400E !important; border-left-color: #D97706;">
-            <strong>⚠️ DUST ALERT:</strong> High probability of sandstorms ({max_dust}%) detected over {target_dust}!<br>
-            • Expected Wind Speed: {target_wind_spd} km/h (Gusts up to {target_wind_gst} km/h)<br>
-            • Wind Direction: {target_wind_dir}°<br>
-            • Current Visibility: {target_vis} km (Regional Range: {min_vis} km to {max_vis} km)
+            <strong>⚠️ DUST ALERT:</strong> High probability of sandstorms ({max_dust}%) detected over:<br>
+            📍 {target_dust_str}<br><br>
+            • Max Wind Speed: {target_wind_spd} km/h (Gusts up to {target_wind_gst} km/h)<br>
         </div>
         ''', unsafe_allow_html=True)
         
-        alert_key_dust = f"DUST_STORM_{target_dust}_{selected_time}"
+        alert_key_dust = f"DUST_STORM_{target_dust_str}_{selected_time}"
         if st.session_state["last_alert_sent"] != alert_key_dust:
-            send_alert_smart("DUST_STORM", target_dust, is_severe=True)
+            send_alert_smart("DUST_STORM", target_dust_str, is_severe=True)
             st.session_state["last_alert_sent"] = alert_key_dust
 
-    # خريطة انتشار الغبار (Dust Density)
     fig3 = px.density_mapbox(df_time, lat="Latitude", lon="Longitude", z="Dust Probability",
                             radius=45, center=dict(lat=24.4, lon=54.6), zoom=6,
                             mapbox_style="white-bg", opacity=0.75,
@@ -460,7 +483,6 @@ with tab4:
     st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 34-Station Matrix at {selected_time}</h3>", unsafe_allow_html=True)
     display_df = df_time.sort_values(by="Temperature", ascending=False)
     
-    # تمت إضافة أعمدة رادار التأكيد هنا (dBZ و Verification)
     html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Temp (°C)</th><th>Wind (km/h)</th><th>Visibility (km)</th><th>Storm (%)</th><th>Radar (dBZ)</th><th>Verification</th></tr>"
     for _, row in display_df.iterrows():
         t_val = row['Temperature']

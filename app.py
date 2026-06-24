@@ -344,9 +344,12 @@ with tab1:
         fig1.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_empty")
     else:
-        df_plot_storm["Marker Size"] = df_plot_storm["Storm Probability"] + 10
-        fig1 = px.scatter_mapbox(df_plot_storm, lat="Latitude", lon="Longitude", color="Storm Probability", size="Marker Size",
-                                mapbox_style="white-bg", zoom=6, color_continuous_scale=["#10B981", "#F59E0B", "#EF4444", "#7F1D1D"], range_color=[0, 100])
+        # خريطة حرارية (Density Map) للعواصف
+        fig1 = px.density_mapbox(df_plot_storm, lat="Latitude", lon="Longitude", z="Storm Probability",
+                                radius=45, center=dict(lat=24.4, lon=54.6), zoom=6,
+                                mapbox_style="white-bg", opacity=0.75,
+                                color_continuous_scale=["rgba(0,0,0,0)", "#A3E635", "#FDE047", "#EF4444", "#7E22CE"],
+                                range_color=[0, 100])
         fig1.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_data")
         
@@ -388,9 +391,12 @@ with tab2:
         fig2.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")
     else:
-        df_plot_heat["Node Size"] = np.clip((df_plot_heat["Temperature"] - 30) * 2, 5, 45)
-        fig2 = px.scatter_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", color="Temperature", size="Node Size",
-                                mapbox_style="white-bg", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
+        # خريطة حرارية (Density Map) للحرارة
+        fig2 = px.density_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", z="Temperature",
+                                radius=50, center=dict(lat=24.4, lon=54.6), zoom=6,
+                                mapbox_style="white-bg", opacity=0.7,
+                                color_continuous_scale=["rgba(0,0,0,0)", "#FDE047", "#F97316", "#DC2626", "#450A0A"],
+                                range_color=[40, 60])
         fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
 
@@ -422,11 +428,13 @@ with tab3:
             send_alert_smart("DUST_STORM", target_dust, is_severe=True)
             st.session_state["last_alert_sent"] = alert_key_dust
 
-    df_time["Dust Node"] = df_time["Dust Probability"] + 10
-    fig3 = px.scatter_mapbox(df_time, lat="Latitude", lon="Longitude", color="Dust Probability", size="Dust Node",
-                            hover_data={"Station": True, "Wind Speed": True, "Wind Direction": True, "Visibility": True, "Latitude": False, "Longitude": False, "Dust Node": False},
-                            mapbox_style="white-bg", zoom=6, 
-                            color_continuous_scale=["#FEF3C7", "#FCD34D", "#D97706", "#78350F"], range_color=[0, 100])
+    # خريطة انتشار الغبار (Dust Density)
+    fig3 = px.density_mapbox(df_time, lat="Latitude", lon="Longitude", z="Dust Probability",
+                            radius=45, center=dict(lat=24.4, lon=54.6), zoom=6,
+                            mapbox_style="white-bg", opacity=0.75,
+                            hover_data={"Station": True, "Wind Speed": True, "Wind Direction": True, "Visibility": True},
+                            color_continuous_scale=["rgba(0,0,0,0)", "#FEF3C7", "#FCD34D", "#D97706", "#78350F"],
+                            range_color=[0, 100])
     fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
     st.plotly_chart(fig3, use_container_width=True, key="dust_map_data")
 

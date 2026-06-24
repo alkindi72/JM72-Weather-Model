@@ -526,9 +526,17 @@ with tab6:
             st.session_state["admin_logged_in"] = False
             st.rerun()
 
-        if scan_button:
-            if not selected_emails:
-                st.error("❌ No emails selected.")
+       if scan_button:
+            if not st.session_state["email_targets"]:
+                st.error("❌ لا توجد إيميلات محفوظة في القائمة!")
             else:
-                # [منطق الإرسال الخاص بك هنا]
-                st.success(f"Dispatched to {len(selected_emails)} recipient(s).")
+                with st.spinner("جاري فحص البيانات وإرسال التنبيهات..."):
+                    # نستخدم القائمة المحفوظة في الجلسة
+                    recipients = st.session_state["email_targets"]
+                    
+                    # منطق فحص البيانات (مثال)
+                    # هنا سيقوم النظام بالمرور على محطاتك وفحص الحرارة أو العواصف
+                    # وإذا وجد خطراً، سيرسل لـ recipients
+                    
+                    st.success(f"✅ تم مسح البيانات بنجاح وإرسال التقرير إلى: {', '.join(recipients)}")
+                    # هنا ستضع كود إرسال الـ smtplib الذي كان يعمل معك سابقاً

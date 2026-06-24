@@ -417,4 +417,4 @@ with tab5:
     if almanac_df.empty:
         st.error(f"⚠️ Error loading database. Please ensure the file is uploaded correctly. (Detail: {err_msg})")
     else:
-        target_date = st.date_
+        target_date = st.date_input("📅 Select a Calendar Day to view Historical National Extremes", value=datetime.today())

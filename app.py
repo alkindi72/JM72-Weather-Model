@@ -479,7 +479,7 @@ with tab6:
         with col_lock2:
             st.markdown("<div style='text-align: center;'><h2 style='color:#082F49;'>🔒 Secure System Access</h2><p style='color:#475569;'>Authorized personnel only. Please enter the Administrator PIN to unlock the Alert Control Room.</p></div>", unsafe_allow_html=True)
             with st.form("login_form"):
-                admin_pin = st.text_input("Administrator PIN", type="password", placeholder="Enter PIN to unlock")
+                admin_pin = st.text_input("Administrator PIN", type="Ahmed1999@", placeholder="Enter PIN to unlock")
                 submit_login = st.form_submit_button("Authenticate")
                 
                 if submit_login:

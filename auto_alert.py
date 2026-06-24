@@ -9,13 +9,10 @@ def apply_terrain_correction(temp, altitude):
     return temp - (altitude / 100) * 0.65
 
 def check_for_storms():
-    # 1. قراءة بيانات المحطات من ملفك الخاص
-    # تأكد أن الملف مرفوع في المجلد الرئيسي على GitHub
-    df = pd.read_excel("Meta_data34.xlsx") 
+    # قراءة بيانات المحطات من ملف CSV بدلاً من Excel
+    df = pd.read_csv("Meta_data34.csv") 
     
-    # افتراض لأسماء الأعمدة (يرجى تعديلها إذا كانت مختلفة في ملفك)
-    # نستخدم: 'Station_Name', 'Latitude', 'Longitude', 'Altitude'
-    
+    # نستخدم أسماء الأعمدة القياسية: 'Station_Name', 'Latitude', 'Longitude', 'Altitude'
     alerts = []
     
     for _, row in df.iterrows():
@@ -31,7 +28,7 @@ def check_for_storms():
             raw_temp = response['hourly']['temperature_2m'][0]
             corrected_temp = apply_terrain_correction(raw_temp, alt)
             
-            # معايير التحذير: CAPE > 1000
+            # معايير التحذير: طاقة الحمل الحراري تتجاوز 1000
             if cape > 1000:
                 alerts.append(f"📍 {name}: طاقة العاصفة={cape} J/kg، الحرارة المصححة={corrected_temp:.1f}°C")
         except Exception as e:
@@ -42,7 +39,7 @@ def check_for_storms():
 
 def send_email(subject, body):
     sender = "jm72.weather@gmail.com"
-    recipients = ["target@example.com"] # ضع إيميلاتك هنا
+    recipients = ["target@example.com"] # ضع إيميلات الاستلام هنا
     password = os.environ.get('APP_PASSWORD')
     
     msg = MIMEText(body)

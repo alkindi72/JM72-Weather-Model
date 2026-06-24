@@ -42,7 +42,7 @@ def check_for_storms():
             raw_temp = response['hourly']['temperature_2m'][0]
             corrected_temp = apply_terrain_correction(raw_temp, alt)
             
-            if cape > 1000:
+            if cape > 300:
                 alerts.append(f"📍 {name}: طاقة العاصفة={cape} J/kg، الحرارة المصححة={corrected_temp:.1f}°C")
                 
     except KeyError as e:

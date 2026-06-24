@@ -15,7 +15,47 @@ from email.mime.text import MIMEText
 from email.header import Header
 
 # ==========================================
-# 0. SMART ALERT FUNCTION (CENTRAL ENGINE)
+# 1. PLATFORM SETTINGS MUST BE VERY FIRST
+# ==========================================
+st.set_page_config(
+    page_title="JM72 AI Weather Model", 
+    page_icon="🌩️",  # أيقونة المتصفح الموثوقة
+    layout="wide"
+)
+
+# ==========================================
+# 2. BULLETPROOF FLOATING LOGO (TOP RIGHT)
+# ==========================================
+icon_svg_code = """
+<svg viewBox="-10 10 160 80" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 10,70 L 40,25 L 70,55 L 100,15 L 130,70 Z" fill="#D4AF37" />
+    <path d="M -5,70 Q 35,55 70,70 T 145,70 L 145,85 L -5,85 Z" fill="#0284C7" />
+    <text x="70" y="55" font-family="'Arial Black', sans-serif" font-weight="900" font-size="24" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
+</svg>
+"""
+icon_b64 = base64.b64encode(icon_svg_code.encode('utf-8')).decode('utf-8')
+
+st.markdown(f'''
+<style>
+    .floating-logo {{
+        position: fixed;
+        top: 15px;
+        right: 20px;
+        z-index: 999999;
+        background-color: rgba(248, 250, 252, 0.9);
+        padding: 8px 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        border: 2px solid #E2E8F0;
+    }}
+</style>
+<div class="floating-logo">
+    <img src="data:image/svg+xml;base64,{icon_b64}" style="width: 75px; height: auto;" alt="JM72 Logo" />
+</div>
+''', unsafe_allow_html=True)
+
+# ==========================================
+# 3. SMART ALERT FUNCTION (CENTRAL ENGINE)
 # ==========================================
 def send_alert_smart(status, area_name, is_severe=True):
     alerts_db = {
@@ -57,27 +97,8 @@ def send_alert_smart(status, area_name, is_severe=True):
             pass
 
 # ==========================================
-# 1. PLATFORM SETTINGS, FAVICON & CUSTOM CSS
+# 4. CUSTOM WINDY CSS & SESSION STATE
 # ==========================================
-
-# Extract the JM72 geometric logo and save it temporarily for the Favicon and Top Logo
-icon_svg_code = """<svg viewBox="-10 10 160 80" xmlns="http://www.w3.org/2000/svg">
-    <path d="M 10,70 L 40,25 L 70,55 L 100,15 L 130,70 Z" fill="#D4AF37" />
-    <path d="M -5,70 Q 35,55 70,70 T 145,70 L 145,85 L -5,85 Z" fill="#0284C7" />
-    <text x="70" y="55" font-family="'Arial Black', sans-serif" font-weight="900" font-size="24" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
-</svg>"""
-
-with open("jm72_icon.svg", "w", encoding="utf-8") as f:
-    f.write(icon_svg_code)
-
-st.set_page_config(
-    page_title="JM72 AI Weather Model", 
-    page_icon="jm72_icon.svg", 
-    layout="wide"
-)
-
-st.logo("jm72_icon.svg")
-
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 
 if "admin_logged_in" not in st.session_state:
@@ -120,27 +141,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# BULLETPROOF HEADER
-svg_code = """
-<svg width="600" height="240" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
-    <path id="textArcPath" d="M 70,160 Q 300,0 530,160" fill="transparent" />
-    <text font-family="'Arial Black', 'Segoe UI Black', sans-serif" font-weight="900" font-size="36" fill="#082F49">
-        <textPath href="#textArcPath" startOffset="50%" text-anchor="middle">
-            JM72 AI Weather Model
-        </textPath>
-    </text>
-    <g transform="translate(230, 110)">
-        <path d="M 10,70 L 40,25 L 70,55 L 100,15 L 130,70 Z" fill="#D4AF37" />
-        <path d="M -5,70 Q 35,55 70,70 T 145,70 L 145,85 L -5,85 Z" fill="#0284C7" />
-        <text x="70" y="55" font-family="'Arial Black', sans-serif" font-weight="900" font-size="24" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
-    </g>
-</svg>
-"""
-b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
-st.markdown(f'<div style="text-align: center; margin-top: 10px; margin-bottom: 30px; width: 100%;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 100%; height: auto;" /></div>', unsafe_allow_html=True)
+# MAIN CENTER LOGO (Kept for visual balance)
+b64_svg = base64.b64encode(icon_svg_code.encode('utf-8')).decode('utf-8')
+st.markdown(f'<div style="text-align: center; margin-top: 10px; margin-bottom: 30px; width: 100%;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 100%; height: auto; transform: scale(2.5);" /></div>', unsafe_allow_html=True)
 
 # ==========================================
-# 2. REST-API & GEOGRAPHICAL SECTORS
+# 5. REST-API & GEOGRAPHICAL SECTORS
 # ==========================================
 stations_matrix = {
     "Abu Dhabi": {"lat": 24.4760, "lon": 54.3290, "type": "Coast"}, "ADNOC HQ": {"lat": 24.4621, "lon": 54.3241, "type": "Coast"},
@@ -204,7 +210,7 @@ with st.spinner("🤖 Dynamically compiling live metrics & fetching real-time Ra
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 # ==========================================
-# 3. ALMANAC DATA LOADER
+# 6. ALMANAC DATA LOADER
 # ==========================================
 @st.cache_data
 def load_national_almanac():
@@ -221,7 +227,7 @@ def load_national_almanac():
 almanac_df, err_msg = load_national_almanac()
 
 # ==========================================
-# 4. JM72 AI DYNAMICS ENGINE & NOWCASTING
+# 7. JM72 AI DYNAMICS ENGINE & NOWCASTING
 # ==========================================
 weather_data = []
 if fetch_success and type(live_data) is list:
@@ -297,7 +303,7 @@ df_all = pd.DataFrame(weather_data)
 esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}]
 
 # ==========================================
-# 5. SIX-TAB PROFESSIONAL INTERFACE (INDEPENDENT TIMELINES)
+# 8. SIX-TAB PROFESSIONAL INTERFACE
 # ==========================================
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🌩️ Orographic Thunderstorms", "🔥 Heat Dome Tracker", "🌪️ Wind & Sandstorms", "📋 Model Matrix", "📚 National Almanac", "⚙️ Control Room"

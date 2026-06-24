@@ -1,0 +1,368 @@
+﻿,,,Period,,Highest Temperature °C,,,,Lowest Temperature °C,,,,Rainfall mm,,,,Rainfall occurences,,Maximum Wind km/h,,,
+ID,month,month_day,period_start,period_end,highest_temperature_value,highest_temperature_year,highest_temperature_location_ar,highest_temperature_location_en,lowest_temperature_value,lowest_temperature_year,lowest_temperature_location_ar,lowest_temperature_location_en,highest_rainfall_value,highest_rainfall_year,highest_rainfall_location_ar,highest_rainfall_location_en,rainfall_occurence_value,rainfall_period_years,maximum_wind_value,maximum_wind_year,maximum_wind_location_ar,maximum_wind_location_en
+1,January,1,2003,2025,31.7,2016,سويحان, Sweihan,1.9,2006,جبل جيس,Jais Mountain,132.8,2022,سيح السلم,Saih Al Salem,8,23,102,2022,مطار زايد,Zayed  Airport
+2,January,2,2003,2025,31.9,2016,حرس حدود الجزيرة, Al Jazeera B.G. ,1.1,2006,جبل جيس,Jais Mountain,19.6,2014,أبو البخوش,Abu Al Bukhoosh ,9,23,76,2022,مطار زايد,Zayed  Airport
+3,January,3,2003,2025,31.9,2020,الشوامخ,Al Shawamekh,1.2,2007,جبل جيس,Jais Mountain,39.6,2016,جبل مبرح, Mebreh Mountain,12,23,77,2022,جبل حفيت,Hafeet Mountain
+4,January,4,2003,2025,31.2,2019,حميم, Hamim ,0.8,2007,جبل جيس,Jais Mountain,24.4,2022,خطم الشكلة,Khatam Al Shaklah ,9,23,69,2019,الفرفار,Al FarFar
+5,January,5,2003,2025,30.9,2020,بدع دعفس,Bada Dafas ,1.8,2025,جبل جيس,Jais Mountain,12.6,2022,أبو البخوش,Abu Al Bukhoosh ,6,23,69,2020,قرنين,Qarnen 
+6,January,6,2003,2025,30.7,2004,حرس حدود الجزيرة, Al Jazeera B.G. ,1.2,2006,ركنة, Raknah,20.3,2023,جبل الرحبه,Jabal Al Rahba,4,23,80,2022,الفرفار,Al Farfar
+7,January,7,2003,2025,31.9,2013,الرويس,Al-Ruwais ,-0.3,2008,جبل جيس,Jais Mountain,35,2023,خورفكان,Khor Fakkan,5,23,69,2008,قرنين,Qarnen 
+8,January,8,2003,2025,31.6,2012,الرويس,Al-Ruwais ,-0.1,2008,جبل جيس,Jais Mountain,20.7,2018,رأس الخيمة,Ras Al Khaimah,9,23,63,2021,الفرفار,Al FarFar
+9,January,9,2003,2025,32.4,2012,الرويس,Al-Ruwais ,-2,2021,ركنة, Raknah,57.6,2018,جميرا ,Jumeirah ,7,23,54,2004,جبل الحبن,Al Heben Mountain
+10,January,10,2003,2025,32.2,2012,حرس حدود الجزيرة, Al Jazeera B.G. ,0.2,2008,ركنة, Raknah,63.8,2020,أبو قرين,Abu Qrayn,8,23,87,2020,جبل حفيت,Hafeet Mountain
+11,January,11,2003,2025,31.8,2012,الرويس,Al-Ruwais ,-1.9,2021,ركنة, Raknah,147.3,2020,خطم الشكلة,Khatam Al Shaklah ,11,23,95,2020,جبل حفيت,Hafeet Mountain
+12,January,12,2003,2025,33.4,2012,الرويس,Al-Ruwais ,0.2,2020,جبل جيس,Jais Mountain,115.2,2020,ميناء صقر,Saqr Port ,9,23,85,2020,مطار الفجيرة,Fujairah Airport
+13,January,13,2003,2025,32.4,2012,حرس حدود الجزيرة, Al Jazeera B.G. ,0.6,2005,جبل جيس,Jais Mountain,26.3,2008,مسافي,Masafi ,7,23,61,2009,مطار العين,Al Ain Airport 
+14,January,14,2003,2025,33.1,2006,مدينة زايد, Madinat Zayed ,1,2020,جبل جيس,Jais Mountain,44.2,2009,حميم,Hamim ,9,23,83,2020,قرنين,Qarnen 
+15,January,15,2003,2025,32.9,2024,الغويفات,Algheweifat ,-0.1,2020,جبل جيس,Jais Mountain,65.6,2008,فلج المعلا,Falaj Al Moalla ,6,23,68,2006,"جبل مبرح، أبو البخوش","Mebreh Mountain, Abu Albukhoosh"
+16,January,16,2003,2025,32.6,2024,مخيرز,Mukhariz ,1.3,2008,جبل جيس,Jais Mountain,51.6,2008,الفقع,Al Faqa,5,23,78,2006,جبل مبرح,Mebreh Mountain
+17,January,17,2003,2025,33.1,2023,الشوامخ, Al Shawamekh ,0,2008-2013,"جبل جيس، جبل جيس","Jais Mountain, Jais Mountain ",5,2022,الحفار,Al Haffar ,7,23,87,2024,الفرفار,Al FarFar
+18,January,18,2003,2025,32.1,2021,كلباء, Kalba ,0.9,2013,دمثة, Damtha,4.2,2005,ضدنا,Dhudna ,11,23,76,2006,جبل مبرح,Mebreh Mountain
+19,January,19,2003,2025,31.2,2021,كلباء, Kalba ,0.1,2006,جبل جيس,Jais Mountain,47.4,2015,خطم الشكلة,Khatam Al Shaklah,13,23,72,2015,مطار آل مكتوم,Al Maktoum Airport
+20,January,20,2003,2025,30.3,2010,أم الزمول, Um Azimul ,1.3,2015,جبل جيس,Jais Mountain,41.8,2005,مخيرز,Mukhariz ,10,23,70,2022,جبل مبرح,Mebreh Mountain
+21,January,21,2003,2025,31.3,2010,حرس حدود الجزيرة, Al Jazeera B.G. ,-0.1,2022,جبل جيس,Jais Mountain,30.8,2011,الغويفات,Algheweifat ,14,23,90,2022,جبل مبرح,Mebreh Mountain
+22,January,22,2003,2025,30.8,2017,براكة, Barakah ,0.4,2012,جبل جيس,Jais Mountain,18.6,2011,وتييد,Owtaid ,8,23,79,2021,جبل مبرح,Mebreh Mountain
+23,January,23,2003,2025,30.5,2003,حرس حدود الجزيرة, Al Jazeera B.G. ,0.8,2012,جبل جيس,Jais Mountain,49.8,2005,ضدنا,Dhudna ,12,23,100,2003,الغويفات,Algheweifat
+24,January,24,2003,2025,30.9,2019,سويحان , Sweihan,0.5,2012,جبل جيس,Jais Mountain,60.6,2017,"رزين، العراد",Rezeen - Al Arad ,8,23,88,2003,حرس حدود الجزيرة,Al Jazeera B.G.
+25,January,25,2003,2025,32,2010,حرس حدود الجزيرة, Al Jazeera B.G. ,0.3,2009-2012,"جبل جيس، جبل جيس","Jais Mountain, Jais Mountain ",37.4,2023,الفقع,Al Faqa,7,23,70,2018,مطار آل مكتوم,Al Maktoum Airport
+26,January,26,2003,2025,33.6,2013,الرويس,Al-Ruwais ,0.3,2009,جبل جيس,Jais Mountain,57.1,2023,صير بو نعير,Sir Bu Nair,6,23,72,2020,الفرفار,Al FarFar
+27,January,27,2003,2025,33.6,2018,سويحان , Sweihan,0.8,2009,جبل جيس,Jais Mountain,52,2023,ضدنا,Dhudna,7,23,94,2010,جبل مبرح,Mebreh Mountain
+28,January,28,2003,2025,32.9,2019,أبو الأبيض, Abu Al Abyad ,0.7,2009,جبل جيس,Jais Mountain,32.4,2011,مسافي,Masafi ,9,23,94,2011,مطار دبي,Dubai Airport
+29,January,29,2003,2025,32.4,2003,حميم, Hamim ,-0.2,2016,جبل جيس,Jais Mountain,1.6,2003,ضدنا,Dhudna ,4,23,67,2004,أبو البخوش,Abu Al Bukhoosh
+30,January,30,2003,2025,33.2,2024,أم الزمول,Um Azimul ,-0.3,2016,جبل جيس,Jais Mountain,8.6,2003,ضدنا,Dhudna ,6,23,77,2010,جبل مبرح,Mebreh Mountain
+31,January,31,2003,2025,33.8,2024,أم الزمول,Um Azimul ,2.5,2018,جبل جيس,Jais Mountain,7.4,2025,ميناء صقر,Saqr Port,6,23,78,2010,جبل مبرح,Mebreh Mountain
+32,February,1,2003,2025,35.6,2024,وتييد,Owtaid,-1.1,2008,جبل جيس,Jais Mountain,8.4,2024,برج خليفة ,Burj Khalifah ,10,23,111,2008,مطار الفجيرة,Fujairah Airport
+33,February,2,2003,2025,33.9,2019,الرويس,Al-Ruwais ,-1.1,2008,جبل جيس,Jais Mountain,30,2017,جبل مبرح, Mebreh Mountain,10,23,81,2024,قرنين,Qarnen 
+34,February,3,2003,2025,36,2014,أم الزمول, Um Azimul ,-5.7,2017,جبل جيس,Jais Mountain,60.8,2019,الفقع,Al Faqa,9,23,88,2017,أبو البخوش,Abu Al Bukhoosh
+35,February,4,2003,2025,34.9,2014,وتييد,Owtaid,-3,2017,جبل جيس,Jais Mountain,14.8,2007,جبل مبرح, Mebreh Mountain,9,23,79,2014,جبل حفيت,Hafeet Mountain
+36,February,5,2003,2025,32.8,2022,بدع دعفس,Bada Dafas ,-2.7,2008,جبل جيس,Jais Mountain,6.6,2007,جبل مبرح, Mebreh Mountain,5,23,77,2010,جبل مبرح,Mebreh Mountain
+37,February,6,2003,2025,33.3,2011,أم غافة,Um Ghafa ,-2,2008,جبل جيس,Jais Mountain,10.6,2010,جبل مبرح, Mebreh Mountain,7,23,76,2024,مطار الفجيرة,Fujairah Airport
+38,February,7,2003,2025,36.5,2007,حرس حدود الجزيرة, Al Jazeera B.G. ,0.6,2008,ركنة, Raknah ,26.2,2010,أم الزمول,Um Azimul  ,8,23,99,2010,جبل مبرح,Mebreh Mountain
+39,February,8,2003,2025,36.1,2006,حرس حدود الجزيرة, Al Jazeera B.G. ,1.2,2008,ركنة, Raknah ,22.2,2007,جبل جيس, Jais Mountain,7,23,106,2010,جبل مبرح,Mebreh Mountain
+40,February,9,2003,2025,36.3,2006,حرس حدود الجزيرة, Al Jazeera B.G. ,0.6,2011,جبل جيس,Jais Mountain,8.6,2014,مسافي,Masafi  ,4,23,73,2023,قرنين,Qarnen
+41,February,10,2003,2025,34.7,2006,حميم, Hamim ,0.1,2005-2011,"جبل جيس، جبل جيس","Jabal Jais, Jabal Jais ",1.2,2017,مليون_منطقة الظفرة,Malyoon_Al Dhafra_Region,6,23,84,2023,قرنين,Qarnen
+42,February,11,2003,2025,34.8,2006,فلج المعلا, Falaj Al Moalla ,0.4,2005,جبل جيس,Jais Mountain,16.4,2024,جبل الرحبة,Jabal Al Rahba,6,23,74,2009,الجلاع,Alqlaa
+43,February,12,2003,2025,35.2,2015,الرويس,Al-Ruwais ,0.2,2011,جبل جيس,Jais Mountain,167.1,2024,جامعة الإمارات_العين,UAE University_Al Ain ,9,23,106,2024,مطار زايد,Zayed  Airport
+44,February,13,2003,2025,37.8,2018,الرويس,Al-Ruwais ,0.4,2011,جبل جيس,Jais Mountain,54,2005,ضدنا,Dhudna ,7,23,76,2025,الجلاع,Alqlaa
+45,February,14,2003,2025,36.3,2023,الظنة,Al Dhanna ,0.1,2011,جبل جيس,Jais Mountain,162,2024,أم الغاف ,Um Al Ghaf,9,23,60,2024,جبل جيس,Jais Mountain
+46,February,15,2003,2025,36.6,2023,الظنة,Al Dhanna ,3.5,2011-2014,"جبل جيس، دمثة","Jabal Jais, Damtha",15.6,2005,الغويفات,Algheweifat,5,23,62,2025,قرنين,Qarnen
+47,February,16,2003,2025,35.8,2006,حرس حدود الجزيرة, Al Jazeera B.G. ,3.2,2011,جبل جيس,Jais Mountain,34.6,2019,حتا,Hatta,6,23,65,2023,جبل حفيت,Hafeet Mountain
+48,February,17,2003,2025,37.4,2015,سويحان , Sweihan,3.1,2003,جبل جيس,Jais Mountain,34.7,2019,حتا,Hatta,7,23,74,2017,مطار آل مكتوم,Al Maktoum Airport
+49,February,18,2003,2025,37.3,2018,سيح السلم, Saih Al Salem ,2.7,2003,جبل جيس,Jais Mountain,28.6,2016,مسافي,Masafi ,9,23,80,2024,قرنين,Qarnen 
+50,February,19,2003,2025,37.5,2015,أم الزمول, Um Azimul ,4,2011-2017,"جبل مبرح، جبل مبرح"," Mebreh Mountain, Mebreh Mountain ",7,2007,سويحان,Sweihan ,8,23,83,2024,مطار الفجيرة,Fujairah Airport
+51,February,20,2003,2025,37.5,2015,حميم, Hamim ,2.2,2019,جبل جيس,Jais Mountain,2,2007,جبل مبرح, Mebreh Mountain,8,23,72,2015,جبل حفيت,Hafeet Mountain
+52,February,21,2003,2025,35.8,2015,أم الزمول, Um Azimul ,2.6,2012,جبل مبرح, Mebreh Mountain,6.2,2015,جبل مبرح, Mebreh Mountain,9,23,105,2010,جبل مبرح,Mebreh Mountain
+53,February,22,2003,2025,36.1,2009,وتييد,Owtaid,2.2,2012,جبل جيس,Jais Mountain,8.6,2018,جبل مبرح, Mebreh Mountain,11,23,75,2022,الفرفار,Al Farfar
+54,February,23,2003,2025,38.6,2025,مزيرعة,Mezaira,-1.2,2015,جبل جيس,Jais Mountain,48.6,2006,مكاسب,Makassib,10,23,78,2015,جبل مبرح,Mebreh Mountain
+55,February,24,2003,2025,37.3,2010,وتييد,Owtaid,-0.1,2015,جبل جيس,Jais Mountain,53,2006,جبل حفيت,Hafeet Mountain,10,23,69,2003,مطار دبي,Dubai Airport
+56,February,25,2003,2025,37.9,2024,بدع دعفس,Bada Dafas ,3.9,2015,جبل جيس,Jais Mountain,28.4,2018,براكة,Barakah,11,23,94,2025,قرنين,Qarnen
+57,February,26,2003,2025,39.7,2007,مطار رأس الخيمة, Ras Al Khaimah Airport,5.5,2024,جبل جيس,Jais Mountain,34,2017,الفقع,Al Faqa ,13,23,84,2012,جبل حفيت,Hafeet Mountain
+58,February,27,2003,2025,39.7,2009,حرس حدود الجزيرة, Al Jazeera B.G. ,3.4,2015,جبل جيس,Jais Mountain,47.4,2010,جبل الحبن,Al Heben Mountain,11,23,141,2010,جبل مبرح,Mebreh Mountain
+59,February,28,2003,2025,39.8,2009,حرس حدود الجزيرة, Al Jazeera B.G. ,2.3,2015,جبل جيس,Jais Mountain,40.4,2005,مزيد,Mezyed ,13,23,107,2009,مطار العين,Al Ain Airport 
+60,February,29,2003,2025,35.5,2016,أم الزمول,Um Azimul ,3.5,2024,جبل جيس,Jais Mountain,9.9,2024,مزيرعة,Mezaira ,2,23,70,2024,قرنين,Qarnen 
+61,March,1,2003,2025,37.1,2012,الرويس,Al-Ruwais ,2.4,2024,جبل جيس,Jais Mountain,42.8,2010,مطار زايد,Zayed  Airport,11,23,85,2010,مطار دبي,Dubai Airport
+62,March,2,2003,2025,37.8,2021,حرس حدود الجزيرة, Al Jazeera B.G. ,1,2019,جبل جيس, Jais Mountain,61.6,2010,مسافي,Masafi ,11,23,112,2010,جبل مبرح,Mebreh Mountain
+63,March,3,2003,2025,38.0,2021,حميم, Hamim ,2.6,2019,جبل جيس, Jais Mountain,6.4,2010,جبل مبرح,Mebreh Mountain ,7,23,96,2010,جبل مبرح,Mebreh Mountain
+64,March,4,2003,2025,38.9,2021,أم الزمول, Um Azimul ,1.6,2012,جبل جيس, Jais Mountain,18.7,2024,مربح الفجيرة,Merbeh Fujairah,6,23,88,2010,جبل مبرح,Mebreh Mountain
+65,March,5,2003,2025,41.1,2021,بدع دعفس,Bada Dafas ,2.9,2019,ركنة, Raknah ,54.9,2024,مربح الفجيرة,Merbeh Fujairah,6,23,105,2010,جبل مبرح,Mebreh Mountain
+66,March,6,2003,2025,40.0,2013,مخيرز, Mukhariz ,4.3,2019,ركنة, Raknah ,31.1,2024,الصاع,Al Saa,6,23,77,2012,أبو البخوش,Abu Al Bukhoosh
+67,March,7,2003,2025,39.2,2025,براكة,Barakah,4.5,2012,دمثة, Damtha ,14.8,2016,حرس حدود الجزيرة,Al Jazeera B.G. ,4,23,78,2021,الفرفار,Al FarFar
+68,March,8,2003,2025,41.1,2022,الظنة,Al Dhanna ,5,2019,جبل جيس, Jais Mountain,80,2016,مدينة زايد,Madinat Zayed ,3,23,87,2016,مزيد,Mezyed
+69,March,9,2003,2025,38.5,2023,الظنة,Al Dhanna ,2.9,2019,جبل جيس, Jais Mountain,287.6,2016,الشويب,Al Shiweb ,5,23,130,2016,مطار البطين,Al Bateen Airport 
+70,March,10,2003,2025,42.0,2022,الظنة,Al Dhanna ,2.4,2019,جبل جيس,Jais Mountain,19.4,2016,الروضة,Rowdah ,5,23,87,2012,مطار الفجيرة,Fujairah Airport
+71,March,11,2003,2025,42.1,2022,الظنة,Al Dhanna ,3.4,2019,ركنة, Raknah ,2.8,2025,جبل جيس,Jabal Jais,8,23,76,2015,ميناء صقر,Saqr Port 
+72,March,12,2003,2025,41.8,2003,حرس حدود الجزيرة, Al Jazeera B.G. ,3.1,2019,جبل جيس, Jais Mountain,10.7,2024,الصاع,Al Saa,5,23,76,2012,مطار الفجيرة,Fujairah Airport 
+73,March,13,2003,2025,40.9,2003,مطار زايد,Zayed Airport,4.4,2019,ركنة,Raknah ,2.2,2017,جبل مبرح ,Mebreh Mountain ,7,23,72,2003,مطار العين,Al Ain Airport 
+74,March,14,2003,2025,40.9,2007,الغويفات,Algheweifat ,7.6,2003,جبل جيس, Jais Mountain,34.4,2014,سويحان,Sweihan ,6,23,67,2014,مطار زايد,Zayed  Airport
+75,March,15,2003,2025,40.5,2007-2022,"الغويفات، الشوامخ"," Algheweifat, Al Shawamekh",5.9,2003,ركنة,Raknah ,13.8,2014,ميناء صقر,Saqr Port,9,23,70,2011,أبو البخوش,Abu Al Bukhoosh
+76,March,16,2003,2025,40.6,2022,بدع دعفس ,Bada Dafas ,4.2,2014,جبل جيس, Jais Mountain,32.4,2015,الفوعة,Al Foah,7,23,82,2022,قرنين,Qarnen
+77,March,17,2003,2025,40.4,2021,بدع دعفس,Bada Dafas ,3.6,2014,جبل جيس, Jais Mountain,51.9,2019,ضدنا,Dhudna ,12,23,91,2022,قرنين,Qarnen
+78,March,18,2003,2025,41.4,2021,بدع دعفس,Bada Dafas ,5.4,2018,جبل مبرح,Mebreh Mountain,94.6,2007,خطم الشكلة,Khatam Al Shaklah ,10,23,76,2012,أبو البخوش,Abu Al Bukhoosh
+79,March,19,2003,2025,41.7,2021,بدع دعفس,Bada Dafas ,4,2007,جبل جيس,Jais Mountain,18,2006,ضدنا,Dhudna ,9,23,83,2017,جزيرة الفزعية,Al Fzaayyah Island
+80,March,20,2003,2025,40.2,2003,حرس حدود الجزيرة, Al Jazeera B.G. ,4.5,2007,جبل جيس, Jais Mountain,27.2,2020,أبو ظبي,Abu Dhabi,9,23,123,2020,دلما,Dalma
+81,March,21,2003,2025,41.0,2025,الظنة,Al Dhanna ,5.6,2005,ركنة,Raknah ,100.4,2020,جميرا,Jumeirah ,9,23,80,2020,جبل جيس,Jais Mountain
+82,March,22,2003,2025,42.5,2009,حرس حدود الجزيرة, Al Jazeera B.G. ,5.5,2023,جبل جيس,Jais Mountain,80.1,2020,جبل ينس,Yanas Mountain,14,23,104,2010,جبل مبرح,Mebreh Mountain
+83,March,23,2003,2025,40.5,2022,سويحان,Sweihan,4,2020,جبل جيس, Jais Mountain,76.2,2009,ضدنا,Dhudna ,13,23,108,2010,جبل مبرح,Mebreh Mountain
+84,March,24,2003,2025,41.5,2022,براكة, Barakah ,3.7,2020,جبل جيس, Jais Mountain,94.7,2017,براكة,Barakah ,12,23,102,2017,الغويفات,Algheweifat 
+85,March,25,2003,2025,42.6,2009-2022,"حرس حدود الجزيرة، سيح السلم"," Al Jazeera B.G., Saih Al Salem  ",5.2,2020,جبل مبرح,Jabal Mebreh ,67.6,2009,ركنة,Raknah,10,23,96,2017,مطار زايد,Zayed  Airport
+86,March,26,2003,2025,41.6,2021,براكة, Barakah ,6.4,2025,جبل مبرح,Jabal Mebreh ,72,2014,ركنة,Raknah ,10,23,99,2010,جبل مبرح,Mebreh Mountain
+87,March,27,2003,2025,42.0,2021,سيح السلم, Saih Al Salem ,5.6,2024,جبل جيس, Jais Mountain,36.2,2009,جبل جيس,Jais Mountain ,8,23,84,2022,قرنين,Qarnen
+88,March,28,2003,2025,41.2,2018,مزيرعة, Mezaira ,7.8,2013-2023,"دمثة، جبل جيس"," Damtha, Jais Mountain",21,2019,خطم الشكلة,Khatam Al Shaklha ,9,23,85,2023,مطار الفجيرة,Fujairah Airport
+89,March,29,2003,2025,43.1,2018-2018,"سيح السلم، سويحان"," Saih Al Salem, Sweihan ",7,2013-2013,"أشعب، رزين"," Ashaab, Rezeen ",27.2,2009,ضدنا,Dhudna ,8,23,88,2010,جبل مبرح,Mebreh Mountain
+90,March,30,2003,2025,42.9,2018,سيح السلم, Saih Al Salem ,6.1,2005,ركنة, Raknah ,25.8,2009,حميم,Hamim,10,23,115,2009,الحبن,Al Heben Mountain 
+91,March,31,2003,2025,42.9,2003,حرس حدود الجزيرة, Al Jazeera B.G. ,4.7,2009,جبل جيس, Jais Mountain,24,2009,جبل جيس,Jais Mountain ,11,23,77,2010,جبل مبرح,Mebreh Mountain
+92,April,1,2003,2025,43.7,2015,حميم,Hamim,5.3,2009,جبل جيس,Jais  Mountain,16.2,2016,غياثي,Ghiathi ,9,23,93,2010,جبل مبرح,Mebreh Mountain
+93,April,2,2003,2025,43.1,2017,وتييد,Owtaid,6.3,2009,جبل جيس, Jais  Mountain,8.9,2007,مطار الفجيرة, Fujairah Airport  ,8,23,111,2010,جبل مبرح,Mebreh Mountain
+94,April,3,2003,2025,44,2021,سويحان,  Sweihan,6.3,2016,جبل جيس, Jais  Mountain,20.4,2009,مخيرز,Mukhariz ,8,23,98,2014,مطار البطين,Al Bateen Airport
+95,April,4,2003,2025,43,2025-2025,"الشوامخ، براكة"," Al Shawamekh, Barakah",6.9,2009,جبل جيس, Jais  Mountain,32.8,2014,ركنة,Raknah ,6,23,94,2017,مطار الفجيرة,Fujairah Airport
+96,April,5,2003,2025,43.2,2025,الظنة,Al Dhanna ,7.5,2024,ركنة,Raknah,4.5,2007,مطار رأس الخيمة,Ras Al Khaimah Airport ,5,23,89,2017,مطار الفجيرة,Fujairah Airport
+97,April,6,2003,2025,42.4,2022,سويحان,  Sweihan,7.2,2024,ركنة,Raknah,23.2,2013,سويحان,Sweihan,3,23,94,2013,مطار دبي,Dubai Airport
+98,April,7,2003,2025,43.2,2025,سويحان,  Sweihan,5,2013,جبل جيس, Jais  Mountain,24.4,2013,الفقع,Al Faqa ,6,23,121,2013,جبل حفيت,Hafeet Mountain
+99,April,8,2003,2025,43.4,2022,وتييد,Owtaid,6.4,2013,جبل جيس, Jais  Mountain,22,2016,أم الزمول,Um Azimul  ,8,23,77,2016,الجلاع,Alqlaa
+100,April,9,2003,2025,44.3,2020,براكة,Barakah ,8.6,2005,ركنة,Raknah,8,2019,براكه,Barakah,11,23,77,2019,الجلاع,Alqlaa
+101,April,10,2003,2025,45,2022,بدع دعفس,Bada Dafas,11.8,2004,جبل جيس, Jais  Mountain,20.2,2011,مسافي,Masafi ,10,23,124,2011,مطار العين,Al Ain Airport 
+102,April,11,2003,2025,44.9,2017,مزيرعة,Mezaira ,13.1,2009,جبل جيس, Jais  Mountain,12.8,2011,جبل مبرح, Mebreh Mountain ,7,23,85,2023,تل السراب,Tal Al Sarab
+103,April,12,2003,2025,46.2,2025,بدع دعفس,Bada Dafas,11.9,2009,جبل جيس, Jais  Mountain,18.8,2019,ميناء الفجيرة,Fujairah Port,11,23,85,2012,مطار آل مكتوم,Al Maktoum Airport
+104,April,13,2003,2025,45.7,2022,وتييد,Owtaid,9.5,2009-2019,"جبل جيس، جبل جيس"," Jais Mountain, Jais Mountain",116.2,2019,الغزلة,Ghazla,14,23,101,2010,جبل مبرح,Mebreh Mountain
+105,April,14,2003,2025,46.3,2022,وتييد,Owtaid,6.9,2019,جبل جيس, Jais  Mountain,131.2,2019,الغزلة,Ghazla,12,23,106,2003,وتييد,Owtaid 
+106,April,15,2003,2025,45.4,2025,سويحان,  Sweihan,9.1,2019,جبل جيس, Jais  Mountain,45,2003,أم الزمول,Um Azimul  ,10,23,89,2024,براكة, Barakah 
+107,April,16,2003,2025,44,2014,مخيرز,Mukhariz,9.1,2019,ركنة,Raknah,259.5,2024,خطم الشكلة,Khatam Al Shaklah ,8,23,137,2003,مطار العين,Al Ain Airport 
+108,April,17,2003,2025,44.5,2015,سويحان, Sweihan,9.5,2024,جبل جيس, Jais  Mountain,153.6,2003,رزين,Rezeen ,3,23,135,2003,مطار العين,Al Ain Airport 
+109,April,18,2003,2025,44.9,2013,مخيرز,Mukhariz ,9.6,2007-2024,"ركنة، جبل جيس"," Raknah, Jais  Mountain",17.4,2012,القوع,Alquaa ,10,23,80,2010,جبل مبرح,Mebreh Mountain
+110,April,19,2003,2025,44.9,2014,مزيرعة,Mezaira ,9.8,2011,ركنة,Raknah,8.2,2012,أم الزمول,Um Azimul  ,8,23,95,2010,جبل مبرح,Mebreh Mountain
+111,April,20,2003,2025,45.6,2013,أم الزمول, Um Azimul ,8.4,2008,ركنة,Raknah,1.3,2020,جبل جيس,Jais Mountain,8,23,89,2010-2017,"جبل مبرح، مطار الفجيرة","Mebreh Mountain, Fujairah Airport"
+112,April,21,2003,2025,43.4,2004,حميم,Hamim ,10.4,2015,ركنة,Raknah,5.6,2013,سويحان,Sweihan,5,23,72,2003,مطار دبي,Dubai Airport
+113,April,22,2003,2025,44.2,2018,الرويس,Al-Ruwais,10.9,2016,ركنة,Raknah,6.4,2020,ميناء صقر,Saqr Port ,5,23,70,2003,مطار زايد,Zayed  Airport
+114,April,23,2003,2025,45,2025,بدع دعفس,Bada Dafas,10.6,2009,دمثة,Damtha,4.8,2003,ركنة,Raknah ,7,23,80,2019,قرنين,Qarnen 
+115,April,24,2003,2025,45.2,2015,سويحان, Sweihan,10.6,2009,دمثة,Damtha,84.2,2013,القوع,Alquaa ,7,23,91,2019,قرنين,Qarnen 
+116,April,25,2003,2025,45.2,2009,الغويفات,Algheweifat ,10.3,2019,ركنة,Raknah,6.8,2006,الغويفات,Algheweifat ,8,23,100,2010,جبل مبرح,Mebreh Mountain
+117,April,26,2003,2025,45.2,2009,حرس حدود الجزيرة,Al Jazeera B.G. ,8.8,2019,ركنة,Raknah,17.1,2023,كلباء,Kalba,7,23,85,2010,جبل مبرح,Mebreh Mountain
+118,April,27,2003,2025,46.6,2025,الطويين, Tawiyen,11.9,2013,جبل جيس, Jais  Mountain,27.8,2013,سويحان,Sweihan ,8,23,74,2010,جبل مبرح,Mebreh Mountain
+119,April,28,2003,2025,45.9,2025,مزيرعة,Mezaira ,12.9,2013,جبل جيس, Jais  Mountain,27.7,2021,دبا,Dibba ,9,23,96,2010,جبل مبرح,Mebreh Mountain
+120,April,29,2003,2025,46,2025,الشوامخ, Al Shawamekh ,11.7,2011,ركنة,Raknah ,39.9,2024,مسافي,Masafi,8,23,80,2020,مطار العين,Al Ain Airport 
+121,April,30,2003,2025,46.9,2012,الرويس,Al-Ruwais,12.7,2013,جبل جيس, Jais  Mountain,28.2,2013,ضدنا,Dhudna ,9,23,76,2022,مطار الفجيرة,Fujairah Airport
+122,May,1,2003,2025,46.2,2025,سويحان, Sweihan,12.9,2011,ركنة,Raknah ,34.5,2024,بدع مبارك_منطقة الظفرة, Bada Mubarak_Al Dhafra Region ,7,23,100,2024,مطار زايد,Zayed  Airport
+123,May,2,2003,2025,46.2,2025,سويحان, Sweihan,11.5,2024,جبل جيس, Jais  Mountain,62.4,2024,بوحصا,Buhasa,5,23,93,2024,برج أدنوك ,ADNOC Tower
+124,May,3,2003,2025,46.3,2012,سويحان, Sweihan,11.1,2024,جبل جيس, Jais  Mountain,7.1,2021,ضدنا,Dhudnah ,8,23,91,2010-2023,"جبل مبرح، تل السراب","Mebreh Mountain, Tal Al Sarab"
+125,May,4,2003,2025,47,2012,الياسات,Yasat,12.3,2023,ركنة,Raknah,37,2021,ضدنا,Dhudnah ,6,23,101,2010,جبل مبرح,Mebreh Mountain
+126,May,5,2003,2025,47.2,2025,بدع دعفس,Bada Dafas,13.2,2021-2023,"جبل جيس، دمثة","Jais  Mountain, Damtha",12.6,2017,وادي الطوى,Wadi Al Tuwa ,8,23,89,2013,الجلاع,Alqlaa 
+127,May,6,2003,2025,46.8,2012,مزيرعة,Mezaira ,10.8,2005-2005,"جبل جيس، جبل مبرح","Jais  Mountain, Jabal Mebreh",1.4,2008,أم القيوين,Umm Al Quwain ,5,23,117,2010,جبل مبرح,Mebreh Mountain
+128,May,7,2003,2025,47.9,2012,سويحان, Sweihan,9,2005,جبل جيس,Jais  Mountain,0.1,2024-2024,"راس غميس، مكاسب","Ras Ghumais, Makassib",4,23,89,2010,جبل مبرح,Mebreh Mountain
+129,May,8,2003,2025,48.1,2018,مزيرعة,Mezaira,12.9,2005,ركنة,Raknah,9.8,2021,مزيد,Mezyed,4,23,100,2010,جبل مبرح,Mebreh Mountain
+130,May,9,2003,2025,47.1,2018,الرويس,Al-Ruwais,12.1,2025,ركنة,Raknah ,4.8,2012,مسافي,Masafi ,6,23,96,2010,جبل مبرح,Mebreh Mountain
+131,May,10,2003,2025,46.6,2009,أم الزمول,Um Azimul ,14.5,2020,ركنة,Raknah ,6,2012,خطم الشكلة,Khatam Al Shaklah ,5,23,71,2024,قرنين,Qarnen 
+132,May,11,2003,2025,46.9,2009-2019,"مدينة زايد، مزيرعة","Madinat Zayed, Mezaira",13.5,2024,ركنة,Raknah,11.2,2017,وادي الطوى,Wadi Al Tuwa ,5,23,67,2008,مطار دبي ,Dubai Airport
+133,May,12,2003,2025,47.8,2011,الياسات,Yasat,15.4,2022,ركنة,Raknah,31,2017,جبل الحبن,Al Heben Mountain,2,23,78,2022,قرنين,Qarnen 
+134,May,13,2003,2025,47.4,2016,مزيرعة,Mezaira,13.7,2020,ركنة,Raknah ,18.6,2017,مطار الفجيرة,Fujairah  Airport ,3,23,70,2018-2019,"مطار رأس الخيمة، مطار الفجيرة","Ras Al Khaimah Airport, Fujairah Airport"
+135,May,14,2003,2025,48.1,2011,الياسات,Yasat ,13.1,2020,ركنة,Raknah ,0.4,2017,القوع,Alquaa ,4,23,96,2022,قرنين,Qarnen 
+136,May,15,2003,2025,47.1,2008,حرس حدود الجزيرة,Al Jazeera B.G. ,12.9,2022,ركنة,Raknah,0.4,2021,القور,Al Qor ,3,23,78,2010,جبل مبرح,Mebreh Mountain
+137,May,16,2003,2025,47,2015,فلج المعلا,Falaj Al Moalla ,12.6,2014,جبل جيس,Jais  Mountain,9.3,2019,مسافي,Masafi ,4,23,98,2010,جبل مبرح,Mebreh Mountain
+138,May,17,2003,2025,46.8,2013,مزيرعة,Mezaira ,14.5,2017,دمثة,Damtha ,2,2018,جبل مبرح,Mebreh Mountain,4,23,72,2025,مطار الفجيرة,Fujairah Airport
+139,May,18,2003,2025,47.3,2012,الرويس,Al-Ruwais,14.3,2019,الحبن,  Al Heben,53.8,2019,الفرفار,Al FarFar,3,23,74,2009,مطار الفجيرة,Fujairah Airport
+140,May,19,2003,2025,48,2011-2011-2012,"الطويين، المنامة، سيح السلم","Tayiwen, Manama, Saih Al Salem",15,2004-2015,"ركنة، ركنة","Raknah, Raknah ",60,2019,الخزنة,Alkhazna ,3,23,75,2004,مدينة زايد,Madinat Zayed
+141,May,20,2003,2025,49.4,2011,سيح السلم,Saih Al Salem ,14.6,2013-2024,"ركنة، ركنة","Raknah, Raknah ",14.8,2019,الفرفار,Al FarFar,5,23,93,2023,قرنين,Qarnen 
+142,May,21,2003,2025,49,2025,مخيرز, Mukhariz,15,2019,جبل جيس,Jais  Mountain,4.3,2023,الطويلة,Taweela ,2,23,77,2010,جبل مبرح,Mebreh Mountain
+143,May,22,2003,2025,49.6,2021,سويحان, Sweihan,15.8,2023,جبل جيس,Jais  Mountain,5.1,2023,قرنين,Qarnen,1,23,74,2010,جبل مبرح,Mebreh Mountain
+144,May,23,2003,2025,50.4,2025,الشوامخ,Al Shawamekh,15,2008,ركنة,Raknah ,2.8,2020,مزيد,Mezyed ,4,23,76,2006,جبل مبرح,Mebreh Mountain
+145,May,24,2003,2025,51.6,2025,سويحان, Sweihan,15.6,2019,ركنة,Raknah,15,2020,الذيد,Al Dhaid ,3,23,91,2020,مطار آل مكتوم,Al Maktoum Airport
+146,May,25,2003,2025,49.8,2025,مزيرعة,Mezaira ,16.4,2006,ركنة,Raknah ,58.6,2020,سيح السلم,Saih Al Salem ,5,23,94,2024,تل السراب,Tal Al Sarab
+147,May,26,2003,2025,49.7,2021,بدع دعفس,Bada Dafas ,14.7,2003,ركنة,Raknah,45.4,2020,وادي الطوى,Wadi Al Tuwa ,4,23,74,2022,مطار الفجيرة,Fujairah Airport
+148,May,27,2003,2025,49.8,2009,حرس حدود الجزيرة, Al Jazeera B.G. ,15.6,2016,ركنة,Raknah ,27.4,2018,الفوعة,Alfoah ,3,23,72,2015,مطار الفجيرة,Fujairah Airport
+149,May,28,2003,2025,49.2,2009,حرس حدود الجزيرة, Al Jazeera B.G. ,15.2,2016,ركنة,Raknah ,1.2,2019,ميناء خورفكان,Khor Fakkan Port,2,23,67,2011,مطار دبي,Dubai Airport
+150,May,29,2003,2025,49.5,2009,أم الزمول,Um Azimul ,16.5,2015,ركنة,Raknah ,2.4,2011,سويحان,Sweihan ,3,23,67,2004-2024,"مطار العين، قرنين","Al Ain Airport, Qarnen"
+151,May,30,2003,2025,50,2025,سويحان, Sweihan,17.8,2005,جبل جيس,Jais  Mountain,0.7,2020,أم غافة ,Um Ghafa ,4,23,67,2016,مطار الفجيرة,Fujairah Airport
+152,May,31,2003,2025,50.2,2009-2009,"أم الزمول، مطار الفجيرة","Um Azimul, Fujairah Airport ",15.5,2003,ركنة,Raknah,-,-,-,-,1,23,78,2016,جبل مبرح,Mebreh Mountain
+153,June,1,2003,2025,50.4,2024,سويحان,Sweihan,14.1,2004,ركنة,Raknah  ,-,-,-,-,0,23,82,2016,جبل مبرح,Mebreh Mountain
+154,June,2,2003,2025,50.8,2018,مزيرعة,Mezaira,15.7,2016,جبل مبرح,Jabal Mebreh  ,1.2,2010,ركنة,Raknah,2,23,99,2010,جبل مبرح,Mebreh Mountain
+155,June,3,2003,2025,50.7,2015,سويحان,Sweihan,17.1,2016,ركنة,Raknah  ,2,2006,سويحان,Sweihan,2,23,125,2010,جبل مبرح,Mebreh Mountain
+156,June,4,2003,2025,51,2021,الحفار,Al Haffar  ,17,2010,أم غافة,Um Ghafa  ,0.01,2008,مطار الفجيرة,Fujairah Airport ,3,23,121,2010,جبل مبرح,Mebreh Mountain
+157,June,5,2003,2025,50.2,2021,الحفار,Al Haffar  ,17.6,2009,ركنة,Raknah  ,25.8,2015,خطم الشكلة,khatam Al Shaklah ,4,23,75,2007,الحبن,Al Heben
+158,June,6,2003,2025,51.8,2021,الحفار,Al Haffar  ,16.6,2025,ركنة,Raknah  ,1.4,2015,مزيد,Mezyed ,6,23,74,2007,الحبن,Al Heben
+159,June,7,2003,2025,50,2019,مزيرعة,Mezaira  ,16.4,2007,جبل جيس,Jabal Jais  ,12.2,2006,الفوعة,Alfoah,9,23,74,2020,الشويب,Al Shiweb
+160,June,8,2003,2025,51,2018,مزيرعة,Mezaira ,17.7,2007,جبل جيس,Jabal Jais  ,14.2,2025,وادي الطوى,Wadi Al Tuwa,7,23,74,2006,أم الزمول,Um Azimul
+161,June,9,2003,2025,51.6,2019,مزيرعة,Mezaira  ,19.7,2025,جبل جيس,Jabal Jais  ,9.2,2024,خطم الشكلة,khatam Al Shaklah ,6,23,77,2020,مرغم,Margham
+162,June,10,2003,2025,50.5,2019,مزيرعة,Mezaira ,14.8,2004,ركنة,Raknah  ,13.8,2020,مزيد,Mezyed ,5,23,84,2024,الهير,Al Hayer
+163,June,11,2003,2025,51.8,2019,مزيرعة,Mezaira  ,18.5,2003,ركنة,Raknah  ,-,-,-,-,2,23,69,2018,الفرفار,Al Farfar
+164,June,12,2003,2025,50.6,2019,الحفار,Al Haffar  ,17.1,2005,جبل جيس,Jabal Jais  ,3.8,2005,خطم الشكلة,Khatam Al Shaklah,4,23,82,2022,جبل جيس,Jais Mountain
+165,June,13,2003,2025,50.1,2025,سويحان, Sweihan,17.3,2022,جبل جيس,Jabal Jais  ,19.4,2005,الفقع,Al Faqa ,3,23,89,2022,جبل جيس,Jais Mountain
+166,June,14,2003,2025,50.9,2010,سويحان,Sweihan,18.1,2016,ركنة,Raknah  ,3.2,2022,العين,Al Ain ,3,23,74,2023,تل السراب,Tal Al Sarab
+167,June,15,2003,2025,50.8,2017,مدينة زايد,Madinat Zayed ,17.8,2004,ركنة,Raknah ,0.4,2015,الشويب,Al Shiweb,4,23,70,2009,مطار دبي ,Dubai Airport
+168,June,16,2003,2025,51.5,2017,مزيرعة,Mezaira  ,17.9,2014,ركنة,Raknah  ,1.6,2015,خطم الشكلة,Khatam Al Shaklah ,4,23,82,2023,تل السراب,Tal Al Sarab
+169,June,17,2003,2025,52,2010,الياسات,Yasat  ,18.6,2004,ركنة,Raknah  ,0.3,2024,أبو قرين ,Abu Qrayn,2,23,70,2023,تل السراب,Tal Al Sarab
+170,June,18,2003,2025,49.8,2017-2022-2022,"أم الزمول، سويحان، جامعة الإمارات","Um Azimul, Sweihan, UAE University ",18.5,2004,ركنة,Raknah  ,2,2016,ركنة,Raknah,3,23,77,2021,قرنين,Qarnen
+171,June,19,2003,2025,50.3,2024,الروضة,Rowdah,17.6,2004,ركنة,Raknah  ,20.1,2021,مزيد,Mezyed ,2,23,98,2023,مرغم ,Margham
+172,June,20,2003,2025,49.8,2022,حميم,Hamim,19.9,2013,جبل جيس,Jabal Jais  ,4,2021,الخريمة_منطقة الظفرة, Al Khurimah_Al Dhafra Area,5,23,82,2019,قرنين,Qarnen
+173,June,21,2003,2025,50.7,2022,بدع دعفس,Bada Dafas,19.4,2009,جبل جيس,Jabal Jais  ,15.4,2006,الشويب,Al Shiweb ,2,23,104,2019,مطار دبي ,Dubai Airport
+174,June,22,2003,2025,50.8,2024,سويحان,Sweihan,19.1,2013,جبل مبرح,Jabal Mebreh,44,2007,وتييد,Owtaid ,6,23,104,2006,مطار العين,Al Ain Airport
+175,June,23,2003,2025,51.7,2024,سويحان,Sweihan,19.7,2010,أم غافة,Um Ghafa ,0.7,2024,خطم الشكلة,Khatam Al Shaklah ,4,23,83,2015,مطار الفجيرة,Fujairah Airport
+176,June,24,2003,2025,51.7,2024,سويحان,Sweihan,18.7,2010,دمثة,Damtha  ,9.2,2007,مزيد,Mezyed ,7,23,85,2023,تل السراب,Tal Al Sarab
+177,June,25,2003,2025,50.3,2024,أم الزمول,Um Azimul ,20.5,2025,ركنة,Raknah  ,13,2007,الفوعة,Alfoah,3,23,85,2007,مطار العين,Al Ain Airport
+178,June,26,2003,2025,49.5,2016,سيح السلم,Saih Al Salem ,19.5,2015,جبل مبرح,Jabal Mebreh,4.8,2020,العين,Al Ain ,5,23,75,2015-2024,"جبل مبرح، تل السراب","Mebreh Mountain, Tal Al Sarab"
+179,June,27,2003,2025,50.1,2014,مخيرز,Mukhariz  ,18.7,2015,جبل جيس,Jabal Jais  ,1.4,2014,العرجان,Arjan,3,23,73,2015,جبل مبرح,Mebreh Mountain
+180,June,28,2003,2025,50.6,2008,مزيرعة,Mezaira  ,19.1,2015,جبل جيس,Jabal Jais  ,3,2016,مطار آل مكتوم ,Al Maktoum Airport,5,23,85,2005,مطار العين,Al Ain Airport
+181,June,29,2003,2025,51.4,2019,مزيرعة,Mezaira  ,19,2004,ركنة,Raknah  ,14.4,2020,خطم الشكلة,Khatam Al Shaklah ,4,23,70,2004,مطار العين,Al Ain Airport
+182,June,30,2003,2025,51.2,2019,مزيرعة,Mezaira  ,19.5,2004,ركنة,Raknah ,8,2020,المنامة,Manama,5,23,70,2006,مطار العين,Al Ain Airport
+183,July,1,2003,2025,50.3,2019,مزيرعة, Mezaira,17.9,2004,ركنة, Raknah ,36.8,2020,مزيد,Mezyed ,3,23,68,2020,جبل حفيت,Jabal Hafeet 
+184,July,2,2003,2025,51.3,2017,سويحان,Sweihan,19.5,2006,جبل مبرح,  Jabel Mebreh ,-,-,-,-,0,23,80,2023,تل السراب,Tal Al Sarab
+185,July,3,2003,2025,51,2017,مزيرعة, Mezaira,19.7,2005,ركنة, Raknah,4.6,2014,وادي الطوى,Wadi Al Tuwa ,4,23,88,2024,تل السراب,Tal Al Sarab
+186,July,4,2003,2025,50.6,2017,مزيرعة, Mezaira,19.5,2008,ركنة,  Raknah,34.8,2014,المليحة,Al Melaiha,6,23,85,2014,المليحة,Al Malaiha
+187,July,5,2003,2025,51,2020,مزيرعة, Mezaira,19.3,2022,جبل جيس, Jabel Jais ,67.8,2022,خطم الشكلة,Khatam Al Shaklah ,5,23,130,2022,مطار العين,Al Ain Airport 
+188,July,6,2003,2025,51.2,2017-2017,"مزيرعة، سويحان "," Mezaira, Sweihan",17.9,2011,جبل جيس,  Jabel Jais,15.1,2022,الشوامخ,Al Shawamekh,9,23,85,2018,مطار دبي,Dubai Airport 
+189,July,7,2003,2025,50.6,2020,مزيرعة, Mezaira,20.4,2020-2022,"ركنة، جبل مبرح"," Raknah, Jabal Mebreh",26,2018,الفوعة,Al Foah ,10,23,106,2013,مطار العين,Al Ain Airport 
+190,July,8,2003,2025,51.1,2020,مزيرعة,Mezaira,18.3,2022,جبل جيس,  Jabel Jais,12.2,2022,خطم الشكلة,Khatam Al Shaklah ,7,23,115,2010,مطار العين,Al Ain Airport 
+191,July,9,2003,2025,50.8,2024-2024,"الشوامخ، سويحان","Al Shawamekh, Sweihan ",21.1,2022,جبل جيس, Jabel Jais,17.6,2020,مزيد,Mezyed ,8,23,75,2019,جبل حفيت,Jabal Hafeet 
+192,July,10,2003,2025,51.2,2013-2017,"الرويس، مزيرعة","  Al-Ruwais, Mezaira",19.6,2022,جبل جيس, Jabel Jais,4.8,2011,مزيد,Mezyed ,9,23,113,2005,مطار العين,Al Ain Airport 
+193,July,11,2003,2025,51.5,2018,مزيرعة, Mezaira,18.8,2022,جبل جيس, Jabel Jais,11,2011,أم غافة,Um Ghafa ,5,23,80,2004,المليحة,Al Malaiha 
+194,July,12,2003,2025,51,2018,مزيرعة,Mezaira  ,20.8,2022,جبل جيس, Jabel Jais,3.7,2020,مزيد,Mezyed ,6,23,63,2003,أم الزمول,Um Azimul 
+195,July,13,2003,2025,50.6,2024-2024,"حرس حدود الجزيرة، مزيرعة","Al Jazeera B.G., Mezaira",21.8,2022,جبل جيس,  Jabal Jais ,3.5,2020,خطم الشكلة,Khatam Al Shaklah ,7,23,80,2020,مطار العين,Al Ain Airport 
+196,July,14,2003,2025,51,2018,مزيرعة, Mezaira,21.5,2021,جبل جيس, Jabel Jais,14.8,2005,حرس حدود الجزيرة,Al Jazeera B.G ,11,23,111,2016,مطار العين,Al Ain Airport 
+197,July,15,2003,2025,50.7,2016-2016,"مخيرز، سويحان "," Mukhariz, Sweihan",18.6,2021,جبل جيس,  Jabel Jais ,24.4,2017,المنامة,Manama ,6,23,94,2022,فلج المعلا,Falaj Al Moalla 
+198,July,16,2003,2025,50.8,2010,حرس حدود الجزيرة, Al Jazeera B.G. ,18.8,2021,جبل جيس, Jabel Jais ,32.4,2021,وادي الطوى,Wadi Al Tuwa ,9,23,95,2024,أم الزمول,Um Azimul 
+199,July,17,2003,2025,50.8,2010,سويحان , Sweihan ,18.4,2021,جبل جيس,  Jabel Jais ,46.8,2021,حتا,Hatta ,11,23,88,2021,جبل مبرح,Jabal Mebreh 
+200,July,18,2003,2025,51,2013,الرويس,Al-Ruwais,17.8,2021,جبل جيس,  Jabel Jais,56.2,2016,الفقع,Al Faqa ,11,23,105,2016,خطم الشكلة,Khatam Al Shaklah
+201,July,19,2003,2025,50.2,2010,سويحان, Sweihan,20.1,2021,جبل جيس,  Jabel Jais,61.8,2019,الفوعة,Al Foah ,9,23,76,2022,أم الزمول,Um Azimul
+202,July,20,2003,2025,50.5,2012,سويحان, Sweihan ,20.6,2003,جبل جيس, Jabel Jais,11.8,2019,العراد,Al Arad,7,23,71,2019,العراد,Alarad 
+203,July,21,2003,2025,50,2011,الرويس,Al-Ruwais,21.3,2019,الحبن,  Al Heben,60.6,2021,الظفرة,Al Dhafrah ,11,23,93,2020,مطار العين,Al Ain Airport 
+204,July,22,2003,2025,49.6,2025,مزيرعة, Mezaira,19.9,2003,جبل جيس,Jabel Jais,15.8,2013,الروضة,Rowdah,10,23,120,2013,مطار العين,Al Ain Airport 
+205,July,23,2003,2025,50,2016,مزيرعة, Mezaira ,18.7,2020,جبل الحبن, Jabal Mebreh,30.8,2013,القوع,Al Quaa ,9,23,65,2014,جبل حفيت,Jabal Hafeet 
+206,July,24,2003,2025,49.2,2016,مدينة زايد, Madinat Zayed ,19.5,2016,جبل الحبن,  Jabel Mebreh,56.6,2003,الفوعة,Al Foah ,12,23,85,2003,مطار العين,Al Ain Airport 
+207,July,25,2003,2025,49.9,2011,سيح السلم, Saih Al Salem ,20.4,2022,جبل جيس,  Jabel Jais ,13.4,2025,الهير,Al Hayer,9,23,81,2025,الهير,Al Hayer
+208,July,26,2003,2025,49.9,2025,سويحان, Sweihan ,19.2,2022,جبل جيس,Jabel Jais,17.8,2022,مطار الفجيرة,Al Fujairah Airport,7,23,69,2025,خطم الشكلة,Khatam Al Shaklah
+209,July,27,2003,2025,49.8,2006,أم الزمول,Um Azimul ,16.9,2022,جبل جيس,  Jabel Jais,220.9,2022,ميناء الفجيرة,Fujairah Port,9,23,83,2012,مطار آل مكتوم ,Al Maktoum Airport 
+210,July,28,2003,2025,50.9,2021,بدع دعفس, Bada Dafas,18.0,2022,جبل جيس,  Jabel Jais,89.6,2022,مسافي,Masafi,10,23,73,2024,تل السراب,Tal Al Sarab
+211,July,29,2003,2025,50.8,2025,بدع دعفس, Bada Dafas,17.8,2022,جبل مبرح,  Jabel Mebreh,11.8,2015,حرس حدود الجزيرة,Al Jazeera B.G ,10,23,68,2003,حميم,Hamim 
+212,July,30,2003,2025,51.8,2017,مزيرعة, Mezaira,19.3,2003,جبل جيس,Jabel Jais,34.8,2008,الفقع,Al Faqa ,9,23,96,2008,مطار العين,Al Ain Airport 
+213,July,31,2003,2025,51,2020,الوثبة,Al Wathbah,18.1,2006,جبل جيس,  Jabel Jais,49.2,2003,ضدنا,Dhudnah,10,23,76,2020,مطار العين,Al Ain Airport 
+214,August,1,2003,2025,51.8,2025,سويحان,Sweihan,19.9,2003,جبل جيس,Jabal Jais ,8.6,2022,القور,Al Qor ,11,23,94,2010,مطار العين,Al Ain Airport 
+215,August,2,2003,2025,51.1,2020,مزيرعة, Mezaira,21.1,2021,دمثة,Damtha ,24.2,2017,حرس حدود الجزيرة,Al Jazeera B.G.   ,11,23,81,2010,مطار العين,Al Ain Airport 
+216,August,3,2003,2025,50.7,2020,مزيرعة, Mezaira,19,2003,جبل جيس,Jabal Jais ,19.6,2022,الصاع,Al Saa,11,23,102,2022,مطار العين,Al Ain Airport 
+217,August,4,2003,2025,50.9,2016,مخيرز, Mukhariz,16.1,2013,جبل مبرح,Jabal Mebreh ,35.4,2023,الهير,Al Hayer,10,23,128,2023,الهير,Al Hayer
+218,August,5,2003,2025,50.1,2011,الرويس,Al-Ruwais,18,2013,جبل جيس,Jabal Jais ,20.6,2016,الفوعة,Al Foah ,12,23,104,2007,مطار العين,Al Ain Airport 
+219,August,6,2003,2025,51,2017,مزيرعة, Mezaira,18.3,2008,جبل جيس,Jabal Jais ,37.5,2024,مزيد,Mezyed ,15,23,77,2010,الحبن,Al Heben 
+220,August,7,2003,2025,50.1,2017,مزيرعة, Mezaira,17.8,2008,جبل جيس,Jabal Jais ,33.6,2012,جبل حفيت,Jabel Hafeet ,13,23,83,2012,مطار العين,Al Ain Airport 
+221,August,8,2003,2025,51.4,2017,مزيرعة, Mezaira,19.2,2013,جبل مبرح,Jabal Mebreh ,16,2006,أم الزمول,Um Azimul  ,12,23,98,2018,مطار العين,Al Ain Airport 
+222,August,9,2003,2025,51,2022,سويحان,Sweihan,19.5,2006,جبل جيس,Jabal Jais ,19.4,2008,مزيد,Mezyed ,12,23,81,2005,القوع,Alquaa
+223,August,10,2003,2025,50.7,2017,مزيرعة, Mezaira,20.5,2014,جبل مبرح,Jabal Mebreh ,54.2,2008,الفقع,Al Faqa ,13,23,98,2008,مطار العين,Al Ain Airport 
+224,August,11,2003,2025,49.8,2015-2022,"سويحان، سويحان","Sweihan, Sweihan",22.2,2013,جبل جيس,Jabal Jais ,24.6,2023,خطم الشكلة,Khatam Al Shaklah,12,23,93,2023,الصاع,Saa
+225,August,12,2003,2025,50.8,2021,سويحان,Sweihan,19,2009,جبل جيس,Jabal Jais ,32.8,2013,حميم,Hamim ,9,23,93,2023,حرس حدود الجزيرة ,Al Jazeera B.G. 
+226,August,13,2003,2025,50.7,2021,سويحان,Sweihan,21.6,2004,ركنة,Raknah ,11.2,2016,الشويب,Al Shiweb ,8,23,84,2016,شوكة,Shoukah 
+227,August,14,2003,2025,49.8,2019,مزيرعة, Mezaira,22.6,2009,جبل جيس,Jabal Jais ,67.4,2013,حميم,Hamim ,11,23,93,2013,مخيرز,Mukhariz 
+228,August,15,2003,2025,49.6,2014,سويحان,Sweihan,21.8,2005,ركنة,Raknah ,40.2,2013,مزيد,Mezyed ,13,23,91,2017,مطار العين,Al Ain Int'l Airport 
+229,August,16,2003,2025,50.9,2014,سيح السلم,Saih Al Salem ,20.4,2009,جبل مبرح,Jabal Mebreh ,20,2013,سويحان,Sweihan,15,23,78,2007,الشويب,Al Shiweb 
+230,August,17,2003,2025,49.9,2018,مزيرعة, Mezaira,18.7,2009,جبل جيس,Jabal Jais ,17.2,2014,خطم الشكلة,Khatam Al Shaklah ,16,23,89,2006,مطار العين,Al Ain Airport 
+231,August,18,2003,2025,49,2005,حرس حدود الجزيرة,Al Jazeera B.G. ,20.1,2024,جبل جيس,Jabal Jais ,10.6,2015-2016,"الفقع، جسيورة","Al Faqa, Qasyoura ",13,23,80,2024,مطار رأس الخيمة,Ras Al Khaimah Airport
+232,August,19,2003,2025,50.4,2017,مزيرعة, Mezaira,18.7,2024,جبل جيس,Jabal Jais ,16.6,2023,خطم الشكلة,Khatam Al Shaklah,15,23,107,2017,مطار العين,Al Ain  Airport 
+233,August,20,2003,2025,49.3,2022,سويحان,Sweihan,21.7,2024,جبل مبرح,Jabal Mebreh,15,2011,حرس حدود الجزيرة,Al Jazeera B.G. ,11,23,71,2011,حرس حدود الجزيرة ,Al Jazeera B.G. 
+234,August,21,2003,2025,50.2,2012,سويحان,Sweihan,19.4,2024,جبل مبرح,Jabal Mebreh,5.3,2025,أم الزمول,Um Azimul,8,23,66,2025,أم الزمول,Um Azimul
+235,August,22,2003,2025,49.8,2012,سويحان,Sweihan,21.1,2009,جبل جيس,Jabal Jais ,1.2,2021, القوع, Al quaa ,7,23,65,2016,الشويب,Al Shiweb 
+236,August,23,2003,2025,49.6,2018,مزيرعة, Mezaira,18.1,2007,جبل مبرح,Jabal Mebreh,21.8,2019,المليحة,Al Malaiha ,8,23,100,2019,مطار دبي,Dubai Airport 
+237,August,24,2003,2025,49.2,2009,حرس حدود الجزيرة,Al Jazeera B.G. ,20.1,2012,جبل مبرح,Jabal Mebreh ,10.2,2024,الخريمة_منطقة الظفرة, Al Khurimah_Al Dhafra Area,12,23,72,2016,مطار العين,Al Ain Airport 
+238,August,25,2003,2025,50.3,2023,الذيد,Al Dhaid,20.8,2022,ركنة,Raknah ,25,2006,العين,Al Ain ,12,23,98,2006,مطار العين,Al Ain  Airport 
+239,August,26,2003,2025,50.8,2023,وتييد,Owtaid,19.2,2020,جبل جيس,Jabal Jais ,7.4,2008,الفقع,Al Faqa ,11,23,67,2010,مطار دبي,Dubai  Airport 
+240,August,27,2003,2025,50.7,2024,سويحان,Sweihan,21.1,2020,الحبن,Al Heben ,16.3,2020,جبل حفيت,Jabal Hafeet ,10,23,70,2017,سويحان,Swiehan 
+241,August,28,2003,2025,50.2,2015,سويحان,Sweihan,19.6,2013,جبل مبرح,Jabal Mebreh,10.2,2020,الروضة,Rowdah,8,23,84,2023,الحبن,Al Heben 
+242,August,29,2003,2025,50,2024,سويحان,Sweihan,21.5,2019,ركنة,Raknah ,22.9,2020,حرس حدود الجزيرة,Al Jazeera B.G.,10,23,87,2020,حرس حدود الجزيرة ,Al Jazeera B.G. 
+243,August,30,2003,2025,49.5,2019,الحفار,Al Haffar ,20.1,2014-2019,"جبل جيس، ركنة","Jabal Jais, Raknah ",41.6,2014,مسافي,Masafi ,9,23,72,2020,مخيرز,Mukhariz 
+244,August,31,2003,2025,50,2019,سويحان,Sweihan,20.4,2014,جبل جيس,Jabal Jais ,53.8,2011,وتييد,Owtaid,8,23,64,2024,جبل الرحبة,Jabal Al Rahba
+245,September,1,2003,2025,49.1,2016,مخيرز, Mukhariz ,20.1,2024,جبل مبرح,Jabal Mebreh ,27.2,2014,مسافي,Masafi ,12,23,80,2011,مطار العين,Al Ain Airport
+246,September,2,2003,2025,49.4,2019-2019,"سيح السلم، سويحان"," Saih Al Salem, Sweihan ",20.3,2023,جبل مبرح,Jabal Mebreh ,24.6,2008,الروضة,Rowdah,10,23,109,2008,مطار العين,Al Ain Airport
+247,September,3,2003,2025,50.6,2016,مخيرز, Mukhariz ,20.2,2008,جبل جيس,Jabal Jais ,25.4,2012,مزيرعة,Mezaira ,9,23,78,2006,مطار العين,Al Ain Airport
+248,September,4,2003,2025,51.1,2016,مخيرز, Mukhariz ,17.9,2015,جبل جيس,Jabal Jais ,7.6,2006,خطم الشكلة,Khatam Al Shaklah,8,23,85,2021,مطار العين,Al Ain Airport
+249,September,5,2003,2025,49.4,2016,مخيرز, Mukhariz ,18,2015,جبل مبرح,Jabal Mebreh ,80.4,2006,جبل حفيت,Jabel Hafeet ,9,23,98,2006,مطار العين,Al Ain Airport
+250,September,6,2003,2025,49.1,2019,سويحان,Sweihan,18.5,2006,جبل جيس,Jabal Jais ,20.2,2015,خطم الشكلة,Khatam Al Shaklah,13,23,87,2016,مطار العين,Al Ain Airport
+251,September,7,2003,2025,49.4,2019,سويحان,Sweihan,18.5,2015,جبل جيس, Jabal Jais ,21,2016,خطم الشكلة,Khatam Al Shaklah,12,23,72,2004,الحبن,Al Heben 
+252,September,8,2003,2025,50.1,2017,براكة, Barakah ,16.5,2015,جبل جيس, Jabal Jais ,27,2017,وادي الطوى,Wadi Tuwa ,8,23,79,2024,الشويب,Al Shiweb 
+253,September,9,2003,2025,49.4,2017,براكة, Barakah ,18.2,2007,جبل مبرح,Jabal Mebreh ,38.4,2015,حتا,Hatta ,9,23,80,2013,مطار دبي ,Dubai Int'l Airport
+254,September,10,2003,2025,47.4,2017,براكة, Barakah ,20.2,2024,ركنة, Raknah ,10.5,2015,عرجان_منطقة الظفرة,Arjan_Al Dhafra_Region,8,23,72,2011,الفقع,Al Faqa
+255,September,11,2003,2025,48.1,2020,الحفار, Al Haffar ,20.9,2006-2007,"ركنة، جبل جيس","Raknah, Jabel Jais",76.8,2014,خطم الشكلة,Khatam Al Shaklah,9,23,89,2009,مطار العين,Al Ain Airport
+256,September,12,2003,2025,47.8,2020,سيح السلم, Saih Al Salem ,19.6,2015,جبل جيس,Jabal Jais ,10.6,2007,جبل حفيت,Jabel Hafeet ,8,23,63,2015,مطار العين,Al Ain Airport
+257,September,13,2003,2025,47.6,2021,الطويين, Tawiyen,18.9,2025,جبل مبرح,Jabal Mebreh ,22,2004,ركنة,Raknah ,6,23,62,2004,الحبن,Al Heben
+258,September,14,2003,2025,49.1,2018,مزيرعة,Mezaira ,18,2025,جبل مبرح,Jabal Mebreh ,2.4,2021,المدام,Al Madam,7,23,57,2011,مطار دبي ,Dubai Int'l Airport
+259,September,15,2003,2025,47.1,2018,مدينة زايد, Madinat Zayed ,18.8,2020,ركنة, Raknah ,40.8,2013,الشويب,Al Shiweb,5,23,74,2013,مطار العين,Al Ain Airport
+260,September,16,2003,2025,47.3,2018,مدينة زايد,Madinat Zayed ,18,2009,جبل جيس, Jabal Jais ,1.4,2013,خطم الشكلة,Khatam Al Shaklah,8,23,68,2015,جبل حفيت,Jabel Hafeet
+261,September,17,2003,2025,46.3,2021,سويحان,Sweihan,18.5,2005,ركنة, Raknah ,7.2,2017,الشويب,Al Shiweb,9,23,75,2017,الشويب,Al Shiweb
+262,September,18,2003,2025,47.9,2019,سويحان,Sweihan,17.5,2008,جبل مبرح,Jabal Mebreh ,18.6,2023,الشويب,Al Shiweb,6,23,92,2023,الصاع,Saa
+263,September,19,2003,2025,46.5,2019,سيح السلم, Saih Al Salem ,17.8,2020,دمثة,Damtha ,15.8,2013,المنامة,Manama ,10,23,67,2011,مطار دبي ,Dubai Int'l Airport
+264,September,20,2003,2025,46.6,2015,سويحان,Sweihan,18.9,2020,دمثة,Damtha ,12,2022,شوكة,Shoukah,11,23,59,2005,مطار دبي ,Dubai Int'l Airport
+265,September,21,2003,2025,48.9,2012,الرويس,Al-Ruwais ,17.5,2020,دمثة,Damtha ,9.3,2022,المدام,Al Madam,4,23,65,2012,مطار دبي ,Dubai Int'l Airport
+266,September,22,2003,2025,47.2,2020,سويحان,Sweihan,16.7,2020,ركنة, Raknah ,6.2,2022,شوكة,Shoukah,3,23,107,2004,مطار العين,Al Ain Airport
+267,September,23,2003,2025,46.6,2023,سيح السلم, Saih Al Salem ,16.6,2020,دمثة,Damtha ,4.8,2004,خطم الشكلة,Khatam Al Shaklah,5,23,67,2004,مطار العين,Al Ain Airport
+268,September,24,2003,2025,46.1,2019,سويحان,Sweihan,18.4,2008,ركنة, Raknah ,39.3,2021,مرغم,Margham,4,23,71,2021,مرغم,Margham 
+269,September,25,2003,2025,45.5,2024,سويحان,Sweihan,17,2007,ركنة, Raknah ,5.5,2004,مسافي,Masafi ,3,23,60,2018,جبل حفيت,Jabel Hafeet
+270,September,26,2003,2025,45.3,2024,سويحان,Sweihan,17.6,2007,ركنة, Raknah ,1.8,2019,القوع,Al Quaa ,4,23,84,2021,قرنين,Qarnen
+271,September,27,2003,2025,45.1,2017,مزيرعة, Mezaira ,17.8,2014,جبل جيس,Jabal Jais,14.2,2019,القوع,Al Quaa ,5,23,69,2019,أبو قرين,Abu Qrayn
+272,September,28,2003,2025,45.2,2018,مزيرعة, Mezaira ,17.6,2014,جبل جيس,Jabal Jais ,12.9,2024,أم غافة,Um Ghafa ,9,23,74,2023,مطار البطين ,Al Bateen Airport
+273,September,29,2003,2025,44.7,2011,الرويس,Al-Ruwais ,17,2007,ركنة, Raknah ,23.4,2024,أم القيوين,Umm Al Quwain,13,23,69,2024,أم القيوين,Umm Al Quwain 
+274,September,30,2003,2025,45.4,2025,سويحان,Sweihan,16.9,2016,جبل جيس, Jabal Jais ,45.9,2024,أم غافة,Um Ghafa ,11,23,67,2012,مطار دبي ,Dubai Airport
+275,October,1,2003,2025,46.3,2017,مزيرعة, Mezaira ,17.6,2016,جبل جيس,Jabal Jais ,17,2024,جبل الرحبة,Jabal Al Rahba,10,23,61,2005,مطار العين,Al Ain Airport 
+276,October,2,2003,2025,45,2017-2019,"مزيرعة، بدع دعفس","Mezaira, Bada Dafas ",16.9,2020,ركنة,Raknah,2.7,2014,العرجان,Arjan,4,23,57,2025,تل السراب,Tal Al Sarab
+277,October,3,2003,2025,44.1,2019-2019,"حرس حدود الجزيرة، الحفار"," Al Jazeera B.G, Al Haffar ",15.3,2020,ركنة,Raknah ,30,2016,الشويب,Al Shiweb,5,23,73,2021,جبل حفيت,Jabal Hafeet
+278,October,4,2003,2025,46.0,2023,سويحان, Sweihan,16.7,2012,جبل جيس, Jabal Jais ,57.6,2016,الفقع,Al Faqa ,7,23,96,2019,مطار الفجيرة,Fujairah Airport 
+279,October,5,2003,2025,45.4,2023,الروضة,Rowdah,14,2019,جبل جيس,Jabal Jais ,53.4,2019,ميناء الفجيرة,Fujairah Port,9,23,80,2019,دبا,Dibba 
+280,October,6,2003,2025,44.8,2015,سويحان, Sweihan,12.8,2007,جبل جيس,Jabal Jais ,18.6,2016-2019,"الحبن، المليحة","Al Heben, Malaiha ",8,23,80,2019,مطار رأس الخيمة,Ras Al Khaimah Airport 
+281,October,7,2003,2025,44.8,2015-2023,"مخيرز، سيح السلم"," Mukhariz, Saih Al Salem ",15.8,2019,جبل جيس,Jabal Jais ,71.8,2016,الفقع,Al Faqa,7,23,66,2023,قرنين,Qarnen
+282,October,8,2003,2025,45.5,2023,سويحان, Sweihan,14.8,2007,ركنة,Raknah ,94,2016,الشويب,Al Shiweb ,7,23,72,2016,مطار العين,Al Ain Airport 
+283,October,9,2003,2025,44.4,2018,مزيرعة, Mezaira ,16.4,2014,جبل جيس,Jabal Jais ,5.2,2013,أم غافة,Um Ghafa ,7,23,60,2014,جبل مبرح,Jabal Mebreh 
+284,October,10,2003,2025,43.8,2010,سويحان, Sweihan,16,2011,جبل جيس, Jabel Jais,63.4,2019,الفقع,Al Faqa ,8,23,72,2007,مطار دبي,Dubai Airport 
+285,October,11,2003,2025,43.7,2023,سويحان, Sweihan,15.2,2011,جبل جيس,Jabal Jais ,5,2019,أم غافة,Um Ghafa,7,23,71,2020,الشويب,Al Shiweb 
+286,October,12,2003,2025,44.4,2023,سويحان, Sweihan,15.3,2016,ركنة,Raknah ,22.2,2011,فلج المعلا,Falaj Al Moalla ,7,23,74,2011,مطار رأس الخيمة,Ras Al Khaimah Airport 
+287,October,13,2003,2025,43.5,2023,سويحان, Sweihan,15.3,2007,ركنة,Raknah ,30.6,2019,فلج المعلا,Falaj Al Moalla ,10,23,69,2013,فلج المعلا,Falaj Al Moalla 
+288,October,14,2003,2025,43.1,2023,الذيد,Al Dhaid,14.3,2010,جبل جيس, Jabel Jais,10.6,2013,وادي الطوى,Wadi Tuwa ,7,23,56,2005,مطار دبي,Dubai Airport 
+289,October,15,2003,2025,43,2021,سويحان, Sweihan,12.1,2020,ركنة,Raknah ,0.5,2025,الشويب,Al Shiweb,6,23,67,2008,مطار دبي,Dubai Airport 
+290,October,16,2003,2025,42.5,2021,سويحان, Sweihan,9.9,2020,ركنة,Raknah ,33.4,2018,القور,Al Qor ,5,23,78,2025,مطار العين,Al Ain Airport 
+291,October,17,2003,2025,42.6,2022,سويحان,  Sweihan,7.9,2020,ركنة,Raknah ,14.9,2023,سيح السلم,Saih Al Salem,8,23,56,2009-2010,"مطار دبي، مطار دبي","Dubai Airport, Dubai Airport"
+292,October,18,2003,2025,42.3,2011,سويحان, Sweihan,12.5,2020,دمثة,Damtha ,7.8,2012,مطار الفجيرة,Fujairah Airport,6,23,59,2012,مطار دبي,Dubai Airport 
+293,October,19,2003,2025,41.6,2017,مزيرعة, Mezaira ,8.7,2020,ركنة, Raknah ,28.8,2024,الشوامخ,Al Shawamekh,8,23,72,2021,قرنين,Qarnen
+294,October,20,2003,2025,41.9,2010,سويحان, Sweihan,6.4,2020,ركنة,Raknah ,46.2,2018,مسافي,Masafi ,8,23,56,2005,مطار دبي,Dubai Airport 
+295,October,21,2003,2025,41.3,2014,سويحان, Sweihan,8,2020,ركنة,Raknah ,42.2,2024,وادي الطوى,Wadi Tuwa ,8,23,73,2021,قرنين,Qarnen
+296,October,22,2003,2025,40.8,2022,سويحان, Sweihan,9.3,2020,دمثة, Damtha ,8,2018,أبو البخوش,Abu Al Bukhoosh ,9,23,71,2018,مكاسب,Makassib 
+297,October,23,2003,2025,42,2024,الظنة,Al Dhanna,13.4,2020,ركنة,Raknah ,7,2023,الحبن,Al Heben,6,23,67,2019,مطار آل مكتوم,Al Maktoum Airport 
+298,October,24,2003,2025,42.4,2024, الظنة,Al Dhanna,9.4,2020,ركنة,Raknah ,25.8,2023,المليحة,Al Malaiha,7,23,61,2010,مطار دبي,Dubai Airport 
+299,October,25,2003,2025,40.5,2019-2019,"جسيورة، سويحان"," Gasyoura, Sweihan",11,2020,ركنة,Raknah,34.8,2023,الحبن,Al Heben,9,23,83,2023,مطار رأس الخيمة,Ras Al Khaimah Airport 
+300,October,26,2003,2025,40.2,2017-2019-2019,"سويحان، حميم، سويحان","Sweihan, Hamim, Sweihan",12.7,2023,جبل جيس, Jabal Jais ,48.7,2023,الشوامخ,Al Shawamekh,10,23,83,2023,قرنين,Qarnen 
+301,October,27,2003,2025,41.9,2012,الرويس,Al-Ruwais ,11.8,2020,ركنة,Raknah ,27.4,2015,الشويب,Al Shiweb ,9,23,71,2018,مكاسب,Makassib 
+302,October,28,2003,2025,40.8,2012,الرويس,Al-Ruwais ,11.1,2020,ركنة,Raknah ,102.8,2018,ميناء الفجيرة,Al Fujairah Port,8,23,72,2024,قرنين,Qarnen 
+303,October,29,2003,2025,41.3,2019,وتييد,Owtaid,8.4,2020,ركنة,Raknah ,14,2012,جبل جيس,Jais Mountain,6,23,117,2012,قرنين,Qarnen 
+304,October,30,2003,2025,40.2,2019-2019,"الشوامخ، مزيرعة"," Al Shawamekh, Mezaira  ",8.4,2020,ركنة,Raknah ,4,2018,ميناء صقر,Saqr Port,5,23,56,2010-2014-2018,"مطار دبي، مطار الشارقة، مطار دبي","Dubai Airport, Sharjah Airport, Dubai Airport"
+305,October,31,2003,2025,43.5,2019,وتييد,Owtaid,7.6,2020,ركنة, Raknah ,5.5,2023,مزيد,Mezyed,7,23,67,2011,مطار دبي ,Dubai Airport 
+306,November,1,2003,2025,39.9,2021,سويحان,Sweihan,11.8,2012,جبل جيس, Jabal Jais ,42.4,2014,مسافي,Masafi ,6,23,70,2014,مطار آل مكتوم,Al Maktoum Airport 
+307,November,2,2003,2025,39.5,2021,الذيد,Al Dhaid,12.5,2019,جبل جيس, Jabal Jais ,3.6,2011,القوع,Al Quaa ,4,23,59,2018,مطار دبي,Dubai  Airport 
+308,November,3,2003,2025,38.8,2009,حرس حدود الجزيرة,Al Jazeera B.G. ,11.4,2018,جبل جيس,Jabal Jais ,4.6,2007,مزيرعة,Mezaira ,6,23,59,2018,الحبن,Al Heben 
+309,November,4,2003,2025,39.9,2024,سويحان,Sweihan,11.7,2018,جبل جيس,Jabal Jais ,11.6,2013,حتا,Hatta ,4,23,63,2013,ميناء صقر,Saqr Port 
+310,November,5,2003,2025,39.4,2024,سويحان,Sweihan,11.9,2013,جبل جيس,Jabal Jais ,56.3,2023,ميناء الفجيرة,Fujairah Port,6,23,52,2010,مطار دبي,Dubai Airport 
+311,November,6,2003,2025,40.1,2024,سويحان,Sweihan,10.8,2014,جبل مبرح,Jabal Mebreh ,12,2006-2023,"حتا، دمثة","Hatta, Damtha",8,23,63,2023,دمثة,Damtha
+312,November,7,2003,2025,38.5,2024,سويحان,Sweihan,9.9,2013-2014,"جبل جيس، جبل جيس","Jabal Jais, Jabal Jais ",40.6,2011,دلما,Dalma ,7,23,67,2010,أبو البخوش,Abu Al Bukhoosh 
+313,November,8,2003,2025,38.4,2022,الظنة,Al Dhanna ,8.9,2014,جبل جيس, Jabal Jais ,49.7,2020,دبا,Dibba,8,23,70,2021,مطار الفجيرة,Fujairah Airport 
+314,November,9,2003,2025,39.3,2022,الظنة,Al Dhanna ,6.9,2014,جبل جيس,Jabal Jais,57.6,2010,مسافي,Masafi ,9,23,92,2010,أبو الأبيض,Abu Al Abyad 
+315,November,10,2003,2025,39.1,2022,الظنة,Al Dhanna ,7.1,2019,جبل جيس,Jabal Jais ,37.8,2019,خطم الشكلة,Khatam Al Shaklah ,7,23,93,2019,مطار العين,Al Ain Airport 
+316,November,11,2003,2025,38.8,2022,سويحان,Sweihan,6.7,2014,ركنة,Raknah ,49.4,2018,راس غناضة,Ras Ghanadah,6,23,94,2018,مطار البطين,Al Bateen Airport 
+317,November,12,2003,2025,37.1,2020,براكة,Barakah ,8.7,2014,دمثة,Damtha ,33.2,2015,جبل جيس,Jais Mountain,6,23,67,2017,مطار الفجيرة,Fujairah Airport 
+318,November,13,2003,2025,36.4,2020,الرويس,Al-Ruwais ,8.5,2019,جبل جيس,Jabal Jais ,2.6,2019,مكاسب,Makassib ,7,23,64,2017,الفرفار,Al FarFar 
+319,November,14,2003,2025,36.6,2012-2018,"الرويس، مزيرعة","Al-Ruwais, Mezaira",8.5,2015,جبل جيس,Jabal Jais ,23.2,2013,مطار الفجيرة,Fujairah Airport ,6,23,80,2004,جزيرة الفزعية,Al Fzaayyah Island
+320,November,15,2003,2025,37.5,2018-2018,"الرويس، مزيرعة","A-lRuwais, Mezaira ",8.2,2019,ركنة,Raknah ,22.8,2004,مطار دبي,Dubai Airport ,8,23,89,2004,مطار دبي,Dubai Airport 
+321,November,16,2003,2025,36.9,2011,الرويس,Al-Ruwais ,8.5,2004,جبل جيس, Jabal Jais ,73.8,2013,مسافي,Masafi ,9,23,65,2017,مطار الفجيرة,Fujairah Airport 
+322,November,17,2003,2025,36.7,2018-2022,"سويحان، سويحان","Sweihan, Sweihan",7.7,2008,جبل جيس,Jabal Jais ,65.8,2023,إكسبو,Expo ,7,23,96,2023,مطار آل مكتوم,Al Maktoum Airport 
+323,November,18,2003,2025,36.4,2011,سويحان,Sweihan ,6.7,2013,جبل مبرح, Jabal Mebreh ,7.6,2005,أبو البخوش,Abu Al Bukhoosh,7,23,93,2005,أبو البخوش,Abu Al Bokhoosh 
+324,November,19,2003,2025,36.8,2025,الذيد,Al Dhaid,8.5,2010,دمثة,Damtha ,15.1,2019,جزيرة ديينه,Dayyinah Island ,6,23,69,2019,قرنين,Qarnen 
+325,November,20,2003,2025,36.5,2025,سويحان,Sweihan,7.8,2025,ركنة,Raknah ,81.6,2013,دلما,Dalma ,9,23,90,2013,دلما,Dalma 
+326,November,21,2003,2025,35.7,2004,حرس حدود الجزيرة,Al Jazeera B.G. ,5.6,2019,جبل جيس,Jabal Jais ,125.8,2013,خطم الشكلة,Khatam Al Shaklah ,7,23,97,2013,الرويس,Al-Ruwais 
+327,November,22,2003,2025,37.3,2021,سويحان, Sweihan,4.1,2009,جبل جيس, Jabal Jais ,38,2013,ضدنا,Dhudna ,7,23,63,2022,مطار دبي,Dubai Airport 
+328,November,23,2003,2025,37.5,2021,سويحان, Sweihan,5.5,2019,جبل جيس,Jabal Jais,19.2,2010,صير أبو نعير,Sir Bu Nair,11,23,65,2012,مطار دبي,Dubai Airport 
+329,November,24,2003,2025,36.7,2019,وتييد,Owtaid,6.5,2009-2019,"جبل مبرح، جبل جيس","Mebreh, Jabal Jais ",21.8,2025,مزرعة بن زعل_منطقة الظفرة,Bin Zaal Farm_Al Dhafra_Region,14,23,70,2016,ميناء صقر,Saqr Port 
+330,November,25,2003,2025,36.6,2006,القطارة,Al Qatara ,7.1,2017,جبل جيس,Jabal Jais ,41.6,2016,أبو البخوش,Abu Al Bukhoosh ,8,23,71,2018,عجمان,Ajman 
+331,November,26,2003,2025,35.3,2024,براكة,Barakah ,6.6,2011,جبل جيس,Jabal Jais ,60.6,2018,الغزلة,Ghazla,8,23,76,2018,ميناء صقر,Saqr Port 
+332,November,27,2003,2025,35.8,2024,بدع دعفس, Bada Dafas,7,2006,جبل جيس,Jabal Jais ,9.2,2008,الطويين,Al Tawiyen,6,23,60,2007,أبو البخوش,Abu Al Bukhoosh 
+333,November,28,2003,2025,34.8,2023,الغويفات,Algheweifat,6.4,2006,جبل جيس, Jabal Jais ,8.2,2024,جبل مبرح,Mebreh Mountain ,7,23,67,2024,تل السراب ,Tal Al Sarab
+334,November,29,2003,2025,34.6,2022,سيح السلم,Saih Al Salem,5.8,2006,جبل جيس,Jabal Jais ,16.6,2021,مربح ,Merbah ,11,23,70,2008,صير أبو نعير,Sir Bu Nair 
+335,November,30,2003,2025,34.2,2022,الوثبة,Al Wathbah,6.5,2006,جبل جيس,Jabal Jais ,42.2,2012,مطار دبي,Dubai Aiport,7,23,91,2012,مطار آل مكتوم,Al Maktoum  Airport 
+336,December,1,2003,2025,33.8,2022,سويحان, Sweihan,6.5,2009,جبل جيس,Jabal Jais ,14,2006,ضدنا,Dhudna,6,23,70,2006,مطار دبي,Dubai Int'l Airport 
+337,December,2,2003,2025,35.5,2016,سويحان, Sweihan,5.5,2006,جبل جيس, Jabal Jais ,131.8,2006,ضدنا,Dhudna ,9,23,72,2006,مطار دبي,Dubai Int'l Airport 
+338,December,3,2003,2025,37,2016,سويحان,Sweihan ,3.7,2006,جبل جيس,Jabal Jais ,78.7,2006,مطار الشارقة,Sharjah Airport ,10,23,66,2006,قرنين,Qarnen 
+339,December,4,2003,2025,35,2016,سويحان, Sweihan,1.8,2006,جبل جيس,Jabal Jais ,28.4,2008,ضدنا,Dhudna,5,23,59,2006-2017,"قرنين، مطار العين","Qarnen, Al Ain Airport"
+340,December,5,2003,2025,35.4,2016,فلج المعلا, Falaj Al Moalla ,2.3,2006,جبل جيس,Jabal Jais ,2,2008,أبو البخوش,Abu Al Bukhoosh,7,23,70,2019,مطار آل مكتوم,Al Maktoum Int Airport 
+341,December,6,2003,2025,33.9,2003,مطار الشارقة, Sharjah  Int'l Airport ,3.8,2017,دمثة, Damtha ,8.6,2008,أبو ظبي,Abu Dhabi ,9,23,67,2009,مطار دبي,Dubai Int'l Airport 
+342,December,7,2003,2025,35.5,2010,حرس حدود الجزيرة, Al Jazeera B.G. ,2.2,2017,دمثة, Damtha ,22.6,2008,أبو البخوش,Abu Al Bukhoosh ,8,23,68,2009,أبو البخوش, Abu Al Bokhoosh
+343,December,8,2003,2025,33,2014,سويحان, Sweihan,2.6,2015,جبل جيس,Jabal Jais ,104.8,2019,مزيد,Mezyed ,8,23,67,2009,مطار العين,Al Ain Int'l Airport 
+344,December,9,2003,2025,32.6,2025,الذيد,Al Dhaid,3.9,2015,جبل جيس,Jabal Jais ,8.4,2004,مسافي,Masafi ,7,23,68,2013,جبل حفيت,Jabal Hafeet
+345,December,10,2003,2025,32.1,2025,الشوامخ,Al Shawamekh,4,2016,جبل جيس, Jabal Jais ,34.8,2019,دلما,Dalma ,6,23,87,2019,مكاسب,Makassib
+346,December,11,2003,2025,33,2012,الرويس,Al-Ruwais ,1.4,2016,جبل جيس,Jabal Jais,31.1,2019,دبا,Diba ,10,23,70,2019,ميناء صقر,Saqr Port
+347,December,12,2003,2025,32.3,2012,أم الزمول,Um Azimul ,2,2016,جبل جيس,Jabal Jais ,40.8,2006,أم الزمول,Um Azimul  ,7,23,69,2009,جبل مبرح,Jabal Mebreh
+348,December,13,2003,2025,33.4,2010,الغويفات, Algheweifat ,3.5,2006,جبل جيس, Jabal Jais ,121.2,2009,الفوعة,Alfoah ,8,23,78,2009,مطار العين,Al Ain Int'l Airport
+349,December,14,2003,2025,32.8,2013-2013,"سيح السلم، مطار الفجيرة"," Saih Al Salem, Fujairah Airport",2.4,2006,جبل جيس,Jabal Jais ,39.2,2006,الوثبة,Alwathbah ,12,23,65,2010,أبو البخوش,Abu Al Bukhoosh
+350,December,15,2003,2025,32.5,2004,مطار رأس الخيمة,Ras Al Khaimah Airport ,2.3,2006,جبل جيس,Jabal Jais ,8.8,2019,مكاسب,Makassib ,13,23,68,2023,الفرفار,Al FarFar 
+351,December,16,2003,2025,32,2019,مدينة زايد,Madinat Zayed ,4,2009,جبل جيس,Jabal Jais,33.9,2025,مربح الفجيرة,Merbah Fujairah,6,23,66,2015,جبل مبرح,Jabal Mebreh
+352,December,17,2003,2025,31.3,2019,مطار دبي, Dubai Airport ,0.5,2006,جبل جيس,Jabal Jais ,128.8,2017,مطار الفجيرة,Fujairah Port,7,23,69,2025,جبل حفيت,Jabal Hafeet
+353,December,18,2003,2025,31.2,2009,حرس حدود الجزيرة, Al Jazeera B.G. ,0.7,2008,ركنة,Raknah ,59.6,2017,ضدنا,Dhudna ,9,23,86,2025,جبل ينس,Jabal Yanas
+354,December,19,2003,2025,30.6,2009,أم الزمول, Um Azimul ,2.8,2006,جبل جيس,Jabal Jais ,96.5,2025,الغزلة,Ghazla,9,23,68,2025,جبل ينس,Jabal Yanas
+355,December,20,2003,2025,30.7,2021,الشوامخ, Al Shawamekh ,2.7,2008,جبل جيس, Jabal Jais ,28.4,2025,الغزلة,Ghazla,6,23,66,2013,جبل مبرح,Jabal Mebreh
+356,December,21,2003,2025,31.6,2021,الظنة, Al Dhanna,3.7,2025,جبل جيس, Jabal Jais ,14.3,2024,ميناء صقر,Saqr Port,6,23,67,2013,أبو البخوش,Abu Al Bukhoosh 
+357,December,22,2003,2025,32.2,2012,مزيرعة, Mezaira ,3.7,2013,جبل جيس, Jabal Jais ,8,2013,مطار دبي,Dubai Airport  ,9,23,69,2024,قرنين,Qarnen
+358,December,23,2003,2025,34.1,2016,ضدنا, Dhudna ,2.9,2011,دمثة,Damtha ,28.2,2013,مطار الشارقة,Sharjah Airport ,5,23,65,2013-2015-2018,"مطار دبي، مطار دبي، الفرفار","Dubai Airport, Dubai Airport, Al Farfar"
+359,December,24,2003,2025,33,2016,سويحان, Sweihan ,2.1,2013,جبل جيس,Jabal Jais ,29.8,2009,الياسات,Yasat ,8,23,62,2006,جزيرة الفزعية,Al Fzaayyah Island
+360,December,25,2003,2025,33.8,2012,سويحان, Sweihan ,2.7,2013,جبل جيس, Jabal Jais ,21.8,2022,جبل الرحبة,Jabal Al Rahba,11,23,67,2006-2009,"قرنين، أبو البخوش","Qarnen, Abu Al Bukhoosh"
+361,December,26,2003,2025,33.3,2017,جسيورة,Gasyoura ,2.5,2006,جبل جيس,Jabal Jais ,49.8,2015,أبو الأبيض,Abu Al Abyad ,12,23,70,2004,مطار العين,Al Ain Int'l Airport
+362,December,27,2003,2025,34.5,2016,سويحان, Sweihan ,2.9,2008,ركنة,Raknah ,79,2004,رزين,Rezeen ,10,23,65,2010,مطار دبي,Dubai Int'l Airport
+363,December,28,2003,2025,33.2,2016,القور, Al-Qor,-0.4,2004,جبل جيس,Jabal Jais ,16.8,2022,الحبن,Al Heben,8,23,70,2022,قرنين,Qarnen
+364,December,29,2003,2025,35.5,2016,القور, Al-Qor,-0.7,2004,جبل جيس,Jabal Jais ,30.2,2004,مطار الشارقة,Sharjah Airport ,5,23,67,2006,مطار الفجيرة,Fujairah Airport
+365,December,30,2003,2025,34.4,2016,القور, Al-Qor,-0.1,2004,جبل جيس, Jabal Jais ,14.4,2005,جبل جيس,Jais Mountain,7,23,84,2025,جبل مبرح,Jabal Mebreh 
+366,December,31,2003,2025,31.6,2016,جسيورة, Gasyoura ,0.4,2010,ركنة,Raknah ,31,2021,مطار دبي,Dubai Airport  ,9,23,80,2006,مطار الفجيرة,Fujairah Airport

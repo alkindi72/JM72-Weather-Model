@@ -27,7 +27,7 @@ def check_for_storms():
         col_alt = 'Altitude' if 'Altitude' in df.columns else 'alt'
         col_name = 'Station_Name' if 'Station_Name' in df.columns else 'Station'
         
-        # سنأخذ أول محطة فقط في القائمة لتصلك رسالة واحدة واضحة للتجربة
+        # نأخذ أول منطقة في ملفك لتجربة الإرسال الفوري عليها
         row = df.iloc[0]
         lat, lon = row[col_lat], row[col_lon]
         alt = row[col_alt]
@@ -38,18 +38,17 @@ def check_for_storms():
         raw_temp = response['hourly']['temperature_2m'][0]
         corrected_temp = apply_terrain_correction(raw_temp, alt)
         
-        # تجاوزنا شروط الطقس لإجبار الإرسال
+        # صيغة التحذير المطلوبة من التبويب الأول مباشرة
         probability = 100
-        
         en_alert = f"🚨 RED ALERT: Severe Convective Storm Risk ({probability}%) detected over {name}!"
         ar_alert = f"🚨 إنذار أحمر: خطر عواصف ركامية شديدة بنسبة ({probability}%) مرصودة فوق منطقة {name}!"
-        weather_info = f"📍 المنطقة المعرضة للحدث: {name} | درجة الحرارة: {corrected_temp:.1f}°C"
+        weather_info = f"📍 المنطقة المعرضة للحدث: {name} | درجة الحرارة المصححة: {corrected_temp:.1f}°C"
         
         full_alert = f"{en_alert}\n{ar_alert}\n{weather_info}\n{'-'*50}"
         alerts.append(full_alert)
                 
     except Exception as e:
-        print(f"❌ حدث خطأ أثناء الفحص: {e}")
+        print(f"❌ حدث خطأ أثناء فحص البيانات: {e}")
         return
 
     if alerts:
@@ -57,12 +56,14 @@ def check_for_storms():
         if recipients:
             final_message = "تحذير من نظام JM72 للأرصاد الجوية:\n\n" + "\n\n".join(alerts)
             send_email("🚨 JM72 RED ALERT - إنذار جوي عالي الأهمية", final_message, recipients)
-            print(f"✅ تم إرسال الإنذار الأحمر بنجاح!")
+            print(f"✅ تم تشغيل أمر الإرسال بنجاح!")
         else:
-            print("❌ لا توجد إيميلات في ملف email_list.txt")
+            print("❌ لم يتم الإرسال: تأكد من وجود إيميلات داخل ملف email_list.txt")
 
 def send_email(subject, body, recipients):
-    sender = "jm72.weather@gmail.com" # ضع إيميلك المرسل هنا
+    # ⚠️ ضع هنا إيميلك الحقيقي والفعلي الذي استخرجت منه الـ App Password
+    sender = "اjumah72ا@gmail.com" 
+    
     password = os.environ.get('APP_PASSWORD')
     
     msg = MIMEText(body)
@@ -70,12 +71,10 @@ def send_email(subject, body, recipients):
     msg['From'] = sender
     msg['To'] = ", ".join(recipients)
     
-    try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(sender, password)
-            server.sendmail(sender, recipients, msg.as_string())
-    except Exception as e:
-        print(f"❌ خطأ في إرسال الإيميل: {e}")
+    # تركنا الاتصال مباشر بدون try/except ليظهر لك أي خطأ بوضوح في السجلات
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(sender, password)
+        server.sendmail(sender, recipients, msg.as_string())
 
 if __name__ == "__main__":
     check_for_storms()

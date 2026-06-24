@@ -390,4 +390,4 @@ with tab2:
     if df_plot_heat.empty:
         fig2 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
         fig2.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
-       st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
+       st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")

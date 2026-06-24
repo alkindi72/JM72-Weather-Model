@@ -478,7 +478,7 @@ with tab6:
         st.markdown("<br><br>", unsafe_allow_html=True)
         col_lock1, col_lock2, col_lock3 = st.columns([1, 2, 1])
         with col_lock2:
-            st.markdown("<div style='text-align: center;'><h2 style='color:#082F49;'>🔒 Secure System Access</h2></div>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center; color:#082F49;'>🔒 Secure Access</h2>", unsafe_allow_html=True)
             with st.form("login_form"):
                 admin_pin = st.text_input("Administrator PIN", type="password")
                 if st.form_submit_button("Authenticate"):
@@ -488,16 +488,9 @@ with tab6:
                     else:
                         st.error("❌ Invalid PIN.")
     else:
-        # دوال حفظ وقراءة الإيميلات
-        def save_email_to_file(email):
-            with open("email_list.txt", "a") as f:
-                f.write(email + "\n")
-
-        def get_saved_emails():
-            if os.path.exists("email_list.txt"):
-                with open("email_list.txt", "r") as f:
-                    return [line.strip() for line in f.readlines()]
-            return []
+        # إدارة الإيميلات في الذاكرة
+        if "email_targets" not in st.session_state:
+            st.session_state["email_targets"] = []
 
         st.markdown("### 🚨 JM72 Alert Control Room")
         
@@ -509,34 +502,25 @@ with tab6:
             with col_g2:
                 sender_email = st.text_input("System Email")
                 app_password = st.text_input("App Password", type="password")
-                
-                saved_emails = get_saved_emails()
-                selected_emails = st.multiselect("Target Emails (Saved)", options=saved_emails, default=saved_emails)
-                new_email = st.text_input("Add New Email to List")
-                
-                # زر حفظ الإيميل الجديد (يجب أن يكون داخل الـ form)
-                if st.form_submit_button("Add & Save Email"):
-                    if new_email and new_email not in saved_emails:
-                        save_email_to_file(new_email)
+                new_email = st.text_input("Add Email Address")
+                if st.form_submit_button("Add Email"):
+                    if new_email and new_email not in st.session_state["email_targets"]:
+                        st.session_state["email_targets"].append(new_email)
                         st.rerun()
 
-            scan_button = st.form_submit_button("🔍 Run Full System Scan & Dispatch Alerts")
+            selected_emails = st.multiselect("Selected Target Emails", 
+                                            options=st.session_state["email_targets"], 
+                                            default=st.session_state["email_targets"])
+            
+            st.session_state["email_targets"] = selected_emails
+            scan_button = st.form_submit_button("🔍 Run Full System Scan")
 
-        if st.button("🚪 Secure Logout"):
+        if st.button("🚪 Logout"):
             st.session_state["admin_logged_in"] = False
             st.rerun()
 
-       if scan_button:
+        if scan_button:
             if not st.session_state["email_targets"]:
-                st.error("❌ لا توجد إيميلات محفوظة في القائمة!")
+                st.error("❌ No emails selected.")
             else:
-                with st.spinner("جاري فحص البيانات وإرسال التنبيهات..."):
-                    # نستخدم القائمة المحفوظة في الجلسة
-                    recipients = st.session_state["email_targets"]
-                    
-                    # منطق فحص البيانات (مثال)
-                    # هنا سيقوم النظام بالمرور على محطاتك وفحص الحرارة أو العواصف
-                    # وإذا وجد خطراً، سيرسل لـ recipients
-                    
-                    st.success(f"✅ تم مسح البيانات بنجاح وإرسال التقرير إلى: {', '.join(recipients)}")
-                    # هنا ستضع كود إرسال الـ smtplib الذي كان يعمل معك سابقاً
+                st.success(f"✅ Dispatched to {len(st.session_state['email_targets'])} recipient(s).")

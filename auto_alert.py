@@ -10,7 +10,6 @@ def get_email_list(filename="email_list.txt"):
     try:
         with open(filename, "r", encoding="utf-8") as file:
             for line in file:
-                # فلتر ذكي يستخرج الإيميل الإنجليزي فقط ويتجاهل أي مسافات أو حروف عربية
                 found = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', line)
                 valid_emails.extend(found)
         return valid_emails
@@ -22,28 +21,40 @@ def send_alert():
         df = pd.read_csv("Meta_data34.csv") 
         df.columns = df.columns.str.strip() 
         
-        col_name = 'Station_Name' if 'Station_Name' in df.columns else 'Station'
-        col_lat = 'Lat.' if 'Lat.' in df.columns else 'Lat'
-        col_lon = 'Long.' if 'Long.' in df.columns else 'Long'
-        
         locations_list = []
         for _, row in df.iterrows():
-            name = row.get(col_name, 'غير محدد')
-            lat = row.get(col_lat, 'غير محدد')
-            lon = row.get(col_lon, 'غير محدد')
-            locations_list.append(f"📍 {name}  (خط الطول: {lon} | خط العرض: {lat})")
+            # استخراج الأسماء بناءً على الأعمدة الدقيقة التي أرسلتها
+            name_ar = str(row.get('Full_Name_ar', '')).strip()
+            name_en = str(row.get('Full_Name_eng', '')).strip()
+            
+            # ترتيب عرض الاسم ليكون (عربي - إنجليزي) أو أحدهما إذا كان الآخر فارغاً
+            if name_ar and name_en and name_ar != 'nan' and name_en != 'nan':
+                display_name = f"{name_ar} ({name_en})"
+            elif name_ar and name_ar != 'nan':
+                display_name = name_ar
+            elif name_en and name_en != 'nan':
+                display_name = name_en
+            else:
+                continue # تجاهل السطر إذا كانت الأسماء فارغة تماماً
+                
+            locations_list.append(f"📍 {display_name}")
         
         locations_text = "\n".join(locations_list)
         
+        # في حال كان الملف فارغاً أو لا توجد أسماء
+        if not locations_text.strip():
+            locations_text = "📍 لم يتم تحديد مناطق معينة في الملف"
+            
     except Exception as e:
         print(f"❌ حدث خطأ في قراءة ملف البيانات: {e}")
-        locations_text = "📍 الأماكن المحددة في النظام"
+        locations_text = "📍 حدث خطأ في قراءة أسماء المناطق"
 
     probability = 100
     
     en_alert = f"🚨 RED ALERT: Severe Convective Storm Risk ({probability}%) detected over the following areas:"
     ar_alert = f"🚨 إنذار أحمر: خطر عواصف ركامية شديدة بنسبة ({probability}%) مرصودة فوق المناطق التالية:"
     
+    # دمج الرسالة
     full_alert = f"{en_alert}\n\n{ar_alert}\n\n{locations_text}\n\n{'-'*50}"
 
     recipients = get_email_list("email_list.txt")
@@ -51,7 +62,6 @@ def send_alert():
         print("❌ لم يتم الإرسال: تأكد من وجود إيميلات صحيحة داخل ملف email_list.txt")
         return
 
-    # الاعتماد الكلي على الخزنة السرية (لن تكتب إيميلك هنا أبداً بعد الآن)
     sender = os.environ.get('SENDER_EMAIL')
     password = os.environ.get('APP_PASSWORD')
     
@@ -59,10 +69,8 @@ def send_alert():
         print("❌ خطأ: يرجى التأكد من إضافة SENDER_EMAIL و APP_PASSWORD في GitHub Secrets.")
         return
         
-    # تنظيف الإيميل المخفي من أي مسافات زائدة لضمان عدم حدوث خطأ
     sender = sender.strip()
     
-    # إعداد الرسالة بترميز utf-8 لدعم اللغة العربية
     msg = MIMEText(full_alert, 'plain', 'utf-8')
     msg['Subject'] = Header("🚨 JM72 RED ALERT - إنذار جوي عالي الأهمية", 'utf-8')
     msg['From'] = sender
@@ -72,7 +80,7 @@ def send_alert():
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(sender, password)
             server.send_message(msg)
-        print(f"✅ تم إرسال الإنذار بنجاح لـ {len(recipients)} مستلم!")
+        print(f"✅ تم إرسال الإنذار بنجاح مع أسماء المناطق لـ {len(recipients)} مستلم!")
     except Exception as e:
         print(f"❌ خطأ في الإرسال: {e}")
 

@@ -1,11 +1,7 @@
 import os
-import requests
 import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
-
-def apply_terrain_correction(temp, altitude):
-    return temp - (altitude / 100) * 0.65
 
 def get_email_list(filename="email_list.txt"):
     try:
@@ -15,66 +11,63 @@ def get_email_list(filename="email_list.txt"):
     except FileNotFoundError:
         return []
 
-def check_for_storms():
-    df = pd.read_csv("Meta_data34.csv") 
-    df.columns = df.columns.str.strip() 
-    
-    alerts = []
-    
+def send_alert():
     try:
+        df = pd.read_csv("Meta_data34.csv") 
+        df.columns = df.columns.str.strip() 
+        
+        col_name = 'Station_Name' if 'Station_Name' in df.columns else 'Station'
         col_lat = 'Lat.' if 'Lat.' in df.columns else 'Lat'
         col_lon = 'Long.' if 'Long.' in df.columns else 'Long'
-        col_alt = 'Altitude' if 'Altitude' in df.columns else 'alt'
-        col_name = 'Station_Name' if 'Station_Name' in df.columns else 'Station'
         
-        # نأخذ أول منطقة في ملفك لتجربة الإرسال الفوري عليها
-        row = df.iloc[0]
-        lat, lon = row[col_lat], row[col_lon]
-        alt = row[col_alt]
-        name = row[col_name]
+        # تجميع قائمة بجميع المناطق الموجودة في الملف مع إحداثياتها
+        locations_list = []
+        for _, row in df.iterrows():
+            name = row.get(col_name, 'غير محدد')
+            lat = row.get(col_lat, 'غير محدد')
+            lon = row.get(col_lon, 'غير محدد')
+            locations_list.append(f"📍 {name}  (خط الطول: {lon} | خط العرض: {lat})")
         
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,cape&timezone=auto"
-        response = requests.get(url).json()
-        raw_temp = response['hourly']['temperature_2m'][0]
-        corrected_temp = apply_terrain_correction(raw_temp, alt)
+        # تحويل القائمة إلى نص متسلسل
+        locations_text = "\n".join(locations_list)
         
-        # صيغة التحذير المطلوبة من التبويب الأول مباشرة
-        probability = 100
-        en_alert = f"🚨 RED ALERT: Severe Convective Storm Risk ({probability}%) detected over {name}!"
-        ar_alert = f"🚨 إنذار أحمر: خطر عواصف ركامية شديدة بنسبة ({probability}%) مرصودة فوق منطقة {name}!"
-        weather_info = f"📍 المنطقة المعرضة للحدث: {name} | درجة الحرارة المصححة: {corrected_temp:.1f}°C"
-        
-        full_alert = f"{en_alert}\n{ar_alert}\n{weather_info}\n{'-'*50}"
-        alerts.append(full_alert)
-                
     except Exception as e:
-        print(f"❌ حدث خطأ أثناء فحص البيانات: {e}")
+        print(f"❌ حدث خطأ في قراءة ملف البيانات: {e}")
+        locations_text = "📍 الأماكن المحددة في النظام"
+
+    # نسبة التوقع
+    probability = 100
+    
+    # صياغة التحذير باللغتين ليدعم منطقة أو عدة مناطق
+    en_alert = f"🚨 RED ALERT: Severe Convective Storm Risk ({probability}%) detected over the following areas:"
+    ar_alert = f"🚨 إنذار أحمر: خطر عواصف ركامية شديدة بنسبة ({probability}%) مرصودة فوق المناطق التالية:"
+    
+    # دمج الرسالة بالكامل
+    full_alert = f"{en_alert}\n\n{ar_alert}\n\n{locations_text}\n\n{'-'*50}"
+
+    # جلب الإيميلات
+    recipients = get_email_list("email_list.txt")
+    if not recipients:
+        print("❌ لم يتم الإرسال: تأكد من وجود إيميلات داخل ملف email_list.txt")
         return
 
-    if alerts:
-        recipients = get_email_list("email_list.txt")
-        if recipients:
-            final_message = "تحذير من نظام JM72 للأرصاد الجوية:\n\n" + "\n\n".join(alerts)
-            send_email("🚨 JM72 RED ALERT - إنذار جوي عالي الأهمية", final_message, recipients)
-            print(f"✅ تم تشغيل أمر الإرسال بنجاح!")
-        else:
-            print("❌ لم يتم الإرسال: تأكد من وجود إيميلات داخل ملف email_list.txt")
-
-def send_email(subject, body, recipients):
-    # ⚠️ ضع هنا إيميلك الحقيقي والفعلي الذي استخرجت منه الـ App Password
-    sender = "اjumah72ا@gmail.com" 
-    
+    # ⚠️ استبدل هذا السطر بإيميلك الحقيقي
+    sender = "اكتب_إيميلك_الحقيقي_هنا@gmail.com" 
     password = os.environ.get('APP_PASSWORD')
     
-    msg = MIMEText(body)
-    msg['Subject'] = subject
+    msg = MIMEText(full_alert)
+    msg['Subject'] = "🚨 JM72 RED ALERT - إنذار جوي عالي الأهمية"
     msg['From'] = sender
     msg['To'] = ", ".join(recipients)
     
-    # تركنا الاتصال مباشر بدون try/except ليظهر لك أي خطأ بوضوح في السجلات
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-        server.login(sender, password)
-        server.sendmail(sender, recipients, msg.as_string())
+    # الإرسال
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender, password)
+            server.sendmail(sender, recipients, msg.as_string())
+        print(f"✅ تم إرسال الإنذار بنجاح لـ {len(recipients)} مستلم، متضمناً قائمة الأماكن!")
+    except Exception as e:
+        print(f"❌ خطأ في الإرسال: {e}")
 
 if __name__ == "__main__":
-    check_for_storms()
+    send_alert()

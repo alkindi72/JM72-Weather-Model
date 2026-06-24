@@ -136,13 +136,14 @@ with st.spinner("🤖 Dynamically compiling live metrics across 34 geographical 
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 # ==========================================
-# 3. ALMANAC DATA LOADER (UPDATED FOR EXCEL)
+# 3. ALMANAC DATA LOADER (CSV SUPPORT)
 # ==========================================
 @st.cache_data
 def load_national_almanac():
-    file_name = "climate_yearly_almanac_till_dec_20252.xlsx"
+    file_name = "climate_yearly_almanac_till_dec_20252.csv"
     try:
-        df = pd.read_excel(file_name)
+        # We try UTF-8 with signature first to handle Arabic text correctly
+        df = pd.read_csv(file_name, encoding='utf-8-sig')
         df.columns = df.iloc[0]
         df = df[1:].reset_index(drop=True)
         cols_num = ['month_day', 'highest_temperature_value', 'lowest_temperature_value', 'highest_rainfall_value', 'maximum_wind_value']
@@ -151,7 +152,18 @@ def load_national_almanac():
                 df[col] = pd.to_numeric(df[col], errors='coerce')
         return df, None
     except Exception as e:
-        return pd.DataFrame(), str(e)
+        try:
+            # Fallback for standard encoding
+            df = pd.read_csv(file_name)
+            df.columns = df.iloc[0]
+            df = df[1:].reset_index(drop=True)
+            cols_num = ['month_day', 'highest_temperature_value', 'lowest_temperature_value', 'highest_rainfall_value', 'maximum_wind_value']
+            for col in cols_num:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+            return df, None
+        except Exception as ex:
+            return pd.DataFrame(), str(ex)
 
 almanac_df, err_msg = load_national_almanac()
 
@@ -403,176 +415,6 @@ with tab5:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📚 UAE National Climate Almanac (2003 - 2025)</h4>', unsafe_allow_html=True)
     
     if almanac_df.empty:
-        st.error(f"⚠️ Error loading database. Please ensure 'requirements.txt' is configured correctly and the app has been Rebooted. (Detail: {err_msg})")
+        st.error(f"⚠️ Error loading database. Please ensure the file is uploaded correctly. (Detail: {err_msg})")
     else:
-        target_date = st.date_input("📅 Select a Calendar Day to view Historical National Extremes", value=datetime.today())
-        
-        target_month_name = target_date.strftime('%B')
-        target_day = target_date.day
-        
-        day_data = almanac_df[(almanac_df['month'] == target_month_name) & (almanac_df['month_day'] == target_day)]
-        
-        if not day_data.empty:
-            record = day_data.iloc[0]
-            st.markdown(f"<p style='font-size:18px; color:#082F49;'><strong>Historical Extremes recorded on {target_month_name} {target_day} across the UAE:</strong></p>", unsafe_allow_html=True)
-            
-            def format_year(y):
-                try:
-                    return str(int(y))
-                except:
-                    return "-"
-
-            st.markdown(f"""
-            <table class="custom-table">
-                <tr style="background-color:#E0F2FE;">
-                    <th>Meteorological Metric</th>
-                    <th>All-Time Record</th>
-                    <th>Station / Location</th>
-                    <th>Recorded Year</th>
-                </tr>
-                <tr>
-                    <td>🔥 Highest Temperature</td>
-                    <td style="color:#DC2626; font-weight:bold;">{record['highest_temperature_value']} °C</td>
-                    <td>{record['highest_temperature_location_en']}</td>
-                    <td>{format_year(record['highest_temperature_year'])}</td>
-                </tr>
-                <tr>
-                    <td>❄️ Lowest Temperature</td>
-                    <td style="color:#0284C7; font-weight:bold;">{record['lowest_temperature_value']} °C</td>
-                    <td>{record['lowest_temperature_location_en']}</td>
-                    <td>{format_year(record['lowest_temperature_year'])}</td>
-                </tr>
-                <tr>
-                    <td>🌪️ Strongest Wind Gust</td>
-                    <td style="color:#D97706; font-weight:bold;">{record['maximum_wind_value']} km/h</td>
-                    <td>{record['maximum_wind_location_en']}</td>
-                    <td>{format_year(record['maximum_wind_year'])}</td>
-                </tr>
-                <tr>
-                    <td>🌧️ Highest Rainfall</td>
-                    <td style="color:#10B981; font-weight:bold;">{record['highest_rainfall_value']} mm</td>
-                    <td>{record['highest_rainfall_location_en']}</td>
-                    <td>{format_year(record['highest_rainfall_year'])}</td>
-                </tr>
-            </table>
-            """, unsafe_allow_html=True)
-        else:
-            st.info(f"No extreme records found in the database for {target_month_name} {target_day}.")
-
-with tab6:
-    if not st.session_state["admin_logged_in"]:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        col_lock1, col_lock2, col_lock3 = st.columns([1, 2, 1])
-        with col_lock2:
-            st.markdown("<div style='text-align: center;'><h2 style='color:#082F49;'>🔒 Secure System Access</h2><p style='color:#475569;'>Authorized personnel only. Please enter the Administrator PIN to unlock the Alert Control Room.</p></div>", unsafe_allow_html=True)
-            with st.form("login_form"):
-                admin_pin = st.text_input("Administrator PIN", type="password", placeholder="Enter PIN to unlock")
-                submit_login = st.form_submit_button("Authenticate")
-                
-                if submit_login:
-                    if admin_pin == "JM72":
-                        st.session_state["admin_logged_in"] = True
-                        st.rerun() 
-                    else:
-                        st.error("❌ Invalid PIN. Access Denied.")
-    else:
-        st.markdown("### 🚨 JM72 Alert Control Room")
-        st.markdown("Dispatch urgent early warnings directly to mobile phones and/or emails.")
-        
-        with st.form("alert_form"):
-            col_g1, col_g2 = st.columns(2)
-            with col_g1:
-                st.markdown("#### 📱 Telegram Gateway")
-                bot_token = st.text_input("Telegram Bot Token", type="password", placeholder="123456:ABC-DEF...")
-                chat_id = st.text_input("Target Chat IDs", placeholder="ID1, ID2, ID3... (Comma separated)")
-            
-            with col_g2:
-                st.markdown("#### 📧 Email Gateway")
-                sender_email = st.text_input("System Email (Sender)", placeholder="jm72.weather@gmail.com")
-                app_password = st.text_input("App Password", type="password", help="16-letter App Password")
-                target_email = st.text_input("Target Emails", placeholder="user1@gmail.com, user2@yahoo.com")
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            scan_button = st.form_submit_button("🔍 Run Full System Scan & Dispatch Alerts")
-
-        if st.button("🚪 Secure Logout & Lock System"):
-            st.session_state["admin_logged_in"] = False
-            st.rerun()
-
-        if scan_button:
-            tel_ready = bool(bot_token and chat_id)
-            eml_ready = bool(sender_email and app_password and target_email)
-            
-            if not tel_ready and not eml_ready:
-                st.error("❌ Please configure at least one gateway (Telegram or Email) completely.")
-            else:
-                current_time_str = timeline_str[0]
-                df_now = df_all[df_all["Time"] == current_time_str]
-                
-                critical_alerts = []
-                max_storm_now = df_now["Storm Probability"].max()
-                if max_storm_now >= 75:
-                    s_station = df_now.loc[df_now["Storm Probability"].idxmax(), "Station"]
-                    critical_alerts.append(f"🔴 *RED ALERT:* Severe Convective Storm Risk ({max_storm_now}%) over {s_station}.")
-                    
-                max_heat_now = df_now["Temperature"].max()
-                if max_heat_now >= 48.0:
-                    h_station = df_now.loc[df_now["Temperature"].idxmax(), "Station"]
-                    critical_alerts.append(f"🔥 *HEAT DOME ALERT:* Extreme temperature ({max_heat_now}°C) detected at {h_station}.")
-                    
-                max_dust_now = df_now["Dust Probability"].max()
-                if max_dust_now >= 60:
-                    d_station = df_now.loc[df_now["Dust Probability"].idxmax(), "Station"]
-                    critical_alerts.append(f"🌪️ *DUST STORM ALERT:* High sandstorm probability ({max_dust_now}%) over {d_station}.")
-
-                if not critical_alerts:
-                    st.success("🟢 System Scan Complete: No immediate critical threats detected. No messages sent.")
-                else:
-                    with st.spinner("Dispatching urgent warnings..."):
-                        
-                        platform_url = "https://jm72-weather-model.streamlit.app/" 
-                        
-                        if tel_ready:
-                            try:
-                                message_text = "🚨 *JM72 AUTOMATED WEATHER INTELLIGENCE*\n==================================\n\n"
-                                message_text += "\n\n".join(critical_alerts)
-                                message_text += f"\n\n🌐 _Please check the [JM72 Dashboard]({platform_url}) for live telemetry._"
-                                
-                                chat_ids_list = [cid.strip() for cid in chat_id.split(",") if cid.strip()]
-                                success_count_tel = 0
-                                url_api = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-                                
-                                for cid in chat_ids_list:
-                                    payload = {"chat_id": cid, "text": message_text, "parse_mode": "Markdown", "disable_web_page_preview": False}
-                                    response = requests.post(url_api, json=payload)
-                                    if response.status_code == 200: success_count_tel += 1
-                                    
-                                st.success(f"📱 Telegram: Dispatched to {success_count_tel} phone(s).")
-                            except Exception as e:
-                                st.error(f"❌ Telegram Error: {e}")
-                                
-                        if eml_ready:
-                            try:
-                                target_emails_list = [email.strip() for email in target_email.split(",") if email.strip()]
-                                
-                                msg = MIMEMultipart()
-                                msg['From'] = sender_email
-                                msg['To'] = ", ".join(target_emails_list)
-                                msg['Subject'] = "🚨 JM72 WEATHER ALERT NOTIFICATION"
-                                
-                                body_text = "JM72 AUTOMATED INTELLIGENCE REPORT\n====================================\n\n"
-                                for alert in critical_alerts:
-                                    body_text += alert.replace("*", "") + "\n\n" 
-                                body_text += f"Please check the JM72 Dashboard for live radar and telemetry:\n{platform_url}"
-                                
-                                msg.attach(MIMEText(body_text, 'plain'))
-                                
-                                server = smtplib.SMTP('smtp.gmail.com', 587)
-                                server.starttls()
-                                server.login(sender_email, app_password)
-                                server.sendmail(sender_email, target_emails_list, msg.as_string())
-                                server.quit()
-                                
-                                st.success(f"📧 Email: Dispatched to {len(target_emails_list)} recipient(s).")
-                            except Exception as e:
-                                st.error(f"❌ Email Error: Check App Password. Error: {e}")
+        target_date = st.date_

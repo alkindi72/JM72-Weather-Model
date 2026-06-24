@@ -136,31 +136,32 @@ with st.spinner("🤖 Dynamically compiling live metrics across 34 geographical 
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 # ==========================================
-# 3. ALMANAC DATA LOADER (CSV SUPPORT)
+# 3. ALMANAC DATA LOADER (BULLETPROOF CSV)
 # ==========================================
 @st.cache_data
 def load_national_almanac():
     file_name = "climate_yearly_almanac_till_dec_20252.csv"
     try:
-        # We try UTF-8 with signature first to handle Arabic text correctly
         df = pd.read_csv(file_name, encoding='utf-8-sig')
-        df.columns = df.iloc[0]
-        df = df[1:].reset_index(drop=True)
-        cols_num = ['month_day', 'highest_temperature_value', 'lowest_temperature_value', 'highest_rainfall_value', 'maximum_wind_value']
-        for col in cols_num:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        # البحث الديناميكي عن صف العناوين لتخطي الفراغات
+        if 'month_day' not in df.columns:
+            for i in range(min(5, len(df))):
+                if 'month_day' in df.iloc[i].astype(str).values:
+                    df.columns = df.iloc[i]
+                    df = df[i+1:].reset_index(drop=True)
+                    break
+                    
         return df, None
     except Exception as e:
         try:
-            # Fallback for standard encoding
             df = pd.read_csv(file_name)
-            df.columns = df.iloc[0]
-            df = df[1:].reset_index(drop=True)
-            cols_num = ['month_day', 'highest_temperature_value', 'lowest_temperature_value', 'highest_rainfall_value', 'maximum_wind_value']
-            for col in cols_num:
-                if col in df.columns:
-                    df[col] = pd.to_numeric(df[col], errors='coerce')
+            if 'month_day' not in df.columns:
+                for i in range(min(5, len(df))):
+                    if 'month_day' in df.iloc[i].astype(str).values:
+                        df.columns = df.iloc[i]
+                        df = df[i+1:].reset_index(drop=True)
+                        break
             return df, None
         except Exception as ex:
             return pd.DataFrame(), str(ex)
@@ -190,231 +191,4 @@ if fetch_success and type(live_data) is list:
                     rh_700 = station_data["relative_humidity_700hPa"][closest_idx] or 0
                     wind_dir = station_data["winddirection_10m"][closest_idx] or 0
                     wind_spd = station_data.get("windspeed_10m", [0]*len(api_times))[closest_idx] or 0
-                    wind_gst = station_data.get("windgusts_10m", [0]*len(api_times))[closest_idx] or 0
-                    
-                    wind_gst = max(wind_gst, wind_spd * 1.35)
-                    
-                    prob = (cape_val / 2000) * 100
-                    if rh_700 < 45: prob *= 0.05
-                    elif rh_700 < 55: prob *= 0.3
-                    if coords["type"] == "Mountains":
-                        if 90 <= wind_dir <= 180: prob *= 1.4
-                        if temp_c > 38: prob *= 1.2
-                    else:
-                        prob *= 0.15
-                    storm_prob = np.clip(prob, 0, 100)
-                    
-                    live_rain = round(np.random.uniform(5.0, 35.0), 1) if storm_prob > 65 else 0.0
-                    
-                    dust_p = 0
-                    if coords["type"] == "Desert":
-                        dust_p = (wind_spd / 35) * 100
-                    else:
-                        dust_p = (wind_spd / 45) * 100
-                    if wind_gst > 45: dust_p += 25
-                    dust_p = np.clip(dust_p, 0, 100)
-                    
-                    vis_km = np.clip(10.0 - (dust_p / 100) * 9.5, 0.5, 10.0)
-
-                except Exception:
-                    temp_c, storm_prob, live_rain, wind_spd, wind_dir, wind_gst, dust_p, vis_km = 36.0, 0.0, 0.0, 10.0, 180, 15.0, 0.0, 10.0
-
-                weather_data.append({
-                    "Time": dt_str, "DateOnly": dt.strftime('%d %b'), "Station": name,
-                    "Latitude": coords["lat"], "Longitude": coords["lon"],
-                    "Storm Probability": round(storm_prob), "Temperature": round(temp_c, 1),
-                    "Wind Speed": round(wind_spd, 1), "Wind Direction": round(wind_dir), "Gusts": round(wind_gst, 1),
-                    "Dust Probability": round(dust_p), "Visibility": round(vis_km, 1), "Rainfall": live_rain
-                })
-        except Exception:
-            pass
-
-if not weather_data:
-    np.random.seed(42)
-    for dt_str, dt in zip(timeline_str, timeline):
-        hour = dt.hour
-        is_afternoon = 12 <= hour <= 18
-        for name, coords in stations_matrix.items():
-            base_storm = 75 if (is_afternoon and coords["type"] == "Mountains") else 0
-            temp = 42 + np.random.uniform(-3, 4)
-            wind_spd = np.random.uniform(10, 45)
-            s_prob = round(np.clip(base_storm + np.random.uniform(-5, 10), 0, 100)) if base_storm > 0 else 0
-            weather_data.append({
-                "Time": dt_str, "DateOnly": dt.strftime('%d %b'), "Station": name,
-                "Latitude": coords["lat"], "Longitude": coords["lon"],
-                "Storm Probability": s_prob, "Temperature": round(temp, 1), "Wind Speed": round(wind_spd, 1),
-                "Wind Direction": round(np.random.uniform(0, 360)),
-                "Gusts": round(wind_spd * 1.5, 1), "Dust Probability": round((wind_spd/50)*100),
-                "Visibility": round(10.0 - (wind_spd/50)*9.0, 1),
-                "Rainfall": round(np.random.uniform(10, 40), 1) if s_prob > 70 else 0.0
-            })
-
-df_all = pd.DataFrame(weather_data)
-unique_dates = df_all["DateOnly"].unique()[:5]
-
-# Esri World Topographical Tile Server Configuration
-esri_topo_layer = [{
-    "below": 'traces',
-    "sourcetype": "raster",
-    "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]
-}]
-
-# ==========================================
-# 5. GLOBAL TIME CONTROLS
-# ==========================================
-st.markdown('<h4 style="color:#082F49; font-weight:900;">⏱️ Interactive Operational Forecast Timeline (UAE Local Time):</h4>', unsafe_allow_html=True)
-selected_time = st.select_slider("Select Time Check", options=timeline_str, label_visibility="collapsed")
-df_time = df_all[df_all["Time"] == selected_time].copy()
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ==========================================
-# 6. SIX-TAB PROFESSIONAL INTERFACE
-# ==========================================
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "🌩️ Orographic Thunderstorms", 
-    "🔥 Heat Dome Tracker", 
-    "🌪️ Wind & Sandstorms", 
-    "📋 Model Matrix", 
-    "📚 National Almanac",
-    "⚙️ Control Room"
-])
-
-with tab1:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Convective Forecast Briefing</h4>', unsafe_allow_html=True)
-    cols_t1 = st.columns(len(unique_dates))
-    for i, date in enumerate(unique_dates):
-        daily_max_storm = df_all[df_all["DateOnly"] == date]["Storm Probability"].max()
-        with cols_t1[i]:
-            if daily_max_storm >= 75: st.error(f"🔴 **{date}**\n\n**Severe Risk**\nHigh convective potential\n\n### {daily_max_storm}%")
-            elif daily_max_storm >= 40: st.warning(f"🟡 **{date}**\n\n**Localized**\nPossible convection\n\n### {daily_max_storm}%")
-            else: st.success(f"🟢 **{date}**\n\n**Stable**\nClear conditions\n\n### {daily_max_storm}%")
-    st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
-
-    max_storm = df_time["Storm Probability"].max()
-    if max_storm >= 75:
-        target = df_time.loc[df_time["Storm Probability"].idxmax(), "Station"]
-        st.markdown(f'<div class="alert-banner"><strong>🚨 RED ALERT:</strong> Severe Convective Storm Risk ({max_storm}%) detected over {target}!</div>', unsafe_allow_html=True)
-    
-    df_plot_storm = df_time[df_time["Storm Probability"] > 0].copy()
-    if df_plot_storm.empty:
-        fig1 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
-        fig1.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig1, use_container_width=True, key="storm_map_empty")
-    else:
-        df_plot_storm["Marker Size"] = df_plot_storm["Storm Probability"] + 10
-        fig1 = px.scatter_mapbox(df_plot_storm, lat="Latitude", lon="Longitude", color="Storm Probability", size="Marker Size",
-                                mapbox_style="white-bg", zoom=6, color_continuous_scale=["#10B981", "#F59E0B", "#EF4444", "#7F1D1D"], range_color=[0, 100])
-        fig1.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig1, use_container_width=True, key="storm_map_data")
-        
-    st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery & Streams</h3>', unsafe_allow_html=True)
-    components.html("""
-        <div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #1E293B;">
-            <iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe>
-            <div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;">
-                <span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ JM72 SATELLITE LIVE</span>
-            </div>
-        </div>
-    """, height=520)
-
-with tab2:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Forecast</h4>', unsafe_allow_html=True)
-    cols_t2 = st.columns(len(unique_dates))
-    for i, date in enumerate(unique_dates):
-        d_max_t = df_all[df_all["DateOnly"] == date]["Temperature"].max()
-        d_min_t = df_all[df_all["DateOnly"] == date]["Temperature"].min()
-        with cols_t2[i]:
-            if d_max_t >= 48.0: st.error(f"🔴 **{date}**\n\n**Extreme Heat**\nCritical thresholds\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
-            elif d_max_t >= 40.0: st.warning(f"🟡 **{date}**\n\n**High Heat**\nElevated profiles\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
-            else: st.success(f"🟢 **{date}**\n\n**Moderate**\nNormal baseline\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
-    st.markdown("<hr style='margin: 15px 0;'>", unsafe_allow_html=True)
-
-    max_temp = df_time["Temperature"].max()
-    if max_temp >= 50.0:
-        target_heat = df_time.loc[df_time["Temperature"].idxmax(), "Station"]
-        st.markdown(f'<div class="alert-banner"><strong>🚨 HEAT ALERT:</strong> Extreme Thermal Heat Dome ({max_temp}°C) over {target_heat}!</div>', unsafe_allow_html=True)
-
-    df_plot_heat = df_time[df_time["Temperature"] >= 50].copy()
-    if df_plot_heat.empty:
-        fig2 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
-        fig2.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")
-    else:
-        df_plot_heat["Node Size"] = np.clip((df_plot_heat["Temperature"] - 30) * 2, 5, 45)
-        fig2 = px.scatter_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", color="Temperature", size="Node Size",
-                                mapbox_style="white-bg", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
-        fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
-
-with tab3:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">🌪️ Active Wind & Sandstorm Tracker</h4>', unsafe_allow_html=True)
-    max_dust = df_time["Dust Probability"].max()
-    if max_dust >= 60:
-        target_dust_row = df_time.loc[df_time["Dust Probability"].idxmax()]
-        target_dust = target_dust_row["Station"]
-        target_wind_spd = target_dust_row["Wind Speed"]
-        target_wind_gst = target_dust_row["Gusts"]
-        target_wind_dir = target_dust_row["Wind Direction"]
-        target_vis = target_dust_row["Visibility"]
-        
-        min_vis = df_time["Visibility"].min()
-        max_vis = df_time["Visibility"].max()
-        
-        st.markdown(f'''
-        <div class="alert-banner" style="background-color: #FFFBEB; color: #92400E !important; border-left-color: #D97706;">
-            <strong>⚠️ DUST ALERT:</strong> High probability of sandstorms ({max_dust}%) detected over {target_dust}!<br>
-            • Expected Wind Speed: {target_wind_spd} km/h (Gusts up to {target_wind_gst} km/h)<br>
-            • Wind Direction: {target_wind_dir}°<br>
-            • Current Visibility: {target_vis} km (Regional Range: {min_vis} km to {max_vis} km)
-        </div>
-        ''', unsafe_allow_html=True)
-
-    df_time["Dust Node"] = df_time["Dust Probability"] + 10
-    fig3 = px.scatter_mapbox(df_time, lat="Latitude", lon="Longitude", color="Dust Probability", size="Dust Node",
-                            hover_data={"Station": True, "Wind Speed": True, "Wind Direction": True, "Visibility": True, "Latitude": False, "Longitude": False, "Dust Node": False},
-                            mapbox_style="white-bg", zoom=6, 
-                            color_continuous_scale=["#FEF3C7", "#FCD34D", "#D97706", "#78350F"], range_color=[0, 100])
-    fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
-    st.plotly_chart(fig3, use_container_width=True, key="dust_map_data")
-
-with tab4:
-    st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 34-Station Matrix at {selected_time}</h3>", unsafe_allow_html=True)
-    display_df = df_time.sort_values(by="Temperature", ascending=False)
-    
-    html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Temp (°C)</th><th>Wind Speed (km/h)</th><th>Wind Dir (°)</th><th>Visibility (km)</th><th>Dust (%)</th><th>Rainfall (mm)</th><th>Storm (%)</th></tr>"
-    for _, row in display_df.iterrows():
-        t_val = row['Temperature']
-        w_val = row['Wind Speed']
-        wd_val = row['Wind Direction']
-        vis_val = row['Visibility']
-        d_val = row['Dust Probability']
-        s_val = row['Storm Probability']
-        r_val = row['Rainfall']
-        
-        s_color = "#EF4444" if s_val >= 75 else "#1E293B"
-        d_color = "#D97706" if d_val >= 50 else "#1E293B"
-        vis_color = "#991B1B" if vis_val <= 2.0 else "#1E293B"
-        r_color = "#0284C7" if r_val > 0 else "#1E293B"
-        
-        html_table += f"<tr><td>{row['Station']}</td><td>{t_val}°C</td><td>{w_val} km/h</td><td>{wd_val}°</td><td style='color:{vis_color};'>{vis_val} km</td><td style='color:{d_color};'>{d_val}%</td><td style='color:{r_color};'>{r_val} mm</td><td style='color:{s_color};'>{s_val}%</td></tr>"
-    html_table += "</table>"
-    st.markdown(html_table, unsafe_allow_html=True)
-
-    st.markdown("<hr><h3 style='color:#082F49; font-weight:900;'>🔬 Statistical Verification & Model Calibration Matrix</h3>", unsafe_allow_html=True)
-    st.markdown("""
-    <table class="custom-table">
-        <tr style="background-color:#E0F2FE;"><th>Model Node / Processing Engine</th><th>Probability of Detection (POD)</th><th>False Alarm Rate (FAR)</th></tr>
-        <tr style="border: 2px solid #D4AF37; background-color: #FFFBEB;"><td style="color:#082F49; font-weight:bold;">🏆 JM72 Expert AI Weather Model</td><td style="color:#082F49; font-weight:bold;">0.96</td><td style="color:#10B981; font-weight:bold;">0.04</td></tr>
-        <tr><td>German ICON Model (7km)</td><td>0.85</td><td>0.11</td></tr>
-        <tr><td>European ECMWF Consensus (9km)</td><td>0.82</td><td>0.14</td></tr>
-        <tr style="background-color:#F8FAFC;"><td>American GFS Model (22km)</td><td>0.78</td><td>0.18</td></tr>
-    </table>
-    """, unsafe_allow_html=True)
-
-with tab5:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📚 UAE National Climate Almanac (2003 - 2025)</h4>', unsafe_allow_html=True)
-    
-    if almanac_df.empty:
-        st.error(f"⚠️ Error loading database. Please ensure the file is uploaded correctly. (Detail: {err_msg})")
-    else:
-        target_date = st.date_input("📅 Select a Calendar Day to view Historical National Extremes", value=datetime.today())
+                    wind_gst = station_data.get("windgusts_10m", [0]*

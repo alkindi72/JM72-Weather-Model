@@ -1,48 +1,48 @@
 import os
 import requests
+import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
 
-# إضافة الارتفاع (Elevation) لكل محطة بالأمتار
-stations = {
-    "Jabal Jais": {"lat": 25.95, "lon": 56.16, "alt": 1800},
-    "Hatta": {"lat": 24.81, "lon": 56.13, "alt": 400},
-    "Al Dhaid": {"lat": 25.23, "lon": 55.81, "alt": 50},
-    "Al Ain": {"lat": 24.26, "lon": 55.60, "alt": 300}
-}
-
 def apply_terrain_correction(temp, altitude):
-    # معدل التناقص الأديباتي (Lapse Rate): تنخفض الحرارة تقريباً 0.65 درجة لكل 100 متر
-    correction = (altitude / 100) * 0.65
-    return temp - correction
+    # التصحيح التضاريسي: -0.65 درجة لكل 100 متر
+    return temp - (altitude / 100) * 0.65
 
 def check_for_storms():
-    latitudes = ",".join([str(s['lat']) for s in stations.values()])
-    longitudes = ",".join([str(s['lon']) for s in stations.values()])
-    url = f"https://api.open-meteo.com/v1/forecast?latitude={latitudes}&longitude={longitudes}&hourly=temperature_2m,cape&timezone=auto"
+    # 1. قراءة بيانات المحطات من ملفك الخاص
+    # تأكد أن الملف مرفوع في المجلد الرئيسي على GitHub
+    df = pd.read_excel("Meta_data34.xlsx") 
     
-    response = requests.get(url).json()
+    # افتراض لأسماء الأعمدة (يرجى تعديلها إذا كانت مختلفة في ملفك)
+    # نستخدم: 'Station_Name', 'Latitude', 'Longitude', 'Altitude'
+    
     alerts = []
-
-    for i, (name, data) in enumerate(stations.items()):
-        raw_temp = response[i]['hourly']['temperature_2m'][0]
-        cape = response[i]['hourly']['cape'][0]
+    
+    for _, row in df.iterrows():
+        lat, lon = row['Latitude'], row['Longitude']
+        alt = row['Altitude']
+        name = row['Station_Name']
         
-        # تطبيق التصحيح التضاريسي
-        corrected_temp = apply_terrain_correction(raw_temp, data['alt'])
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,cape&timezone=auto"
         
-        # منطق التحذير: دمج CAPE مع انخفاض الحرارة التضاريسي
-        if cape > 1000:
-            intensity = "عالية جداً" if cape > 2000 else "متوسطة"
-            alerts.append(f"📍 المحطة: {name}\n   الشدة: {intensity} (CAPE: {cape})\n   الحرارة المصححة: {corrected_temp:.1f}°C\n")
+        try:
+            response = requests.get(url).json()
+            cape = response['hourly']['cape'][0]
+            raw_temp = response['hourly']['temperature_2m'][0]
+            corrected_temp = apply_terrain_correction(raw_temp, alt)
+            
+            # معايير التحذير: CAPE > 1000
+            if cape > 1000:
+                alerts.append(f"📍 {name}: طاقة العاصفة={cape} J/kg، الحرارة المصححة={corrected_temp:.1f}°C")
+        except Exception as e:
+            continue
 
     if alerts:
-        message = "🚨 تحذير JM72: ظروف جوية غير مستقرة مرصودة:\n\n" + "\n".join(alerts)
-        send_email("🚨 تحذير عواصف رعدية", message)
+        send_email("🚨 تحذير JM72: رصد ظروف غير مستقرة", "\n".join(alerts))
 
 def send_email(subject, body):
-    sender = "jm72.weather@gmail.com" 
-    recipients = ["target@example.com"] 
+    sender = "jm72.weather@gmail.com"
+    recipients = ["target@example.com"] # ضع إيميلاتك هنا
     password = os.environ.get('APP_PASSWORD')
     
     msg = MIMEText(body)

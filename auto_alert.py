@@ -2,12 +2,13 @@ import os
 import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
-from email.header import Header  # مكتبة خاصة لترميز العناوين العربية
+from email.header import Header
 
 def get_email_list(filename="email_list.txt"):
     try:
-        with open(filename, "r", encoding="utf-8") as file:  # أضفنا ترميز لقراءة الملف النصي بأمان
-            emails = [line.strip() for line in file if line.strip()]
+        # قراءة الملف بترميز utf-8 وتنظيف الأسطر للتأكد من جودة الإيميلات
+        with open(filename, "r", encoding="utf-8") as file:
+            emails = [line.strip() for line in file if line.strip() and "@" in line]
         return emails
     except FileNotFoundError:
         return []
@@ -46,14 +47,12 @@ def send_alert():
         print("❌ لم يتم الإرسال: تأكد من وجود إيميلات داخل ملف email_list.txt")
         return
 
-    # ⚠️ استبدل هذا السطر بإيميلك الحقيقي
+    # ⚠️ تنبيه هام جداً: ضع إيميلك الحقيقي باللغة الإنجليزية فقط هنا بدون أي حروف عربية
     sender = "اكتب_إيميلك_الحقيقي_هنا@gmail.com" 
     password = os.environ.get('APP_PASSWORD')
     
-    # تصحيح الترميز هنا: أضفنا 'plain' و 'utf-8' لدعم اللغة العربية في نص الرسالة
+    # إعداد الرسالة بترميز utf-8
     msg = MIMEText(full_alert, 'plain', 'utf-8')
-    
-    # تصحيح ترميز العنوان ليقبل الحروف العربية والرموز التعبيرية بدون مشاكل
     msg['Subject'] = Header("🚨 JM72 RED ALERT - إنذار جوي عالي الأهمية", 'utf-8')
     msg['From'] = sender
     msg['To'] = ", ".join(recipients)
@@ -61,8 +60,9 @@ def send_alert():
     try:
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(sender, password)
-            server.sendmail(sender, recipients, msg.as_string())
-        print(f"✅ تم إرسال الإنذار بنجاح لـ {len(recipients)} مستلم دون أخطاء ترميز!")
+            # تم استبدال sendmail بـ send_message لحل مشكلة الـ ASCII نهائياً
+            server.send_message(msg)
+        print(f"✅ تم إرسال الإنذار بنجاح لـ {len(recipients)} مستلم!")
     except Exception as e:
         print(f"❌ خطأ في الإرسال: {e}")
 

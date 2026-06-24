@@ -57,9 +57,27 @@ def send_alert_smart(status, area_name, is_severe=True):
             pass
 
 # ==========================================
-# 1. PLATFORM SETTINGS & CUSTOM WINDY CSS
+# 1. PLATFORM SETTINGS, FAVICON & CUSTOM CSS
 # ==========================================
-st.set_page_config(page_title="JM72 AI Weather Model", layout="wide")
+
+# Extract the JM72 geometric logo and save it temporarily for the Favicon and Top Logo
+icon_svg_code = """<svg viewBox="-10 10 160 80" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 10,70 L 40,25 L 70,55 L 100,15 L 130,70 Z" fill="#D4AF37" />
+    <path d="M -5,70 Q 35,55 70,70 T 145,70 L 145,85 L -5,85 Z" fill="#0284C7" />
+    <text x="70" y="55" font-family="'Arial Black', sans-serif" font-weight="900" font-size="24" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
+</svg>"""
+
+with open("jm72_icon.svg", "w", encoding="utf-8") as f:
+    f.write(icon_svg_code)
+
+st.set_page_config(
+    page_title="JM72 AI Weather Model", 
+    page_icon="jm72_icon.svg", 
+    layout="wide"
+)
+
+st.logo("jm72_icon.svg")
+
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 
 if "admin_logged_in" not in st.session_state:
@@ -162,12 +180,10 @@ def get_clustered_sectors(station_list):
         if not found: sectors.add(station)
     return list(sectors)
 
-# English Days Mapping for Windy-style Timeline
 days_en = {"Monday": "Mon", "Tuesday": "Tue", "Wednesday": "Wed", "Thursday": "Thu", "Friday": "Fri", "Saturday": "Sat", "Sunday": "Sun"}
 uae_time = datetime.utcnow() + timedelta(hours=4)
 base_date = uae_time.replace(minute=0, second=0, microsecond=0)
 timeline = [base_date + timedelta(hours=i*3) for i in range(8 * 5)]
-# Formatting: "Thu 25 - 14:00"
 timeline_str = [f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')} - {dt.strftime('%H:%M')}" for dt in timeline]
 unique_dates_display = []
 for dt in timeline:

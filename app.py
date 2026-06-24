@@ -479,9 +479,8 @@ with tab6:
         with col_lock2:
             st.markdown("<div style='text-align: center;'><h2 style='color:#082F49;'>🔒 Secure System Access</h2></div>", unsafe_allow_html=True)
             with st.form("login_form"):
-                admin_pin = st.text_input("Administrator PIN", type="password", placeholder="Enter PIN to unlock")
-                submit_login = st.form_submit_button("Authenticate")
-                if submit_login:
+                admin_pin = st.text_input("Administrator PIN", type="password")
+                if st.form_submit_button("Authenticate"):
                     if admin_pin == "JM72":
                         st.session_state["admin_logged_in"] = True
                         st.rerun()
@@ -504,19 +503,17 @@ with tab6:
         with st.form("alert_form"):
             col_g1, col_g2 = st.columns(2)
             with col_g1:
-                st.markdown("#### 📱 Telegram Gateway")
                 bot_token = st.text_input("Telegram Bot Token", type="password")
                 chat_id = st.text_input("Target Chat IDs")
-            
             with col_g2:
-                st.markdown("#### 📧 Email Gateway")
-                sender_email = st.text_input("System Email", placeholder="jm72.weather@gmail.com")
+                sender_email = st.text_input("System Email")
                 app_password = st.text_input("App Password", type="password")
                 
-                # جزء حفظ الإيميلات
                 saved_emails = get_saved_emails()
                 selected_emails = st.multiselect("Target Emails (Saved)", options=saved_emails, default=saved_emails)
                 new_email = st.text_input("Add New Email to List")
+                
+                # زر حفظ الإيميل الجديد (يجب أن يكون داخل الـ form)
                 if st.form_submit_button("Add & Save Email"):
                     if new_email and new_email not in saved_emails:
                         save_email_to_file(new_email)
@@ -529,9 +526,8 @@ with tab6:
             st.rerun()
 
         if scan_button:
-            # استخدام selected_emails في الإرسال
             if not selected_emails:
-                st.error("❌ Please select or add at least one recipient email.")
+                st.error("❌ No emails selected.")
             else:
-                # [هنا تضع منطق الإرسال الخاص بك باستخدام selected_emails]
+                # [منطق الإرسال الخاص بك هنا]
                 st.success(f"Dispatched to {len(selected_emails)} recipient(s).")

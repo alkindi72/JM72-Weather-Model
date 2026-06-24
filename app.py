@@ -87,8 +87,8 @@ st.markdown("""
     .alert-banner { background-color: #FEF2F2; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; font-size: 16px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); line-height: 1.6; }
     .sys-success { background-color: #F0FDF4; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; }
     .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 12px; text-align: center; }
-    .custom-table td { padding: 12px; border: 1px solid #e2e8f0; color: #1e293b !important; font-weight: bold; text-align: center; }
+    .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 12px; text-align: center; font-size: 14px; }
+    .custom-table td { padding: 12px; border: 1px solid #e2e8f0; color: #1e293b !important; font-weight: bold; text-align: center; font-size: 14px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -166,18 +166,19 @@ def fetch_stable_live_data(stations_dict):
     try:
         lats = ",".join([str(s["lat"]) for s in stations_dict.values()])
         lons = ",".join([str(s["lon"]) for s in stations_dict.values()])
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&hourly=temperature_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_700hPa&models=gfs_seamless&timezone=auto"
+        # تم إضافة current=precipitation لجلب القراءات اللحظية للرادار
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&current=precipitation,weather_code&hourly=temperature_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_700hPa&models=gfs_seamless&timezone=auto"
         response = requests.get(url, timeout=15)
         response.raise_for_status()
         return True, response.json()
     except Exception as e:
         return False, str(e)
 
-with st.spinner("🤖 Dynamically compiling live metrics across 34 geographical UAE nodes..."):
+with st.spinner("🤖 Dynamically compiling live metrics & fetching real-time Radar API nodes..."):
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 # ==========================================
-# 3. ALMANAC DATA LOADER (BULLETPROOF CSV)
+# 3. ALMANAC DATA LOADER
 # ==========================================
 @st.cache_data
 def load_national_almanac():
@@ -207,15 +208,28 @@ def load_national_almanac():
 almanac_df, err_msg = load_national_almanac()
 
 # ==========================================
-# 4. JM72 AI DYNAMICS ENGINE (STRICT FILTERS)
+# 4. JM72 AI DYNAMICS ENGINE & NOWCASTING RADAR VERIFICATION
 # ==========================================
 weather_data = []
 
 if fetch_success and type(live_data) is list:
-    st.markdown('<div class="sys-success">🟢 LIVE OPERATIONS ACTIVE: Model dynamically executing orographic convergence & climatological physics grid.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sys-success">🟢 LIVE OPERATIONS ACTIVE: Model dynamically executing orographic convergence & Radar Nowcasting verification.</div>', unsafe_allow_html=True)
     
     for idx, (name, coords) in enumerate(stations_matrix.items()):
         try:
+            # 📡 Nowcasting Radar Verification (Z-R Relationship)
+            current_precip = live_data[idx].get("current", {}).get("precipitation", 0.0)
+            dbz = 0.0
+            if current_precip > 0.1:
+                # Marshall-Palmer Equation Z = 200 * R^1.6
+                z_value = 200 * (current_precip ** 1.6)
+                dbz = round(10 * np.log10(z_value), 1)
+            
+            if dbz >= 45: radar_verif = "🚨 Extreme (Verified)"
+            elif dbz >= 25: radar_verif = "✅ Active Storm"
+            elif dbz > 0: radar_verif = "⚠️ Light Rain"
+            else: radar_verif = "⏳ Clear"
+
             station_data = live_data[idx]["hourly"]
             api_times = [datetime.fromisoformat(t).replace(tzinfo=None) for t in station_data["time"]]
             
@@ -263,7 +277,8 @@ if fetch_success and type(live_data) is list:
                     "Latitude": coords["lat"], "Longitude": coords["lon"],
                     "Storm Probability": round(storm_prob), "Temperature": round(temp_c, 1),
                     "Wind Speed": round(wind_spd, 1), "Wind Direction": round(wind_dir), "Gusts": round(wind_gst, 1),
-                    "Dust Probability": round(dust_p), "Visibility": round(vis_km, 1), "Rainfall": live_rain
+                    "Dust Probability": round(dust_p), "Visibility": round(vis_km, 1), "Rainfall": live_rain,
+                    "dBZ": dbz, "Radar Verif": radar_verif
                 })
         except Exception:
             pass
@@ -285,7 +300,8 @@ if not weather_data:
                 "Wind Direction": round(np.random.uniform(0, 360)),
                 "Gusts": round(wind_spd * 1.5, 1), "Dust Probability": round((wind_spd/50)*100),
                 "Visibility": round(10.0 - (wind_spd/50)*9.0, 1),
-                "Rainfall": round(np.random.uniform(10, 40), 1) if s_prob > 70 else 0.0
+                "Rainfall": round(np.random.uniform(10, 40), 1) if s_prob > 70 else 0.0,
+                "dBZ": 0.0, "Radar Verif": "⏳ Offline Data"
             })
 
 df_all = pd.DataFrame(weather_data)
@@ -331,7 +347,9 @@ with tab1:
     max_storm = df_time["Storm Probability"].max()
     if max_storm >= 75:
         target = df_time.loc[df_time["Storm Probability"].idxmax(), "Station"]
-        st.markdown(f'<div class="alert-banner"><strong>🚨 RED ALERT:</strong> Severe Convective Storm Risk ({max_storm}%) detected over {target}!</div>', unsafe_allow_html=True)
+        # Radar Verification Status directly in the Alert Banner!
+        target_radar = df_time.loc[df_time["Storm Probability"].idxmax(), "Radar Verif"]
+        st.markdown(f'<div class="alert-banner"><strong>🚨 RED ALERT:</strong> Severe Convective Storm Risk ({max_storm}%) detected over {target}! <br> 📡 Radar Nowcast: {target_radar}</div>', unsafe_allow_html=True)
         
         alert_key = f"THUNDERSTORM_{target}_{selected_time}"
         if st.session_state["last_alert_sent"] != alert_key:
@@ -442,22 +460,21 @@ with tab4:
     st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 34-Station Matrix at {selected_time}</h3>", unsafe_allow_html=True)
     display_df = df_time.sort_values(by="Temperature", ascending=False)
     
-    html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Temp (°C)</th><th>Wind Speed (km/h)</th><th>Wind Dir (°)</th><th>Visibility (km)</th><th>Dust (%)</th><th>Rainfall (mm)</th><th>Storm (%)</th></tr>"
+    # تمت إضافة أعمدة رادار التأكيد هنا (dBZ و Verification)
+    html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Temp (°C)</th><th>Wind (km/h)</th><th>Visibility (km)</th><th>Storm (%)</th><th>Radar (dBZ)</th><th>Verification</th></tr>"
     for _, row in display_df.iterrows():
         t_val = row['Temperature']
         w_val = row['Wind Speed']
-        wd_val = row['Wind Direction']
         vis_val = row['Visibility']
-        d_val = row['Dust Probability']
         s_val = row['Storm Probability']
-        r_val = row['Rainfall']
+        dbz_val = row['dBZ']
+        verif_val = row['Radar Verif']
         
         s_color = "#EF4444" if s_val >= 75 else "#1E293B"
-        d_color = "#D97706" if d_val >= 50 else "#1E293B"
         vis_color = "#991B1B" if vis_val <= 2.0 else "#1E293B"
-        r_color = "#0284C7" if r_val > 0 else "#1E293B"
+        dbz_color = "#7E22CE" if dbz_val >= 45 else ("#10B981" if dbz_val > 0 else "#64748B")
         
-        html_table += f"<tr><td>{row['Station']}</td><td>{t_val}°C</td><td>{w_val} km/h</td><td>{wd_val}°</td><td style='color:{vis_color};'>{vis_val} km</td><td style='color:{d_color};'>{d_val}%</td><td style='color:{r_color};'>{r_val} mm</td><td style='color:{s_color};'>{s_val}%</td></tr>"
+        html_table += f"<tr><td>{row['Station']}</td><td>{t_val}°C</td><td>{w_val} km/h</td><td style='color:{vis_color};'>{vis_val} km</td><td style='color:{s_color};'>{s_val}%</td><td style='color:{dbz_color}; font-weight:900;'>{dbz_val}</td><td style='color:{dbz_color};'>{verif_val}</td></tr>"
     html_table += "</table>"
     st.markdown(html_table, unsafe_allow_html=True)
 

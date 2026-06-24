@@ -136,22 +136,24 @@ with st.spinner("🤖 Dynamically compiling live metrics across 34 geographical 
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 # ==========================================
-# 3. ALMANAC DATA LOADER
+# 3. ALMANAC DATA LOADER (UPDATED FOR EXCEL)
 # ==========================================
 @st.cache_data
 def load_national_almanac():
+    file_name = "climate_yearly_almanac_till_dec_20252.xlsx"
     try:
-        df = pd.read_csv("climate_yearly_almanac_till_dec_20252.xlsx - data.csv")
+        df = pd.read_excel(file_name)
         df.columns = df.iloc[0]
         df = df[1:].reset_index(drop=True)
         cols_num = ['month_day', 'highest_temperature_value', 'lowest_temperature_value', 'highest_rainfall_value', 'maximum_wind_value']
         for col in cols_num:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-        return df
-    except:
-        return pd.DataFrame()
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        return df, None
+    except Exception as e:
+        return pd.DataFrame(), str(e)
 
-almanac_df = load_national_almanac()
+almanac_df, err_msg = load_national_almanac()
 
 # ==========================================
 # 4. JM72 AI DYNAMICS ENGINE (STRICT FILTERS)
@@ -401,7 +403,7 @@ with tab5:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📚 UAE National Climate Almanac (2003 - 2025)</h4>', unsafe_allow_html=True)
     
     if almanac_df.empty:
-        st.error("⚠️ Error: The database file 'climate_yearly_almanac_till_dec_20252.xlsx - data.csv' could not be loaded. Please ensure it is uploaded to the root directory.")
+        st.error(f"⚠️ Error loading database. Please ensure 'requirements.txt' is configured correctly and the app has been Rebooted. (Detail: {err_msg})")
     else:
         target_date = st.date_input("📅 Select a Calendar Day to view Historical National Extremes", value=datetime.today())
         
@@ -414,7 +416,6 @@ with tab5:
             record = day_data.iloc[0]
             st.markdown(f"<p style='font-size:18px; color:#082F49;'><strong>Historical Extremes recorded on {target_month_name} {target_day} across the UAE:</strong></p>", unsafe_allow_html=True)
             
-            # Helper to handle NaNs in years gracefully
             def format_year(y):
                 try:
                     return str(int(y))

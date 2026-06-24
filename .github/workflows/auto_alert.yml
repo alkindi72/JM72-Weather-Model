@@ -20,8 +20,8 @@ jobs:
       - name: Install dependencies
         run: pip install pandas streamlit requests
 
-     - name: Run Alert Logic
+    - name: Run Alert Logic
         env:
           APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
-          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }} # تأكد من وجود هذا السطر بالظبط
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
         run: python auto_alert.py

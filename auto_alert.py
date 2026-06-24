@@ -7,15 +7,24 @@ from email.mime.text import MIMEText
 def apply_terrain_correction(temp, altitude):
     return temp - (altitude / 100) * 0.65
 
+def get_email_list(filename="email_list.txt"):
+    # دالة ذكية لقراءة الإيميلات من الملف النصي
+    try:
+        with open(filename, "r") as file:
+            # تقرأ الأسطر، تزيل المسافات الفارغة، وتتجاهل الأسطر الخالية
+            emails = [line.strip() for line in file if line.strip()]
+        return emails
+    except FileNotFoundError:
+        print(f"⚠️ تحذير: ملف {filename} غير موجود.")
+        return []
+
 def check_for_storms():
-    # قراءة الملف
     df = pd.read_csv("Meta_data34.csv") 
-    df.columns = df.columns.str.strip() # تنظيف المسافات المخفية
+    df.columns = df.columns.str.strip() 
     
     alerts = []
     
     try:
-        # توجيه الروبوت للبحث عن الأسماء المختصرة التي ذكرتها
         col_lat = 'Lat.' if 'Lat.' in df.columns else 'Lat'
         col_lon = 'Long.' if 'Long.' in df.columns else 'Long'
         col_alt = 'Altitude' if 'Altitude' in df.columns else 'alt'
@@ -38,26 +47,31 @@ def check_for_storms():
                 
     except KeyError as e:
         print(f"❌ حدث خطأ: الروبوت لم يجد العمود المسمى {e}")
-        print("📋 الأعمدة الموجودة فعلياً في ملفك هي:", df.columns.tolist())
         return
     except Exception as e:
         print(f"❌ خطأ غير متوقع: {e}")
         return
 
     if alerts:
-        send_email("🚨 تحذير JM72: رصد ظروف غير مستقرة", "\n".join(alerts))
-        print("✅ تم إرسال الإيميل بنجاح!")
+        # هنا يقوم الروبوت بسحب قائمة الإيميلات من الملف
+        recipients = get_email_list("email_list.txt")
+        
+        if recipients:
+            send_email("🚨 تحذير JM72: رصد ظروف غير مستقرة", "\n".join(alerts), recipients)
+            print(f"✅ تم إرسال الإيميل بنجاح إلى {len(recipients)} مستلم/مستلمين!")
+        else:
+            print("❌ لم يتم الإرسال: ملف email_list.txt فارغ أو غير موجود.")
     else:
         print("✅ تم الفحص: الوضع الجوي مستقر ولا توجد عواصف حالياً.")
 
-def send_email(subject, body):
-    sender = "jm72.weather@gmail.com"
-    recipients = ["target@example.com"] # ضع إيميل الاستلام الحقيقي هنا
+def send_email(subject, body, recipients):
+    sender = "jm72.weather@gmail.com" # ضع إيميلك المرسل هنا
     password = os.environ.get('APP_PASSWORD')
     
     msg = MIMEText(body)
     msg['Subject'] = subject
     msg['From'] = sender
+    # دمج قائمة الإيميلات ليتم إرسالها دفعة واحدة
     msg['To'] = ", ".join(recipients)
     
     try:

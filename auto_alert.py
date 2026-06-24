@@ -1,15 +1,19 @@
 import os
+import re
 import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 
 def get_email_list(filename="email_list.txt"):
+    valid_emails = []
     try:
-        # قراءة الملف بترميز utf-8 وتنظيف الأسطر للتأكد من جودة الإيميلات
         with open(filename, "r", encoding="utf-8") as file:
-            emails = [line.strip() for line in file if line.strip() and "@" in line]
-        return emails
+            for line in file:
+                # فلتر ذكي يستخرج الإيميل الإنجليزي فقط ويتجاهل أي مسافات أو حروف عربية
+                found = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', line)
+                valid_emails.extend(found)
+        return valid_emails
     except FileNotFoundError:
         return []
 
@@ -44,14 +48,21 @@ def send_alert():
 
     recipients = get_email_list("email_list.txt")
     if not recipients:
-        print("❌ لم يتم الإرسال: تأكد من وجود إيميلات داخل ملف email_list.txt")
+        print("❌ لم يتم الإرسال: تأكد من وجود إيميلات صحيحة داخل ملف email_list.txt")
         return
 
-    # ⚠️ تنبيه هام جداً: ضع إيميلك الحقيقي باللغة الإنجليزية فقط هنا بدون أي حروف عربية
-    sender = "اjumah72@gmail.com" 
+    # الاعتماد الكلي على الخزنة السرية (لن تكتب إيميلك هنا أبداً بعد الآن)
+    sender = os.environ.get('SENDER_EMAIL')
     password = os.environ.get('APP_PASSWORD')
     
-    # إعداد الرسالة بترميز utf-8
+    if not sender or not password:
+        print("❌ خطأ: يرجى التأكد من إضافة SENDER_EMAIL و APP_PASSWORD في GitHub Secrets.")
+        return
+        
+    # تنظيف الإيميل المخفي من أي مسافات زائدة لضمان عدم حدوث خطأ
+    sender = sender.strip()
+    
+    # إعداد الرسالة بترميز utf-8 لدعم اللغة العربية
     msg = MIMEText(full_alert, 'plain', 'utf-8')
     msg['Subject'] = Header("🚨 JM72 RED ALERT - إنذار جوي عالي الأهمية", 'utf-8')
     msg['From'] = sender
@@ -60,7 +71,6 @@ def send_alert():
     try:
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(sender, password)
-            # تم استبدال sendmail بـ send_message لحل مشكلة الـ ASCII نهائياً
             server.send_message(msg)
         print(f"✅ تم إرسال الإنذار بنجاح لـ {len(recipients)} مستلم!")
     except Exception as e:

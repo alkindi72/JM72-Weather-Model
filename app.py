@@ -1,4 +1,5 @@
 import os
+import re
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -11,7 +12,52 @@ import requests
 import base64
 import smtplib
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from email.header import Header
+
+# ==========================================
+# 0. SMART ALERT FUNCTION (CENTRAL ENGINE)
+# ==========================================
+def send_alert_smart(status, area_name, is_severe=True):
+    alerts_db = {
+        "THUNDERSTORM": {"ar": "عاصفة رعدية", "en": "Thunderstorm", "emoji": "⛈️"},
+        "DUST_STORM": {"ar": "عاصفة رملية", "en": "Dust Storm", "emoji": "🌪️"},
+        "HEAT": {"ar": "طقس حار", "en": "Hot Weather", "emoji": "🌡️"}
+    }
+    intensity_ar = " شديدة" if is_severe else ""
+    intensity_en = " Severe" if is_severe else ""
+    alert_data = alerts_db.get(status, {"ar": "تنبيه جوي", "en": "Weather Alert", "emoji": "⚠️"})
+    
+    msg_body = (f"{alert_data['emoji']} إنذار: {alert_data['ar']}{intensity_ar}\n"
+                f"{alert_data['emoji']} Alert: {alert_data['en']}{intensity_en}\n\n"
+                f"📍 المنطقة المتأثرة / Affected Area: {area_name}\n"
+                f"🕒 وقت الرصد / Time: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+
+    sender = os.environ.get('SENDER_EMAIL')
+    password = os.environ.get('APP_PASSWORD')
+    
+    # القراءة مباشرة من الملف لضمان عدم ضياع الإيميلات
+    recipients = []
+    try:
+        with open("email_list.txt", "r", encoding="utf-8") as file:
+            for line in file:
+                found = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', line)
+                recipients.extend(found)
+    except FileNotFoundError:
+        pass
+    
+    if sender and password and recipients:
+        sender = sender.strip()
+        msg = MIMEText(msg_body, 'plain', 'utf-8')
+        msg['Subject'] = Header(f"🚨 JM72 WEATHER ALERT - {alert_data['en']}", 'utf-8')
+        msg['From'] = sender
+        msg['To'] = ", ".join(recipients)
+        try:
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                server.login(sender, password)
+                server.send_message(msg)
+            print(f"Alert sent to {len(recipients)} emails.")
+        except Exception as e:
+            print(f"Email Error: {e}")
 
 # ==========================================
 # 1. PLATFORM SETTINGS & RIGID LIGHT-THEME CSS
@@ -19,33 +65,29 @@ from email.mime.multipart import MIMEMultipart
 st.set_page_config(page_title="JM72 AI Weather Model", layout="wide")
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 
-# Initialize Session State for Authentication
+# Initialize Session State for Authentication & Spam Protection
 if "admin_logged_in" not in st.session_state:
     st.session_state["admin_logged_in"] = False
+if "last_alert_sent" not in st.session_state:
+    st.session_state["last_alert_sent"] = ""
 
 st.markdown("""
 <style>
-    /* Hide default Streamlit toolbar and menus */
     [data-testid="stToolbar"] { visibility: hidden !important; }
-    
     html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stApp"] {
         background-color: #F8FAFC !important;
     }
-    
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"] { 
         color: #082F49 !important; 
         font-weight: 900 !important; 
         font-size: 16px !important; 
     }
-    
     button[data-baseweb="tab"] { background-color: #FFFFFF !important; border: 2px solid #E2E8F0 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; }
     button[data-baseweb="tab"] p { font-size: 18px !important; color: #475569 !important; }
     button[data-baseweb="tab"][aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
     button[data-baseweb="tab"][aria-selected="true"] p { color: #FFFFFF !important; }
-
     .alert-banner { background-color: #FEF2F2; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; font-size: 16px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); line-height: 1.6; }
     .sys-success { background-color: #F0FDF4; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; }
-    
     .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 12px; text-align: center; }
     .custom-table td { padding: 12px; border: 1px solid #e2e8f0; color: #1e293b !important; font-weight: bold; text-align: center; }
@@ -251,7 +293,6 @@ if not weather_data:
 df_all = pd.DataFrame(weather_data)
 unique_dates = df_all["DateOnly"].unique()[:5]
 
-# Esri World Topographical Tile Server Configuration
 esri_topo_layer = [{
     "below": 'traces',
     "sourcetype": "raster",
@@ -293,6 +334,12 @@ with tab1:
     if max_storm >= 75:
         target = df_time.loc[df_time["Storm Probability"].idxmax(), "Station"]
         st.markdown(f'<div class="alert-banner"><strong>🚨 RED ALERT:</strong> Severe Convective Storm Risk ({max_storm}%) detected over {target}!</div>', unsafe_allow_html=True)
+        
+        # 🔗 إرسال إيميل العواصف الرعدية
+        alert_key = f"THUNDERSTORM_{target}_{selected_time}"
+        if st.session_state["last_alert_sent"] != alert_key:
+            send_alert_smart("THUNDERSTORM", target, is_severe=True)
+            st.session_state["last_alert_sent"] = alert_key
     
     df_plot_storm = df_time[df_time["Storm Probability"] > 0].copy()
     if df_plot_storm.empty:
@@ -332,195 +379,15 @@ with tab2:
     if max_temp >= 50.0:
         target_heat = df_time.loc[df_time["Temperature"].idxmax(), "Station"]
         st.markdown(f'<div class="alert-banner"><strong>🚨 HEAT ALERT:</strong> Extreme Thermal Heat Dome ({max_temp}°C) over {target_heat}!</div>', unsafe_allow_html=True)
+        
+        # 🔗 إرسال إيميل الحرارة
+        alert_key_heat = f"HEAT_{target_heat}_{selected_time}"
+        if st.session_state["last_alert_sent"] != alert_key_heat:
+            send_alert_smart("HEAT", target_heat, is_severe=True)
+            st.session_state["last_alert_sent"] = alert_key_heat
 
     df_plot_heat = df_time[df_time["Temperature"] >= 50].copy()
     if df_plot_heat.empty:
         fig2 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
         fig2.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")
-    else:
-        df_plot_heat["Node Size"] = np.clip((df_plot_heat["Temperature"] - 30) * 2, 5, 45)
-        fig2 = px.scatter_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", color="Temperature", size="Node Size",
-                                mapbox_style="white-bg", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
-        fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
-        st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
-
-with tab3:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">🌪️ Active Wind & Sandstorm Tracker</h4>', unsafe_allow_html=True)
-    max_dust = df_time["Dust Probability"].max()
-    if max_dust >= 60:
-        target_dust_row = df_time.loc[df_time["Dust Probability"].idxmax()]
-        target_dust = target_dust_row["Station"]
-        target_wind_spd = target_dust_row["Wind Speed"]
-        target_wind_gst = target_dust_row["Gusts"]
-        target_wind_dir = target_dust_row["Wind Direction"]
-        target_vis = target_dust_row["Visibility"]
-        
-        min_vis = df_time["Visibility"].min()
-        max_vis = df_time["Visibility"].max()
-        
-        st.markdown(f'''
-        <div class="alert-banner" style="background-color: #FFFBEB; color: #92400E !important; border-left-color: #D97706;">
-            <strong>⚠️ DUST ALERT:</strong> High probability of sandstorms ({max_dust}%) detected over {target_dust}!<br>
-            • Expected Wind Speed: {target_wind_spd} km/h (Gusts up to {target_wind_gst} km/h)<br>
-            • Wind Direction: {target_wind_dir}°<br>
-            • Current Visibility: {target_vis} km (Regional Range: {min_vis} km to {max_vis} km)
-        </div>
-        ''', unsafe_allow_html=True)
-
-    df_time["Dust Node"] = df_time["Dust Probability"] + 10
-    fig3 = px.scatter_mapbox(df_time, lat="Latitude", lon="Longitude", color="Dust Probability", size="Dust Node",
-                            hover_data={"Station": True, "Wind Speed": True, "Wind Direction": True, "Visibility": True, "Latitude": False, "Longitude": False, "Dust Node": False},
-                            mapbox_style="white-bg", zoom=6, 
-                            color_continuous_scale=["#FEF3C7", "#FCD34D", "#D97706", "#78350F"], range_color=[0, 100])
-    fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
-    st.plotly_chart(fig3, use_container_width=True, key="dust_map_data")
-
-with tab4:
-    st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 34-Station Matrix at {selected_time}</h3>", unsafe_allow_html=True)
-    display_df = df_time.sort_values(by="Temperature", ascending=False)
-    
-    html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Temp (°C)</th><th>Wind Speed (km/h)</th><th>Wind Dir (°)</th><th>Visibility (km)</th><th>Dust (%)</th><th>Rainfall (mm)</th><th>Storm (%)</th></tr>"
-    for _, row in display_df.iterrows():
-        t_val = row['Temperature']
-        w_val = row['Wind Speed']
-        wd_val = row['Wind Direction']
-        vis_val = row['Visibility']
-        d_val = row['Dust Probability']
-        s_val = row['Storm Probability']
-        r_val = row['Rainfall']
-        
-        s_color = "#EF4444" if s_val >= 75 else "#1E293B"
-        d_color = "#D97706" if d_val >= 50 else "#1E293B"
-        vis_color = "#991B1B" if vis_val <= 2.0 else "#1E293B"
-        r_color = "#0284C7" if r_val > 0 else "#1E293B"
-        
-        html_table += f"<tr><td>{row['Station']}</td><td>{t_val}°C</td><td>{w_val} km/h</td><td>{wd_val}°</td><td style='color:{vis_color};'>{vis_val} km</td><td style='color:{d_color};'>{d_val}%</td><td style='color:{r_color};'>{r_val} mm</td><td style='color:{s_color};'>{s_val}%</td></tr>"
-    html_table += "</table>"
-    st.markdown(html_table, unsafe_allow_html=True)
-
-    st.markdown("<hr><h3 style='color:#082F49; font-weight:900;'>🔬 Statistical Verification & Model Calibration Matrix</h3>", unsafe_allow_html=True)
-    st.markdown("""
-    <table class="custom-table">
-        <tr style="background-color:#E0F2FE;"><th>Model Node / Processing Engine</th><th>Probability of Detection (POD)</th><th>False Alarm Rate (FAR)</th></tr>
-        <tr style="border: 2px solid #D4AF37; background-color: #FFFBEB;"><td style="color:#082F49; font-weight:bold;">🏆 JM72 Expert AI Weather Model</td><td style="color:#082F49; font-weight:bold;">0.96</td><td style="color:#10B981; font-weight:bold;">0.04</td></tr>
-        <tr><td>German ICON Model (7km)</td><td>0.85</td><td>0.11</td></tr>
-        <tr><td>European ECMWF Consensus (9km)</td><td>0.82</td><td>0.14</td></tr>
-        <tr style="background-color:#F8FAFC;"><td>American GFS Model (22km)</td><td>0.78</td><td>0.18</td></tr>
-    </table>
-    """, unsafe_allow_html=True)
-
-with tab5:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📚 UAE National Climate Almanac (2003 - 2025)</h4>', unsafe_allow_html=True)
-    
-    if almanac_df.empty:
-        st.error(f"⚠️ Error loading database. Please ensure the file is uploaded correctly. (Detail: {err_msg})")
-    else:
-        target_date = st.date_input("📅 Select a Calendar Day to view Historical National Extremes", value=datetime.today())
-        
-        target_month_name = target_date.strftime('%B').lower()
-        target_day = str(target_date.day)
-        
-        safe_months = almanac_df['month'].astype(str).str.strip().str.lower()
-        safe_days = almanac_df['month_day'].astype(str).str.replace('.0', '', regex=False).str.strip()
-        
-        day_data = almanac_df[(safe_months == target_month_name) & (safe_days == target_day)]
-        
-        if not day_data.empty:
-            record = day_data.iloc[0]
-            st.markdown(f"<p style='font-size:18px; color:#082F49;'><strong>Historical Extremes recorded on {target_date.strftime('%B %d')} across the UAE:</strong></p>", unsafe_allow_html=True)
-            
-            def format_year(y):
-                try:
-                    return str(int(float(y)))
-                except:
-                    return "-"
-
-            st.markdown(f"""
-            <table class="custom-table">
-                <tr style="background-color:#E0F2FE;">
-                    <th>Meteorological Metric</th>
-                    <th>All-Time Record</th>
-                    <th>Station / Location</th>
-                    <th>Recorded Year</th>
-                </tr>
-                <tr>
-                    <td>🔥 Highest Temperature</td>
-                    <td style="color:#DC2626; font-weight:bold;">{record.get('highest_temperature_value', '-')} °C</td>
-                    <td>{record.get('highest_temperature_location_en', '-')}</td>
-                    <td>{format_year(record.get('highest_temperature_year', '-'))}</td>
-                </tr>
-                <tr>
-                    <td>❄️ Lowest Temperature</td>
-                    <td style="color:#0284C7; font-weight:bold;">{record.get('lowest_temperature_value', '-')} °C</td>
-                    <td>{record.get('lowest_temperature_location_en', '-')}</td>
-                    <td>{format_year(record.get('lowest_temperature_year', '-'))}</td>
-                </tr>
-                <tr>
-                    <td>🌪️ Strongest Wind Gust</td>
-                    <td style="color:#D97706; font-weight:bold;">{record.get('maximum_wind_value', '-')} km/h</td>
-                    <td>{record.get('maximum_wind_location_en', '-')}</td>
-                    <td>{format_year(record.get('maximum_wind_year', '-'))}</td>
-                </tr>
-                <tr>
-                    <td>🌧️ Highest Rainfall</td>
-                    <td style="color:#10B981; font-weight:bold;">{record.get('highest_rainfall_value', '-')} mm</td>
-                    <td>{record.get('highest_rainfall_location_en', '-')}</td>
-                    <td>{format_year(record.get('highest_rainfall_year', '-'))}</td>
-                </tr>
-            </table>
-            """, unsafe_allow_html=True)
-        else:
-            st.info(f"No extreme records found in the database for {target_date.strftime('%B %d')}.")
-
-with tab6:
-    if not st.session_state["admin_logged_in"]:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        col_lock1, col_lock2, col_lock3 = st.columns([1, 2, 1])
-        with col_lock2:
-            st.markdown("<h2 style='text-align: center; color:#082F49;'>🔒 Secure Access</h2>", unsafe_allow_html=True)
-            with st.form("login_form"):
-                admin_pin = st.text_input("Administrator PIN", type="password")
-                if st.form_submit_button("Authenticate"):
-                    if admin_pin == "JM72":
-                        st.session_state["admin_logged_in"] = True
-                        st.rerun()
-                    else:
-                        st.error("❌ Invalid PIN.")
-    else:
-        # إدارة الإيميلات في الذاكرة
-        if "email_targets" not in st.session_state:
-            st.session_state["email_targets"] = []
-
-        st.markdown("### 🚨 JM72 Alert Control Room")
-        
-        with st.form("alert_form"):
-            col_g1, col_g2 = st.columns(2)
-            with col_g1:
-                bot_token = st.text_input("Telegram Bot Token", type="password")
-                chat_id = st.text_input("Target Chat IDs")
-            with col_g2:
-                sender_email = st.text_input("System Email")
-                app_password = st.text_input("App Password", type="password")
-                new_email = st.text_input("Add Email Address")
-                if st.form_submit_button("Add Email"):
-                    if new_email and new_email not in st.session_state["email_targets"]:
-                        st.session_state["email_targets"].append(new_email)
-                        st.rerun()
-
-            selected_emails = st.multiselect("Selected Target Emails", 
-                                            options=st.session_state["email_targets"], 
-                                            default=st.session_state["email_targets"])
-            
-            st.session_state["email_targets"] = selected_emails
-            scan_button = st.form_submit_button("🔍 Run Full System Scan")
-
-        if st.button("🚪 Logout"):
-            st.session_state["admin_logged_in"] = False
-            st.rerun()
-
-        if scan_button:
-            if not st.session_state["email_targets"]:
-                st.error("❌ No emails selected.")
-            else:
-                st.success(f"✅ Dispatched to {len(st.session_state['email_targets'])} recipient(s).")
+        st.plotly_chart(fig2, use_container_width=True, key="

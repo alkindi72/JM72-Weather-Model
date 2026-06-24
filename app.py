@@ -386,8 +386,14 @@ with tab2:
             send_alert_smart("HEAT", target_heat, is_severe=True)
             st.session_state["last_alert_sent"] = alert_key_heat
 
-    df_plot_heat = df_time[df_time["Temperature"] >= 50].copy()
+   df_plot_heat = df_time[df_time["Temperature"] >= 50].copy()
     if df_plot_heat.empty:
         fig2 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
         fig2.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
-       st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")
+        st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")
+    else:
+        df_plot_heat["Node Size"] = np.clip((df_plot_heat["Temperature"] - 30) * 2, 5, 45)
+        fig2 = px.scatter_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", color="Temperature", size="Node Size",
+                                mapbox_style="white-bg", zoom=6, color_continuous_scale=["#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
+        fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
+        st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")

@@ -27,27 +27,26 @@ def check_for_storms():
         col_alt = 'Altitude' if 'Altitude' in df.columns else 'alt'
         col_name = 'Station_Name' if 'Station_Name' in df.columns else 'Station'
         
-        for _, row in df.iterrows():
-            lat, lon = row[col_lat], row[col_lon]
-            alt = row[col_alt]
-            name = row[col_name]
-            
-            url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,cape&timezone=auto"
-            
-            response = requests.get(url).json()
-            cape = response['hourly']['cape'][0]
-            raw_temp = response['hourly']['temperature_2m'][0]
-            corrected_temp = apply_terrain_correction(raw_temp, alt)
-            
-            if cape > 300:
-                probability = min(100, int((cape / 1500) * 100))
-                
-                en_alert = f"🚨 RED ALERT: Severe Convective Storm Risk ({probability}%) detected over {name}!"
-                ar_alert = f"🚨 إنذار أحمر: خطر عواصف ركامية شديدة بنسبة ({probability}%) مرصودة فوق منطقة {name}!"
-                weather_info = f"📍 المنطقة المعرضة للحدث: {name} | درجة الحرارة: {corrected_temp:.1f}°C"
-                
-                full_alert = f"{en_alert}\n{ar_alert}\n{weather_info}\n{'-'*50}"
-                alerts.append(full_alert)
+        # سنأخذ أول محطة فقط في القائمة لتصلك رسالة واحدة واضحة للتجربة
+        row = df.iloc[0]
+        lat, lon = row[col_lat], row[col_lon]
+        alt = row[col_alt]
+        name = row[col_name]
+        
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,cape&timezone=auto"
+        response = requests.get(url).json()
+        raw_temp = response['hourly']['temperature_2m'][0]
+        corrected_temp = apply_terrain_correction(raw_temp, alt)
+        
+        # تجاوزنا شروط الطقس لإجبار الإرسال
+        probability = 100
+        
+        en_alert = f"🚨 RED ALERT: Severe Convective Storm Risk ({probability}%) detected over {name}!"
+        ar_alert = f"🚨 إنذار أحمر: خطر عواصف ركامية شديدة بنسبة ({probability}%) مرصودة فوق منطقة {name}!"
+        weather_info = f"📍 المنطقة المعرضة للحدث: {name} | درجة الحرارة: {corrected_temp:.1f}°C"
+        
+        full_alert = f"{en_alert}\n{ar_alert}\n{weather_info}\n{'-'*50}"
+        alerts.append(full_alert)
                 
     except Exception as e:
         print(f"❌ حدث خطأ أثناء الفحص: {e}")
@@ -59,8 +58,8 @@ def check_for_storms():
             final_message = "تحذير من نظام JM72 للأرصاد الجوية:\n\n" + "\n\n".join(alerts)
             send_email("🚨 JM72 RED ALERT - إنذار جوي عالي الأهمية", final_message, recipients)
             print(f"✅ تم إرسال الإنذار الأحمر بنجاح!")
-    else:
-        print("✅ تم الفحص: لا توجد سحب ركامية خطرة حالياً.")
+        else:
+            print("❌ لا توجد إيميلات في ملف email_list.txt")
 
 def send_email(subject, body, recipients):
     sender = "jm72.weather@gmail.com" # ضع إيميلك المرسل هنا

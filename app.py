@@ -24,85 +24,104 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. AI + HERITAGE + WEATHER DYNAMIC BACKGROUND
+# 2. BULLETPROOF DYNAMIC BACKGROUND (AI + HERITAGE)
 # ==========================================
 st.markdown("""
+<div class="jm72-bg-layer"></div>
+
 <style>
-    /* Animated Background Keyframes */
-    @keyframes panBackground {
-        0% { background-position: 0px 0px, 0px 0px; }
-        100% { background-position: 60px 60px, 300px 300px; }
-    }
-    
-    /* The Canvas (AI Grid + Isobar Curves) */
-    [data-testid="stAppViewContainer"] {
-        background-color: #F8FAFC !important;
-        background-image: 
-            /* AI Nodes Grid (Dots) */
-            radial-gradient(rgba(2, 132, 199, 0.15) 1.5px, transparent 1.5px),
-            /* Weather/Heritage Isobar Curves (SVG) */
-            url("data:image/svg+xml,%3Csvg width='150' height='150' viewBox='0 0 150 150' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M-20,150 C40,-20 100,-20 170,150' fill='none' stroke='%23D4AF37' stroke-width='0.75' opacity='0.3'/%3E%3Cpath d='M-20,75 C50,170 100,-20 170,75' fill='none' stroke='%230284C7' stroke-width='0.5' opacity='0.2'/%3E%3C/svg%3E") !important;
-        background-size: 30px 30px, 150px 150px !important;
-        animation: panBackground 90s linear infinite !important;
+    /* 1. Deep HTML Injection to make Streamlit's stubborn white backgrounds fully transparent */
+    html, body, #root, [data-testid="stAppViewContainer"], .stApp, [data-testid="stHeader"] {
+        background-color: transparent !important;
+        background-image: none !important;
+        background: transparent !important;
     }
 
-    /* Soft Gradient Overlay */
-    [data-testid="stApp"] { 
-        background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(224, 242, 254, 0.4) 100%) !important; 
+    /* 2. The Custom Background Screen (Fixed securely at the back) */
+    .jm72-bg-layer {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100vw; height: 100vh;
+        z-index: -9999; /* Forces it behind absolutely everything */
+        background: linear-gradient(-45deg, #E0F2FE, #F0F9FF, #F8FAFC, #E0F2FE) !important;
+        background-size: 400% 400% !important;
+        animation: techWeatherBG 25s ease infinite !important;
+    }
+
+    /* 3. The Grid & Isobar Overlay */
+    .jm72-bg-layer::after {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-image: 
+            /* AI Tech Grid */
+            radial-gradient(rgba(2, 132, 199, 0.15) 2px, transparent 2px),
+            /* Weather Isobars & Heritage Curves (Gold & Blue) */
+            url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M-20,200 C50,-20 150,-20 220,200' fill='none' stroke='%23D4AF37' stroke-width='1.5' opacity='0.4'/%3E%3Cpath d='M-20,100 C70,220 150,-20 220,100' fill='none' stroke='%230284C7' stroke-width='1' opacity='0.3'/%3E%3C/svg%3E");
+        background-size: 40px 40px, 200px 200px;
+        animation: panPattern 60s linear infinite;
+        opacity: 0.8;
+    }
+
+    @keyframes techWeatherBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
     
-    [data-testid="stHeader"] { background: transparent !important; }
+    @keyframes panPattern {
+        0% { background-position: 0px 0px, 0px 0px; }
+        100% { background-position: 400px 400px, 600px 600px; }
+    }
+
+    /* 4. Glassmorphism for Main Container (Protects the eyes & adds luxury) */
+    .block-container, [data-testid="block-container"] {
+        background: rgba(255, 255, 255, 0.65) !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        border-radius: 20px !important;
+        border: 1px solid rgba(255, 255, 255, 0.8) !important;
+        box-shadow: 0 10px 40px rgba(8, 47, 73, 0.08) !important;
+        padding-top: 2.5rem !important;
+        padding-bottom: 2.5rem !important;
+        margin-top: 2rem !important;
+        margin-bottom: 2rem !important;
+        z-index: 1; /* Keeps content above the background */
+    }
+
     [data-testid="stToolbar"] { visibility: hidden !important; }
 
-    /* Glassmorphism for Main Container (Protects the eyes) */
-    .block-container {
-        z-index: 1;
-        position: relative;
-        background: rgba(255, 255, 255, 0.75) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border-radius: 20px !important;
-        border: 1px solid rgba(255, 255, 255, 0.6) !important;
-        padding-top: 2rem !important;
-        padding-bottom: 2rem !important;
-        margin-top: 1rem !important;
-        margin-bottom: 1rem !important;
-        box-shadow: 0 8px 32px 0 rgba(8, 47, 73, 0.08) !important;
-    }
-
-    /* Typography */
-    .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"] { 
+    /* Typography Override */
+    .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { 
         color: #082F49 !important; font-weight: 900 !important; font-size: 16px !important; 
     }
 
-    /* Transparent Tabs */
-    .stTabs [data-baseweb="tab-panel"] {
-        background: transparent !important;
-    }
-    
+    /* 5. Custom Tabs */
+    .stTabs [data-baseweb="tab-list"] { background-color: transparent !important; }
+    .stTabs [data-baseweb="tab-panel"] { background-color: transparent !important; }
     button[data-baseweb="tab"] { 
-        background-color: rgba(255,255,255,0.6) !important; 
+        background-color: rgba(255,255,255,0.7) !important; 
         border: 1px solid rgba(203, 213, 225, 0.5) !important; 
         border-radius: 10px 10px 0 0 !important; 
         margin-right: 5px !important; 
         padding: 10px 20px !important; 
-        backdrop-filter: blur(5px);
+        transition: all 0.3s ease;
     }
+    button[data-baseweb="tab"]:hover { background-color: rgba(255,255,255,0.9) !important; }
     button[data-baseweb="tab"][aria-selected="true"] { 
-        background-color: #082F49 !important; 
-        border-color: #082F49 !important; 
+        background-color: #082F49 !important; border-color: #082F49 !important; 
     }
     button[data-baseweb="tab"][aria-selected="true"] p { color: #FFFFFF !important; }
     
-    /* Banners & Tables - Make them slightly transparent to blend with glass */
-    .alert-banner { background-color: rgba(254, 242, 242, 0.85); color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; font-size: 16px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); line-height: 1.6; }
-    .sys-success { background-color: rgba(240, 253, 244, 0.85); color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; }
-    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: rgba(255,255,255,0.85); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    /* 6. Custom Components inside the glass */
+    .alert-banner { background-color: rgba(254, 242, 242, 0.9); color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; font-size: 16px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); line-height: 1.6; }
+    .sys-success { background-color: rgba(240, 253, 244, 0.9); color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; }
+    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: rgba(255,255,255,0.95); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 12px; text-align: center; font-size: 14px; }
     .custom-table td { padding: 12px; border: 1px solid rgba(226, 232, 240, 0.6); color: #1e293b !important; font-weight: bold; text-align: center; font-size: 14px; }
     
     /* Windy Timeline */
-    .windy-timeline { background-color: rgba(75, 85, 99, 0.9) !important; padding: 20px 25px 5px 25px; border-radius: 10px; border-bottom: 5px solid #374151; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .windy-timeline { background-color: rgba(75, 85, 99, 0.95) !important; padding: 20px 25px 5px 25px; border-radius: 10px; border-bottom: 5px solid #374151; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     .windy-timeline label { display: none !important; }
     .windy-timeline div[data-testid="stTickBar"] { color: #D1D5DB !important; font-size: 14px !important; }
     .windy-timeline div[role="slider"] { background-color: #D4AF37 !important; border: 2px solid #FFF !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
@@ -111,7 +130,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. ORIGINAL CENTERED LOGO (FIXED CRISP SIZE)
+# 3. PERFECTLY CENTERED LOGO
 # ==========================================
 svg_code = """
 <svg width="600" height="240" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">

@@ -15,7 +15,7 @@ from email.mime.text import MIMEText
 from email.header import Header
 
 # ==========================================
-# 1. PLATFORM SETTINGS & FAVICON
+# 1. PLATFORM SETTINGS
 # ==========================================
 st.set_page_config(
     page_title="JM72 AI Weather Model", 
@@ -24,117 +24,58 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. TRUE ENTERPRISE BACKGROUND & GLASSMORPHISM
+# 2. CLEAN & STABLE CSS (No Background Hacks)
 # ==========================================
 st.markdown("""
 <style>
-    /* 1. Force Streamlit to drop default solid white backgrounds */
-    html, body, [data-testid="stAppViewContainer"], #root {
-        background: transparent !important;
-        background-color: transparent !important;
-    }
-    
-    /* 2. THE BACKGROUND ANIMATION */
-    @keyframes atmosFlow {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
+    /* Hide top header elements safely */
+    [data-testid="stHeader"] { display: none !important; }
+    [data-testid="stToolbar"] { display: none !important; }
 
-    /* Base Layer: Flowing Atmosphere */
-    .stApp {
-        background: linear-gradient(-45deg, #F0F9FF, #E0F2FE, #F8FAFC, #BAE6FD) !important;
-        background-size: 400% 400% !important;
-        animation: atmosFlow 20s ease infinite !important;
-    }
-
-    /* Overlay Layer: AI Data Grid + Isobar Rings */
-    .stApp::before {
-        content: "";
-        position: fixed;
-        top: 0; left: 0; width: 100vw; height: 100vh;
-        background-image: 
-            radial-gradient(rgba(8, 47, 73, 0.1) 1.5px, transparent 1.5px),
-            url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M-20,100 C50,-50 150,-50 220,100' fill='none' stroke='%23082F49' stroke-width='0.5' opacity='0.15'/%3E%3Cpath d='M-20,150 C70,0 150,200 220,50' fill='none' stroke='%23D4AF37' stroke-width='0.5' opacity='0.15'/%3E%3C/svg%3E");
-        background-size: 30px 30px, 200px 200px;
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    /* 3. FIXING THE WHITE BOX (Premium Frosted Glass) */
-    .block-container, [data-testid="block-container"], [data-testid="stMainBlockContainer"] {
-        background: rgba(255, 255, 255, 0.35) !important; /* Transparent Glass instead of solid white */
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
-        border-radius: 24px !important;
-        border: 1px solid rgba(255, 255, 255, 0.6) !important;
-        box-shadow: 0 10px 40px rgba(8, 47, 73, 0.08) !important;
-        padding: 3rem !important;
-        margin-top: 1rem !important;
-        margin-bottom: 2rem !important;
-        max-width: 95% !important;
-        z-index: 1; 
-    }
-
-    /* Hide ugly default headers */
-    [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
-
-    /* Strict Typography */
+    /* Clean Typography */
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { 
         color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; 
     }
 
-    /* 4. Elegant Tabs Over Glass */
+    /* Elegant Tabs */
     div[data-testid="stTabs"] [data-baseweb="tab-list"] { 
         background-color: transparent !important; 
-        border-bottom: 2px solid rgba(15, 23, 42, 0.1); 
-    }
-    div[data-testid="stTabs"] [data-baseweb="tab-panel"] { 
-        background-color: transparent !important; padding-top: 1.5rem !important; 
+        border-bottom: 2px solid #E2E8F0; 
     }
     div[data-testid="stTabs"] button { 
-        background-color: rgba(255, 255, 255, 0.5) !important; 
-        border: 1px solid rgba(255, 255, 255, 0.8) !important; 
+        background-color: #F8FAFC !important; 
+        border: 1px solid #E2E8F0 !important; 
         border-radius: 8px 8px 0 0 !important; 
         margin-right: 5px !important; 
         padding: 10px 20px !important; 
         transition: 0.3s;
     }
-    div[data-testid="stTabs"] button:hover { background-color: rgba(255, 255, 255, 0.9) !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
     
-    /* 5. FIXING THE TIMELINE SLIDER DIRECTLY (Native override) */
+    /* Native Timeline Slider Formatting (FIXED) */
     div[data-testid="stSlider"] {
-        background-color: rgba(30, 41, 59, 0.95) !important;
+        background-color: #1E293B !important;
         padding: 20px 25px 20px 25px !important;
         border-radius: 12px !important;
-        border-bottom: 4px solid #0F172A !important;
         margin-bottom: 25px !important;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
-        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
     }
     div[data-testid="stTickBar"], div[data-testid="stTickBar"] span { color: #E2E8F0 !important; }
-    div[data-testid="stSlider"] div[role="slider"] {
-        background-color: #D4AF37 !important;
-        border: 2px solid #FFF !important;
-        box-shadow: 0 0 8px rgba(0,0,0,0.5) !important;
-    }
-    div[data-testid="stSlider"] div[role="slider"] > div {
-        background-color: #D4AF37 !important; color: #FFF !important;
-    }
+    div[data-testid="stSlider"] div[role="slider"] { background-color: #D4AF37 !important; border: 2px solid #FFF !important; }
+    div[data-testid="stSlider"] div[role="slider"] > div { background-color: #D4AF37 !important; color: #FFF !important; }
 
-    /* 6. Transparent Data Elements */
-    .alert-banner { background-color: rgba(254, 242, 242, 0.85); color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;}
-    .sys-success { background-color: rgba(240, 253, 244, 0.85); color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px;}
-    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid white;}
-    .custom-table th { background-color: rgba(8, 47, 73, 0.95); color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37;}
-    .custom-table td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.5); border-right: 1px solid rgba(255,255,255,0.5); color: #082F49 !important; font-weight: 800; text-align: center;}
+    /* Tables & Alerts */
+    .alert-banner { background-color: #FEF2F2; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px;}
+    .sys-success { background-color: #F0FDF4; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px;}
+    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #E2E8F0;}
+    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37;}
+    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center;}
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. ORIGINAL CENTERED LOGO (CRISP & FIXED SIZE)
+# 3. CENTERED LOGO (CRISP & FIXED SIZE)
 # ==========================================
 svg_code = """
 <svg width="600" height="240" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
@@ -152,10 +93,11 @@ svg_code = """
 </svg>
 """
 b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
-st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: -10px; margin-bottom: 25px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="JM72 AI Weather Model Logo" /></div>', unsafe_allow_html=True)
+st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 30px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="JM72 AI Weather Model Logo" /></div>', unsafe_allow_html=True)
 
-# Save favicon variant
-with open("jm72_icon.svg", "w", encoding="utf-8") as f: f.write(svg_code)
+# Generate favicon file
+with open("jm72_icon.svg", "w", encoding="utf-8") as f:
+    f.write(svg_code)
 
 # ==========================================
 # 4. SMART ALERT FUNCTION
@@ -346,7 +288,7 @@ if fetch_success and type(live_data) is list:
         except Exception: pass
 
 if not weather_data:
-    st.error("⚠️ Connection to Weather Satellite API failed. Showing offline fallback data. (EMAIL ALERTS DISABLED)")
+    st.error("⚠️ Connection to Weather Satellite API failed. Showing offline fallback data. (EMAIL ALERTS DISABLED TO PREVENT FALSE POSITIVES)")
     np.random.seed(42)
     for dt_str, dt in zip(timeline_str, timeline):
         is_afternoon = 12 <= dt.hour <= 18
@@ -384,7 +326,6 @@ with tab1:
             elif daily_max_storm >= 40: st.warning(f"🟡 **{date}**\n\n**Localized**\n\n### {daily_max_storm}%")
             else: st.success(f"🟢 **{date}**\n\n**Stable**\n\n### {daily_max_storm}%")
     
-    # Removed the wrapping divs, native slider gets styled perfectly by the CSS
     selected_time_t1 = st.select_slider("Forecast Timeline", options=timeline_str, key="t1_slider", label_visibility="collapsed")
     df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()
 
@@ -402,11 +343,11 @@ with tab1:
     df_plot_storm = df_time_t1[df_time_t1["Storm Probability"] > 0].copy()
     if df_plot_storm.empty:
         fig1 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
-        fig1.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="rgba(0,0,0,0)")
+        fig1.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_empty")
     else:
         fig1 = px.density_mapbox(df_plot_storm, lat="Latitude", lon="Longitude", z="Storm Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.75, color_continuous_scale=["rgba(0,0,0,0)", "#A3E635", "#FDE047", "#EF4444", "#7E22CE"], range_color=[0, 100])
-        fig1.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="rgba(0,0,0,0)")
+        fig1.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_data")
         
     st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery & Streams</h3>', unsafe_allow_html=True)
@@ -439,11 +380,11 @@ with tab2:
     df_plot_heat = df_time_t2[df_time_t2["Temperature"] >= 50].copy()
     if df_plot_heat.empty:
         fig2 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
-        fig2.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="rgba(0,0,0,0)")
+        fig2.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")
     else:
         fig2 = px.density_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", z="Temperature", radius=50, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.7, color_continuous_scale=["rgba(0,0,0,0)", "#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
-        fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="rgba(0,0,0,0)")
+        fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
         st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
 
 with tab3:
@@ -464,7 +405,7 @@ with tab3:
             st.session_state["last_alert_sent"] = alert_key_dust
 
     fig3 = px.density_mapbox(df_time_t3, lat="Latitude", lon="Longitude", z="Dust Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.75, hover_data={"Station": True, "Wind Speed": True, "Wind Direction": True, "Visibility": True}, color_continuous_scale=["rgba(0,0,0,0)", "#FEF3C7", "#FCD34D", "#D97706", "#78350F"], range_color=[0, 100])
-    fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="rgba(0,0,0,0)")
+    fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
     st.plotly_chart(fig3, use_container_width=True, key="dust_map_data")
 
 with tab4:
@@ -484,7 +425,7 @@ with tab4:
 
 with tab5:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📚 UAE National Climate Almanac (2003 - 2025)</h4>', unsafe_allow_html=True)
-    if almanac_df.empty: st.error(f"⚠️ Error loading database. Please ensure the file is uploaded correctly. (Detail: {err_msg})")
+    if almanac_df.empty: st.error(f"⚠️ Error loading database. Please ensure the file is uploaded correctly.")
     else:
         target_date = st.date_input("📅 Select a Calendar Day to view Historical National Extremes", value=datetime.today())
         safe_months = almanac_df['month'].astype(str).str.strip().str.lower()
@@ -496,13 +437,12 @@ with tab5:
             
             def format_year(y):
                 try:
-                    if pd.isna(y) or str(y).strip() in ["", "-", "nan", "None"]:
-                        return "-"
+                    if pd.isna(y) or str(y).strip() in ["", "-", "nan", "None"]: return "-"
                     return str(int(float(y)))
                 except Exception:
                     return str(y).strip()
 
-            st.markdown(f"""<table class="custom-table"><tr style="background-color:rgba(8, 47, 73, 0.95);"><th style="color:white !important;">Meteorological Metric</th><th style="color:white !important;">All-Time Record</th><th style="color:white !important;">Station / Location</th><th style="color:white !important;">Recorded Year</th></tr><tr><td>🔥 Highest Temperature</td><td style="color:#DC2626; font-weight:bold;">{record.get('highest_temperature_value', '-')} °C</td><td>{record.get('highest_temperature_location_en', '-')}</td><td>{format_year(record.get('highest_temperature_year', '-'))}</td></tr><tr><td>❄️ Lowest Temperature</td><td style="color:#0284C7; font-weight:bold;">{record.get('lowest_temperature_value', '-')} °C</td><td>{record.get('lowest_temperature_location_en', '-')}</td><td>{format_year(record.get('lowest_temperature_year', '-'))}</td></tr><tr><td>🌪️ Strongest Wind Gust</td><td style="color:#D97706; font-weight:bold;">{record.get('maximum_wind_value', '-')} km/h</td><td>{record.get('maximum_wind_location_en', '-')}</td><td>{format_year(record.get('maximum_wind_year', '-'))}</td></tr><tr><td>🌧️ Highest Rainfall</td><td style="color:#10B981; font-weight:bold;">{record.get('highest_rainfall_value', '-')} mm</td><td>{record.get('highest_rainfall_location_en', '-')}</td><td>{format_year(record.get('highest_rainfall_year', '-'))}</td></tr></table>""", unsafe_allow_html=True)
+            st.markdown(f"""<table class="custom-table"><tr><th style="color:white !important;">Meteorological Metric</th><th style="color:white !important;">All-Time Record</th><th style="color:white !important;">Station / Location</th><th style="color:white !important;">Recorded Year</th></tr><tr><td>🔥 Highest Temperature</td><td style="color:#DC2626; font-weight:bold;">{record.get('highest_temperature_value', '-')} °C</td><td>{record.get('highest_temperature_location_en', '-')}</td><td>{format_year(record.get('highest_temperature_year', '-'))}</td></tr><tr><td>❄️ Lowest Temperature</td><td style="color:#0284C7; font-weight:bold;">{record.get('lowest_temperature_value', '-')} °C</td><td>{record.get('lowest_temperature_location_en', '-')}</td><td>{format_year(record.get('lowest_temperature_year', '-'))}</td></tr><tr><td>🌪️ Strongest Wind Gust</td><td style="color:#D97706; font-weight:bold;">{record.get('maximum_wind_value', '-')} km/h</td><td>{record.get('maximum_wind_location_en', '-')}</td><td>{format_year(record.get('maximum_wind_year', '-'))}</td></tr><tr><td>🌧️ Highest Rainfall</td><td style="color:#10B981; font-weight:bold;">{record.get('highest_rainfall_value', '-')} mm</td><td>{record.get('highest_rainfall_location_en', '-')}</td><td>{format_year(record.get('highest_rainfall_year', '-'))}</td></tr></table>""", unsafe_allow_html=True)
         else: st.info(f"No extreme records found in the database for {target_date.strftime('%B %d')}.")
 
 with tab6:

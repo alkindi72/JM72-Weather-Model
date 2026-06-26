@@ -135,7 +135,6 @@ def send_alert_smart(status, area_name, is_severe=True):
         sender = sender.strip()
         msg = MIMEText(msg_body, 'plain', 'utf-8')
         short_area = area_name if len(area_name) < 40 else area_name[:37] + "..."
-        # بصمة مميزة لمعرفة أن هذا الإيميل من الكود الجديد
         msg['Subject'] = Header(f"[JM72-V2] 🚨 ALERT - {alert_data['name']} | {short_area}", 'utf-8')
         msg['From'] = sender
         msg['To'] = ", ".join(recipients)
@@ -238,7 +237,7 @@ almanac_df, err_msg = load_national_almanac()
 # 8. JM72 AI DYNAMICS ENGINE & NOWCASTING
 # ==========================================
 weather_data = []
-is_live_data_active = False  # صمام الأمان لمنع الإنذارات الكاذبة
+is_live_data_active = False
 
 if fetch_success and type(live_data) is list:
     is_live_data_active = True
@@ -448,7 +447,15 @@ with tab5:
         if not day_data.empty:
             record = day_data.iloc[0]
             st.markdown(f"<p style='font-size:18px; color:#082F49;'><strong>Historical Extremes recorded on {target_date.strftime('%B %d')} across the UAE:</strong></p>", unsafe_allow_html=True)
-            format_year = lambda y: str(int(float(y))) if pd.notnull(y) else "-"
+            
+            def format_year(y):
+                if pd.isna(y) or str(y).strip() in ["", "-", "nan"]:
+                    return "-"
+                try:
+                    return str(int(float(y)))
+                except (ValueError, TypeError):
+                    return str(y).strip()
+
             st.markdown(f"""<table class="custom-table"><tr style="background-color:#E0F2FE;"><th>Meteorological Metric</th><th>All-Time Record</th><th>Station / Location</th><th>Recorded Year</th></tr><tr><td>🔥 Highest Temperature</td><td style="color:#DC2626; font-weight:bold;">{record.get('highest_temperature_value', '-')} °C</td><td>{record.get('highest_temperature_location_en', '-')}</td><td>{format_year(record.get('highest_temperature_year', '-'))}</td></tr><tr><td>❄️ Lowest Temperature</td><td style="color:#0284C7; font-weight:bold;">{record.get('lowest_temperature_value', '-')} °C</td><td>{record.get('lowest_temperature_location_en', '-')}</td><td>{format_year(record.get('lowest_temperature_year', '-'))}</td></tr><tr><td>🌪️ Strongest Wind Gust</td><td style="color:#D97706; font-weight:bold;">{record.get('maximum_wind_value', '-')} km/h</td><td>{record.get('maximum_wind_location_en', '-')}</td><td>{format_year(record.get('maximum_wind_year', '-'))}</td></tr><tr><td>🌧️ Highest Rainfall</td><td style="color:#10B981; font-weight:bold;">{record.get('highest_rainfall_value', '-')} mm</td><td>{record.get('highest_rainfall_location_en', '-')}</td><td>{format_year(record.get('highest_rainfall_year', '-'))}</td></tr></table>""", unsafe_allow_html=True)
         else: st.info(f"No extreme records found in the database for {target_date.strftime('%B %d')}.")
 

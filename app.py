@@ -15,47 +15,96 @@ from email.mime.text import MIMEText
 from email.header import Header
 
 # ==========================================
-# 1. PLATFORM SETTINGS MUST BE VERY FIRST
+# 1. PLATFORM SETTINGS & FAVICON
 # ==========================================
 st.set_page_config(
     page_title="JM72 AI Weather Model", 
-    page_icon="🌩️",  # أيقونة المتصفح الموثوقة
+    page_icon="🌩️", 
     layout="wide"
 )
 
 # ==========================================
-# 2. BULLETPROOF FLOATING LOGO (TOP RIGHT)
+# 2. AI & WEATHER DYNAMIC CSS BACKGROUND
 # ==========================================
-icon_svg_code = """
-<svg viewBox="-10 10 160 80" xmlns="http://www.w3.org/2000/svg">
-    <path d="M 10,70 L 40,25 L 70,55 L 100,15 L 130,70 Z" fill="#D4AF37" />
-    <path d="M -5,70 Q 35,55 70,70 T 145,70 L 145,85 L -5,85 Z" fill="#0284C7" />
-    <text x="70" y="55" font-family="'Arial Black', sans-serif" font-weight="900" font-size="24" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
+st.markdown("""
+<style>
+    /* 1. Animated Sky/Atmosphere Gradient */
+    @keyframes techWeatherBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+        background: linear-gradient(-45deg, #F0F9FF, #E0F2FE, #F8FAFC, #F1F5F9) !important;
+        background-size: 400% 400% !important;
+        animation: techWeatherBG 25s ease infinite !important;
+    }
+
+    /* 2. AI Data Grid Overlay (Subtle & Professional) */
+    [data-testid="stAppViewContainer"]::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        background-image: 
+            linear-gradient(rgba(2, 132, 199, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(2, 132, 199, 0.04) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    /* Keep UI elements above background */
+    .block-container { z-index: 1; position: relative; }
+    .stApp { background: transparent !important; }
+    [data-testid="stHeader"] { background: transparent !important; }
+    [data-testid="stToolbar"] { visibility: hidden !important; }
+
+    .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"] { 
+        color: #082F49 !important; font-weight: 900 !important; font-size: 16px !important; 
+    }
+    
+    button[data-baseweb="tab"] { background-color: rgba(255,255,255,0.8) !important; border: 1px solid #CBD5E1 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; box-shadow: 0 -2px 5px rgba(0,0,0,0.02); }
+    button[data-baseweb="tab"][aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
+    button[data-baseweb="tab"][aria-selected="true"] p { color: #FFFFFF !important; }
+    
+    .alert-banner { background-color: rgba(254, 242, 242, 0.95); color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; font-size: 16px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); line-height: 1.6; backdrop-filter: blur(5px);}
+    .sys-success { background-color: rgba(240, 253, 244, 0.95); color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; backdrop-filter: blur(5px);}
+    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: rgba(255,255,255,0.95); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 12px; text-align: center; font-size: 14px; }
+    .custom-table td { padding: 12px; border: 1px solid #e2e8f0; color: #1e293b !important; font-weight: bold; text-align: center; font-size: 14px; }
+    
+    .windy-timeline { background-color: rgba(75, 85, 99, 0.95) !important; padding: 20px 25px 5px 25px; border-radius: 8px; border-bottom: 5px solid #374151; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); backdrop-filter: blur(5px);}
+    .windy-timeline label { display: none !important; }
+    .windy-timeline div[data-testid="stTickBar"] { color: #D1D5DB !important; font-size: 14px !important; }
+    .windy-timeline div[role="slider"] { background-color: #D4AF37 !important; border: 2px solid #FFF !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+    .windy-timeline div[role="slider"] > div { background-color: #D4AF37 !important; color: #FFF !important; border-radius: 5px !important; padding: 5px 10px !important; font-size: 15px !important; font-weight: bold !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+</style>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# 3. ORIGINAL CENTERED LOGO (PERFECT SIZE)
+# ==========================================
+svg_code = """
+<svg width="600" height="240" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+    <path id="textArcPath" d="M 70,160 Q 300,0 530,160" fill="transparent" />
+    <text font-family="'Arial Black', 'Segoe UI Black', sans-serif" font-weight="900" font-size="36" fill="#082F49">
+        <textPath href="#textArcPath" startOffset="50%" text-anchor="middle">
+            JM72 AI Weather Model
+        </textPath>
+    </text>
+    <g transform="translate(230, 110)">
+        <path d="M 10,70 L 40,25 L 70,55 L 100,15 L 130,70 Z" fill="#D4AF37" />
+        <path d="M -5,70 Q 35,55 70,70 T 145,70 L 145,85 L -5,85 Z" fill="#0284C7" />
+        <text x="70" y="55" font-family="'Arial Black', sans-serif" font-weight="900" font-size="24" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
+    </g>
 </svg>
 """
-icon_b64 = base64.b64encode(icon_svg_code.encode('utf-8')).decode('utf-8')
-
-st.markdown(f'''
-<style>
-    .floating-logo {{
-        position: fixed;
-        top: 15px;
-        right: 20px;
-        z-index: 999999;
-        background-color: rgba(248, 250, 252, 0.9);
-        padding: 8px 15px;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        border: 2px solid #E2E8F0;
-    }}
-</style>
-<div class="floating-logo">
-    <img src="data:image/svg+xml;base64,{icon_b64}" style="width: 75px; height: auto;" alt="JM72 Logo" />
-</div>
-''', unsafe_allow_html=True)
+b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
+st.markdown(f'<div style="text-align: center; margin-top: 10px; margin-bottom: 30px; width: 100%;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 600px; width: 100%; height: auto;" alt="JM72 AI Weather Model Logo" /></div>', unsafe_allow_html=True)
 
 # ==========================================
-# 3. SMART ALERT FUNCTION (CENTRAL ENGINE)
+# 4. SMART ALERT FUNCTION (CENTRAL ENGINE)
 # ==========================================
 def send_alert_smart(status, area_name, is_severe=True):
     alerts_db = {
@@ -85,8 +134,9 @@ def send_alert_smart(status, area_name, is_severe=True):
     if sender and password and recipients:
         sender = sender.strip()
         msg = MIMEText(msg_body, 'plain', 'utf-8')
-        short_area = area_name if len(area_name) < 50 else area_name[:47] + "..."
-        msg['Subject'] = Header(f"🚨 JM72 ALERT - {alert_data['name']} | {short_area}", 'utf-8')
+        short_area = area_name if len(area_name) < 40 else area_name[:37] + "..."
+        # بصمة مميزة لمعرفة أن هذا الإيميل من الكود الجديد
+        msg['Subject'] = Header(f"[JM72-V2] 🚨 ALERT - {alert_data['name']} | {short_area}", 'utf-8')
         msg['From'] = sender
         msg['To'] = ", ".join(recipients)
         try:
@@ -97,56 +147,14 @@ def send_alert_smart(status, area_name, is_severe=True):
             pass
 
 # ==========================================
-# 4. CUSTOM WINDY CSS & SESSION STATE
+# 5. SESSION STATE
 # ==========================================
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
-
-if "admin_logged_in" not in st.session_state:
-    st.session_state["admin_logged_in"] = False
-if "last_alert_sent" not in st.session_state:
-    st.session_state["last_alert_sent"] = ""
-
-st.markdown("""
-<style>
-    [data-testid="stToolbar"] { visibility: hidden !important; }
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stApp"] {
-        background-color: #F8FAFC !important;
-    }
-    .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"] { 
-        color: #082F49 !important; font-weight: 900 !important; font-size: 16px !important; 
-    }
-    button[data-baseweb="tab"] { background-color: #FFFFFF !important; border: 2px solid #E2E8F0 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; }
-    button[data-baseweb="tab"] p { font-size: 18px !important; color: #475569 !important; }
-    button[data-baseweb="tab"][aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
-    button[data-baseweb="tab"][aria-selected="true"] p { color: #FFFFFF !important; }
-    .alert-banner { background-color: #FEF2F2; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; font-size: 16px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); line-height: 1.6; }
-    .sys-success { background-color: #F0FDF4; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; }
-    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 12px; text-align: center; font-size: 14px; }
-    .custom-table td { padding: 12px; border: 1px solid #e2e8f0; color: #1e293b !important; font-weight: bold; text-align: center; font-size: 14px; }
-    
-    /* WINDY TIMELINE CUSTOM CSS */
-    .windy-timeline {
-        background-color: #4B5563 !important;
-        padding: 20px 25px 5px 25px;
-        border-radius: 8px;
-        border-bottom: 5px solid #374151;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-    .windy-timeline label { display: none !important; }
-    .windy-timeline div[data-testid="stTickBar"] { color: #D1D5DB !important; font-size: 14px !important; }
-    .windy-timeline div[role="slider"] { background-color: #D4AF37 !important; border: 2px solid #FFF !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-    .windy-timeline div[role="slider"] > div { background-color: #D4AF37 !important; color: #FFF !important; border-radius: 5px !important; padding: 5px 10px !important; font-size: 15px !important; font-weight: bold !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
-</style>
-""", unsafe_allow_html=True)
-
-# MAIN CENTER LOGO (Kept for visual balance)
-b64_svg = base64.b64encode(icon_svg_code.encode('utf-8')).decode('utf-8')
-st.markdown(f'<div style="text-align: center; margin-top: 10px; margin-bottom: 30px; width: 100%;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 100%; height: auto; transform: scale(2.5);" /></div>', unsafe_allow_html=True)
+if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
+if "last_alert_sent" not in st.session_state: st.session_state["last_alert_sent"] = ""
 
 # ==========================================
-# 5. REST-API & GEOGRAPHICAL SECTORS
+# 6. REST-API & GEOGRAPHICAL SECTORS
 # ==========================================
 stations_matrix = {
     "Abu Dhabi": {"lat": 24.4760, "lon": 54.3290, "type": "Coast"}, "ADNOC HQ": {"lat": 24.4621, "lon": 54.3241, "type": "Coast"},
@@ -210,7 +218,7 @@ with st.spinner("🤖 Dynamically compiling live metrics & fetching real-time Ra
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 # ==========================================
-# 6. ALMANAC DATA LOADER
+# 7. ALMANAC DATA LOADER
 # ==========================================
 @st.cache_data
 def load_national_almanac():
@@ -227,10 +235,13 @@ def load_national_almanac():
 almanac_df, err_msg = load_national_almanac()
 
 # ==========================================
-# 7. JM72 AI DYNAMICS ENGINE & NOWCASTING
+# 8. JM72 AI DYNAMICS ENGINE & NOWCASTING
 # ==========================================
 weather_data = []
+is_live_data_active = False  # صمام الأمان لمنع الإنذارات الكاذبة
+
 if fetch_success and type(live_data) is list:
+    is_live_data_active = True
     st.markdown('<div class="sys-success">🟢 LIVE OPERATIONS ACTIVE: Model dynamically executing orographic convergence & Radar Nowcasting verification.</div>', unsafe_allow_html=True)
     for idx, (name, coords) in enumerate(stations_matrix.items()):
         try:
@@ -282,6 +293,7 @@ if fetch_success and type(live_data) is list:
         except Exception: pass
 
 if not weather_data:
+    st.error("⚠️ Connection to Weather Satellite API failed. Showing offline fallback data. (EMAIL ALERTS DISABLED TO PREVENT FALSE POSITIVES)")
     np.random.seed(42)
     for dt_str, dt in zip(timeline_str, timeline):
         is_afternoon = 12 <= dt.hour <= 18
@@ -303,7 +315,7 @@ df_all = pd.DataFrame(weather_data)
 esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}]
 
 # ==========================================
-# 8. SIX-TAB PROFESSIONAL INTERFACE
+# 9. SIX-TAB PROFESSIONAL INTERFACE
 # ==========================================
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🌩️ Orographic Thunderstorms", "🔥 Heat Dome Tracker", "🌪️ Wind & Sandstorms", "📋 Model Matrix", "📚 National Almanac", "⚙️ Control Room"
@@ -331,7 +343,8 @@ with tab1:
         target_radar = df_time_t1.loc[df_time_t1["Storm Probability"].idxmax(), "Radar Verif"]
         st.markdown(f'<div class="alert-banner"><strong>🚨 RED ALERT:</strong> Severe Convective Storm Risk ({max_storm}%) detected over:<br>📍 {target_str} <br><br> 📡 Radar Nowcast: {target_radar}</div>', unsafe_allow_html=True)
         alert_key = f"THUNDERSTORM_{target_str}_{selected_time_t1}"
-        if st.session_state["last_alert_sent"] != alert_key:
+        
+        if is_live_data_active and st.session_state["last_alert_sent"] != alert_key:
             send_alert_smart("THUNDERSTORM", target_str, is_severe=True)
             st.session_state["last_alert_sent"] = alert_key
     
@@ -370,7 +383,7 @@ with tab2:
         target_heat_str = ", ".join(get_clustered_sectors(affected_heat_stations))
         st.markdown(f'<div class="alert-banner"><strong>🚨 HEAT ALERT:</strong> Extreme Thermal Heat Dome ({max_temp}°C) over:<br>📍 {target_heat_str}</div>', unsafe_allow_html=True)
         alert_key_heat = f"HEAT_{target_heat_str}_{selected_time_t2}"
-        if st.session_state["last_alert_sent"] != alert_key_heat:
+        if is_live_data_active and st.session_state["last_alert_sent"] != alert_key_heat:
             send_alert_smart("HEAT", target_heat_str, is_severe=True)
             st.session_state["last_alert_sent"] = alert_key_heat
 
@@ -399,7 +412,7 @@ with tab3:
         target_dust_row = df_time_t3.loc[df_time_t3["Dust Probability"].idxmax()]
         st.markdown(f'''<div class="alert-banner" style="background-color: #FFFBEB; color: #92400E !important; border-left-color: #D97706;"><strong>⚠️ DUST ALERT:</strong> High probability of sandstorms ({max_dust}%) detected over:<br>📍 {target_dust_str}<br><br>• Max Wind Speed: {target_dust_row["Wind Speed"]} km/h (Gusts: {target_dust_row["Gusts"]} km/h)<br></div>''', unsafe_allow_html=True)
         alert_key_dust = f"DUST_STORM_{target_dust_str}_{selected_time_t3}"
-        if st.session_state["last_alert_sent"] != alert_key_dust:
+        if is_live_data_active and st.session_state["last_alert_sent"] != alert_key_dust:
             send_alert_smart("DUST_STORM", target_dust_str, is_severe=True)
             st.session_state["last_alert_sent"] = alert_key_dust
 

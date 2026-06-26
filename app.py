@@ -24,65 +24,59 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. ENTERPRISE AI & METEOROLOGY BACKGROUND
+# 2. BULLETPROOF ROOT BACKGROUND INJECTION
 # ==========================================
 st.markdown("""
-<div class="jm72-bg-base"></div>
-<div class="jm72-bg-grid"></div>
-
 <style>
-    /* Force Streamlit to drop default backgrounds completely */
-    html, body, [data-testid="stAppViewContainer"], .stApp, #root {
+    /* 1. The Animation Keyframes */
+    @keyframes moveGrid {
+        0% { background-position: 0px 0px, 0px 0px, 0px 0px, 0% 0%; }
+        100% { background-position: 40px 40px, 40px 40px, 300px 300px, 0% 0%; }
+    }
+
+    /* 2. ULTIMATE OVERRIDE: Apply to the browser's absolute root */
+    html, body {
+        background-color: #F8FAFC !important;
+        background-image: 
+            /* AI Tech Grid */
+            linear-gradient(rgba(8, 47, 73, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(8, 47, 73, 0.04) 1px, transparent 1px),
+            /* Classic Topographic/Isobar Map Motif */
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M-20,100 C50,-50 150,-50 220,100' fill='none' stroke='%23082F49' stroke-width='0.75' opacity='0.2'/%3E%3Cpath d='M-20,150 C70,0 150,200 220,50' fill='none' stroke='%23D4AF37' stroke-width='0.75' opacity='0.2'/%3E%3C/svg%3E"),
+            /* Soft Atmosphere Gradient */
+            linear-gradient(135deg, #F0F9FF 0%, #E2E8F0 100%) !important;
+        background-size: 40px 40px, 40px 40px, 300px 300px, 100% 100% !important;
+        background-attachment: fixed !important;
+        animation: moveGrid 40s linear infinite !important;
+        margin: 0; padding: 0;
+    }
+
+    /* 3. FORCE STREAMLIT'S WHITE LAYERS TO BECOME COMPLETELY TRANSPARENT */
+    #root, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stMain"] {
         background: transparent !important;
         background-color: transparent !important;
-        overflow-x: hidden;
-    }
-    
-    /* 1. Solid Base Layer (Professional Slate) */
-    .jm72-bg-base {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        width: 100vw; height: 100vh;
-        z-index: -9999;
-        background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%) !important;
     }
 
-    /* 2. Meteorological/AI Tech Grid (Precision coordinates + Heritage Isobars) */
-    .jm72-bg-grid {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        width: 100vw; height: 100vh;
-        z-index: -9998;
-        background-image: 
-            /* Subtle AI Tech Grid */
-            linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
-            /* Classic Topographic/Isobar Map Motif (Meteorological Heritage) */
-            url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,50 Q100,0 200,50 T400,50' fill='none' stroke='%23082F49' stroke-width='0.5' opacity='0.08'/%3E%3Cpath d='M0,150 Q100,100 200,150 T400,150' fill='none' stroke='%23D4AF37' stroke-width='0.5' opacity='0.08'/%3E%3C/svg%3E");
-        background-size: 30px 30px, 30px 30px, 150px 150px;
-        background-position: center center;
-    }
+    /* Completely kill the ugly default top header */
+    [data-testid="stHeader"] { display: none !important; }
+    [data-testid="stToolbar"] { display: none !important; visibility: hidden !important; }
 
-    /* 3. Main Container - Premium Frosted Glass Panel */
-    .block-container, [data-testid="block-container"] {
-        z-index: 1;
-        position: relative;
+    /* 4. THE PREMIUM FROSTED GLASS CONTENT PANEL */
+    .block-container, [data-testid="block-container"], [data-testid="stMainBlockContainer"] {
         background: rgba(255, 255, 255, 0.85) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
         border-radius: 16px !important;
         border: 1px solid rgba(255, 255, 255, 1) !important;
-        box-shadow: 0 10px 40px rgba(8, 47, 73, 0.06) !important;
+        box-shadow: 0 10px 40px rgba(8, 47, 73, 0.08) !important;
         padding: 3rem !important;
-        margin-top: 1rem !important;
+        max-width: 95% !important;
+        margin-top: 2rem !important;
         margin-bottom: 2rem !important;
+        z-index: 1; /* Keeps content strictly above the background */
     }
 
-    /* Clean up default headers */
-    [data-testid="stHeader"] { background: transparent !important; }
-    [data-testid="stToolbar"] { visibility: hidden !important; }
-
-    /* Strict Typography */
+    /* Strict Typography for Readability */
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { 
         color: #082F49 !important; font-weight: 900 !important; font-size: 16px !important; 
     }
@@ -99,12 +93,10 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     button[data-baseweb="tab"]:hover { background-color: rgba(241, 245, 249, 0.8) !important; }
-    button[data-baseweb="tab"][aria-selected="true"] { 
-        background-color: #082F49 !important; 
-    }
+    button[data-baseweb="tab"][aria-selected="true"] { background-color: #082F49 !important; }
     button[data-baseweb="tab"][aria-selected="true"] p { color: #FFFFFF !important; }
     
-    /* Banners & Tables */
+    /* Elegant Components */
     .alert-banner { background-color: rgba(254, 242, 242, 0.95); color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; font-size: 16px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #FEE2E2; }
     .sys-success { background-color: rgba(240, 253, 244, 0.95); color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; border: 1px solid #DCFCE7;}
     .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #E2E8F0;}
@@ -112,7 +104,7 @@ st.markdown("""
     .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #1e293b !important; font-weight: 700; text-align: center; font-size: 14px; }
     
     /* Windy Timeline */
-    .windy-timeline { background-color: rgba(51, 65, 85, 0.95) !important; padding: 20px 25px 5px 25px; border-radius: 12px; border-bottom: 4px solid #1E293B; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); backdrop-filter: blur(5px);}
+    .windy-timeline { background-color: rgba(51, 65, 85, 0.95) !important; padding: 20px 25px 5px 25px; border-radius: 12px; border-bottom: 4px solid #1E293B; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .windy-timeline label { display: none !important; }
     .windy-timeline div[data-testid="stTickBar"] { color: #E2E8F0 !important; font-size: 14px !important; }
     .windy-timeline div[role="slider"] { background-color: #D4AF37 !important; border: 2px solid #FFF !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
@@ -388,11 +380,11 @@ with tab1:
     df_plot_storm = df_time_t1[df_time_t1["Storm Probability"] > 0].copy()
     if df_plot_storm.empty:
         fig1 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
-        fig1.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
+        fig1.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_empty")
     else:
         fig1 = px.density_mapbox(df_plot_storm, lat="Latitude", lon="Longitude", z="Storm Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.75, color_continuous_scale=["rgba(0,0,0,0)", "#A3E635", "#FDE047", "#EF4444", "#7E22CE"], range_color=[0, 100])
-        fig1.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
+        fig1.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_data")
         
     st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery & Streams</h3>', unsafe_allow_html=True)
@@ -427,11 +419,11 @@ with tab2:
     df_plot_heat = df_time_t2[df_time_t2["Temperature"] >= 50].copy()
     if df_plot_heat.empty:
         fig2 = go.Figure(go.Scattermapbox(lat=[24.4], lon=[54.6], mode='markers', marker=dict(size=0, opacity=0)))
-        fig2.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0})
+        fig2.update_layout(mapbox_style="white-bg", mapbox_layers=esri_topo_layer, mapbox_zoom=6, mapbox_center={"lat": 24.4, "lon": 54.6}, margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig2, use_container_width=True, key="heat_map_empty")
     else:
         fig2 = px.density_mapbox(df_plot_heat, lat="Latitude", lon="Longitude", z="Temperature", radius=50, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.7, color_continuous_scale=["rgba(0,0,0,0)", "#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
-        fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
+        fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
 
 with tab3:
@@ -454,7 +446,7 @@ with tab3:
             st.session_state["last_alert_sent"] = alert_key_dust
 
     fig3 = px.density_mapbox(df_time_t3, lat="Latitude", lon="Longitude", z="Dust Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.75, hover_data={"Station": True, "Wind Speed": True, "Wind Direction": True, "Visibility": True}, color_continuous_scale=["rgba(0,0,0,0)", "#FEF3C7", "#FCD34D", "#D97706", "#78350F"], range_color=[0, 100])
-    fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
+    fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0}, paper_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig3, use_container_width=True, key="dust_map_data")
 
 with tab4:

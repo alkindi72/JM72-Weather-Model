@@ -24,91 +24,112 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. BULLETPROOF ROOT BACKGROUND INJECTION
+# 2. TRUE ENTERPRISE BACKGROUND & GLASSMORPHISM
 # ==========================================
 st.markdown("""
 <style>
-    /* 1. The Animation Keyframes */
-    @keyframes moveGrid {
-        0% { background-position: 0px 0px, 0px 0px, 0px 0px, 0% 0%; }
-        100% { background-position: 40px 40px, 40px 40px, 300px 300px, 0% 0%; }
-    }
-
-    /* 2. ULTIMATE OVERRIDE: Apply to the browser's absolute root */
-    html, body {
-        background-color: #F8FAFC !important;
-        background-image: 
-            /* AI Tech Grid */
-            linear-gradient(rgba(8, 47, 73, 0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(8, 47, 73, 0.04) 1px, transparent 1px),
-            /* Classic Topographic/Isobar Map Motif */
-            url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M-20,100 C50,-50 150,-50 220,100' fill='none' stroke='%23082F49' stroke-width='0.75' opacity='0.2'/%3E%3Cpath d='M-20,150 C70,0 150,200 220,50' fill='none' stroke='%23D4AF37' stroke-width='0.75' opacity='0.2'/%3E%3C/svg%3E"),
-            /* Soft Atmosphere Gradient */
-            linear-gradient(135deg, #F0F9FF 0%, #E2E8F0 100%) !important;
-        background-size: 40px 40px, 40px 40px, 300px 300px, 100% 100% !important;
-        background-attachment: fixed !important;
-        animation: moveGrid 40s linear infinite !important;
-        margin: 0; padding: 0;
-    }
-
-    /* 3. FORCE STREAMLIT'S WHITE LAYERS TO BECOME COMPLETELY TRANSPARENT */
-    #root, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stMain"] {
+    /* 1. Force Streamlit to drop default solid white backgrounds */
+    html, body, [data-testid="stAppViewContainer"], #root {
         background: transparent !important;
         background-color: transparent !important;
     }
+    
+    /* 2. THE BACKGROUND ANIMATION */
+    @keyframes atmosFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
 
-    /* Completely kill the ugly default top header */
-    [data-testid="stHeader"] { display: none !important; }
-    [data-testid="stToolbar"] { display: none !important; visibility: hidden !important; }
+    /* Base Layer: Flowing Atmosphere */
+    .stApp {
+        background: linear-gradient(-45deg, #F0F9FF, #E0F2FE, #F8FAFC, #BAE6FD) !important;
+        background-size: 400% 400% !important;
+        animation: atmosFlow 20s ease infinite !important;
+    }
 
-    /* 4. THE PREMIUM FROSTED GLASS CONTENT PANEL */
+    /* Overlay Layer: AI Data Grid + Isobar Rings */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        background-image: 
+            radial-gradient(rgba(8, 47, 73, 0.1) 1.5px, transparent 1.5px),
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M-20,100 C50,-50 150,-50 220,100' fill='none' stroke='%23082F49' stroke-width='0.5' opacity='0.15'/%3E%3Cpath d='M-20,150 C70,0 150,200 220,50' fill='none' stroke='%23D4AF37' stroke-width='0.5' opacity='0.15'/%3E%3C/svg%3E");
+        background-size: 30px 30px, 200px 200px;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* 3. FIXING THE WHITE BOX (Premium Frosted Glass) */
     .block-container, [data-testid="block-container"], [data-testid="stMainBlockContainer"] {
-        background: rgba(255, 255, 255, 0.85) !important;
+        background: rgba(255, 255, 255, 0.35) !important; /* Transparent Glass instead of solid white */
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
-        border-radius: 16px !important;
-        border: 1px solid rgba(255, 255, 255, 1) !important;
+        border-radius: 24px !important;
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
         box-shadow: 0 10px 40px rgba(8, 47, 73, 0.08) !important;
         padding: 3rem !important;
-        max-width: 95% !important;
-        margin-top: 2rem !important;
+        margin-top: 1rem !important;
         margin-bottom: 2rem !important;
-        z-index: 1; /* Keeps content strictly above the background */
+        max-width: 95% !important;
+        z-index: 1; 
     }
 
-    /* Strict Typography for Readability */
+    /* Hide ugly default headers */
+    [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
+
+    /* Strict Typography */
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { 
-        color: #082F49 !important; font-weight: 900 !important; font-size: 16px !important; 
+        color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; 
     }
 
-    /* Enterprise Tabs */
-    .stTabs [data-baseweb="tab-list"] { background-color: transparent !important; border-bottom: 2px solid rgba(203, 213, 225, 0.5); }
-    .stTabs [data-baseweb="tab-panel"] { background-color: transparent !important; padding-top: 1.5rem !important; }
-    button[data-baseweb="tab"] { 
+    /* 4. Elegant Tabs Over Glass */
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] { 
         background-color: transparent !important; 
-        border: none !important; 
+        border-bottom: 2px solid rgba(15, 23, 42, 0.1); 
+    }
+    div[data-testid="stTabs"] [data-baseweb="tab-panel"] { 
+        background-color: transparent !important; padding-top: 1.5rem !important; 
+    }
+    div[data-testid="stTabs"] button { 
+        background-color: rgba(255, 255, 255, 0.5) !important; 
+        border: 1px solid rgba(255, 255, 255, 0.8) !important; 
         border-radius: 8px 8px 0 0 !important; 
         margin-right: 5px !important; 
         padding: 10px 20px !important; 
-        transition: all 0.3s ease;
+        transition: 0.3s;
     }
-    button[data-baseweb="tab"]:hover { background-color: rgba(241, 245, 249, 0.8) !important; }
-    button[data-baseweb="tab"][aria-selected="true"] { background-color: #082F49 !important; }
-    button[data-baseweb="tab"][aria-selected="true"] p { color: #FFFFFF !important; }
+    div[data-testid="stTabs"] button:hover { background-color: rgba(255, 255, 255, 0.9) !important; }
+    div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
+    div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
     
-    /* Elegant Components */
-    .alert-banner { background-color: rgba(254, 242, 242, 0.95); color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; font-size: 16px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #FEE2E2; }
-    .sys-success { background-color: rgba(240, 253, 244, 0.95); color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; border: 1px solid #DCFCE7;}
-    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #E2E8F0;}
-    .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 14px; text-align: center; font-size: 14px; letter-spacing: 0.5px; border-bottom: 3px solid #D4AF37;}
-    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #1e293b !important; font-weight: 700; text-align: center; font-size: 14px; }
-    
-    /* Windy Timeline */
-    .windy-timeline { background-color: rgba(51, 65, 85, 0.95) !important; padding: 20px 25px 5px 25px; border-radius: 12px; border-bottom: 4px solid #1E293B; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    .windy-timeline label { display: none !important; }
-    .windy-timeline div[data-testid="stTickBar"] { color: #E2E8F0 !important; font-size: 14px !important; }
-    .windy-timeline div[role="slider"] { background-color: #D4AF37 !important; border: 2px solid #FFF !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-    .windy-timeline div[role="slider"] > div { background-color: #D4AF37 !important; color: #FFF !important; border-radius: 6px !important; padding: 4px 10px !important; font-size: 14px !important; font-weight: bold !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+    /* 5. FIXING THE TIMELINE SLIDER DIRECTLY (Native override) */
+    div[data-testid="stSlider"] {
+        background-color: rgba(30, 41, 59, 0.95) !important;
+        padding: 20px 25px 20px 25px !important;
+        border-radius: 12px !important;
+        border-bottom: 4px solid #0F172A !important;
+        margin-bottom: 25px !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        backdrop-filter: blur(10px);
+    }
+    div[data-testid="stTickBar"], div[data-testid="stTickBar"] span { color: #E2E8F0 !important; }
+    div[data-testid="stSlider"] div[role="slider"] {
+        background-color: #D4AF37 !important;
+        border: 2px solid #FFF !important;
+        box-shadow: 0 0 8px rgba(0,0,0,0.5) !important;
+    }
+    div[data-testid="stSlider"] div[role="slider"] > div {
+        background-color: #D4AF37 !important; color: #FFF !important;
+    }
+
+    /* 6. Transparent Data Elements */
+    .alert-banner { background-color: rgba(254, 242, 242, 0.85); color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;}
+    .sys-success { background-color: rgba(240, 253, 244, 0.85); color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px;}
+    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid white;}
+    .custom-table th { background-color: rgba(8, 47, 73, 0.95); color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37;}
+    .custom-table td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.5); border-right: 1px solid rgba(255,255,255,0.5); color: #082F49 !important; font-weight: 800; text-align: center;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -131,10 +152,13 @@ svg_code = """
 </svg>
 """
 b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
-st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 30px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 500px; width: 100%; height: auto;" alt="JM72 AI Weather Model Logo" /></div>', unsafe_allow_html=True)
+st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: -10px; margin-bottom: 25px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="JM72 AI Weather Model Logo" /></div>', unsafe_allow_html=True)
+
+# Save favicon variant
+with open("jm72_icon.svg", "w", encoding="utf-8") as f: f.write(svg_code)
 
 # ==========================================
-# 4. SMART ALERT FUNCTION (CENTRAL ENGINE)
+# 4. SMART ALERT FUNCTION
 # ==========================================
 def send_alert_smart(status, area_name, is_severe=True):
     alerts_db = {
@@ -264,7 +288,7 @@ def load_national_almanac():
 almanac_df, err_msg = load_national_almanac()
 
 # ==========================================
-# 8. JM72 AI DYNAMICS ENGINE & NOWCASTING
+# 8. JM72 AI DYNAMICS ENGINE
 # ==========================================
 weather_data = []
 is_live_data_active = False
@@ -322,7 +346,7 @@ if fetch_success and type(live_data) is list:
         except Exception: pass
 
 if not weather_data:
-    st.error("⚠️ Connection to Weather Satellite API failed. Showing offline fallback data. (EMAIL ALERTS DISABLED TO PREVENT FALSE POSITIVES)")
+    st.error("⚠️ Connection to Weather Satellite API failed. Showing offline fallback data. (EMAIL ALERTS DISABLED)")
     np.random.seed(42)
     for dt_str, dt in zip(timeline_str, timeline):
         is_afternoon = 12 <= dt.hour <= 18
@@ -344,7 +368,7 @@ df_all = pd.DataFrame(weather_data)
 esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}]
 
 # ==========================================
-# 9. SIX-TAB PROFESSIONAL INTERFACE
+# 9. TABS & INTERFACE
 # ==========================================
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🌩️ Orographic Thunderstorms", "🔥 Heat Dome Tracker", "🌪️ Wind & Sandstorms", "📋 Model Matrix", "📚 National Almanac", "⚙️ Control Room"
@@ -360,9 +384,8 @@ with tab1:
             elif daily_max_storm >= 40: st.warning(f"🟡 **{date}**\n\n**Localized**\n\n### {daily_max_storm}%")
             else: st.success(f"🟢 **{date}**\n\n**Stable**\n\n### {daily_max_storm}%")
     
-    st.markdown('<div class="windy-timeline">', unsafe_allow_html=True)
-    selected_time_t1 = st.select_slider(" ", options=timeline_str, key="t1_slider")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Removed the wrapping divs, native slider gets styled perfectly by the CSS
+    selected_time_t1 = st.select_slider("Forecast Timeline", options=timeline_str, key="t1_slider", label_visibility="collapsed")
     df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()
 
     max_storm = df_time_t1["Storm Probability"].max()
@@ -372,7 +395,6 @@ with tab1:
         target_radar = df_time_t1.loc[df_time_t1["Storm Probability"].idxmax(), "Radar Verif"]
         st.markdown(f'<div class="alert-banner"><strong>🚨 RED ALERT:</strong> Severe Convective Storm Risk ({max_storm}%) detected over:<br>📍 {target_str} <br><br> 📡 Radar Nowcast: {target_radar}</div>', unsafe_allow_html=True)
         alert_key = f"THUNDERSTORM_{target_str}_{selected_time_t1}"
-        
         if is_live_data_active and st.session_state["last_alert_sent"] != alert_key:
             send_alert_smart("THUNDERSTORM", target_str, is_severe=True)
             st.session_state["last_alert_sent"] = alert_key
@@ -401,9 +423,7 @@ with tab2:
             elif d_max_t >= 40.0: st.warning(f"🟡 **{date}**\n\n**High Heat**\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
             else: st.success(f"🟢 **{date}**\n\n**Moderate**\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
     
-    st.markdown('<div class="windy-timeline">', unsafe_allow_html=True)
-    selected_time_t2 = st.select_slider(" ", options=timeline_str, key="t2_slider")
-    st.markdown('</div>', unsafe_allow_html=True)
+    selected_time_t2 = st.select_slider("Forecast Timeline", options=timeline_str, key="t2_slider", label_visibility="collapsed")
     df_time_t2 = df_all[df_all["Time"] == selected_time_t2].copy()
 
     max_temp = df_time_t2["Temperature"].max()
@@ -429,9 +449,7 @@ with tab2:
 with tab3:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">🌪️ Active Wind & Sandstorm Tracker</h4>', unsafe_allow_html=True)
     
-    st.markdown('<div class="windy-timeline">', unsafe_allow_html=True)
-    selected_time_t3 = st.select_slider(" ", options=timeline_str, key="t3_slider")
-    st.markdown('</div>', unsafe_allow_html=True)
+    selected_time_t3 = st.select_slider("Forecast Timeline", options=timeline_str, key="t3_slider", label_visibility="collapsed")
     df_time_t3 = df_all[df_all["Time"] == selected_time_t3].copy()
 
     max_dust = df_time_t3["Dust Probability"].max()
@@ -450,9 +468,7 @@ with tab3:
     st.plotly_chart(fig3, use_container_width=True, key="dust_map_data")
 
 with tab4:
-    st.markdown('<div class="windy-timeline">', unsafe_allow_html=True)
-    selected_time_t4 = st.select_slider(" ", options=timeline_str, key="t4_slider")
-    st.markdown('</div>', unsafe_allow_html=True)
+    selected_time_t4 = st.select_slider("Forecast Timeline", options=timeline_str, key="t4_slider", label_visibility="collapsed")
     df_time_t4 = df_all[df_all["Time"] == selected_time_t4].copy()
     
     st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 34-Station Matrix at {selected_time_t4}</h3>", unsafe_allow_html=True)
@@ -479,11 +495,14 @@ with tab5:
             st.markdown(f"<p style='font-size:18px; color:#082F49;'><strong>Historical Extremes recorded on {target_date.strftime('%B %d')} across the UAE:</strong></p>", unsafe_allow_html=True)
             
             def format_year(y):
-                if pd.isna(y) or str(y).strip() in ["", "-", "nan"]: return "-"
-                try: return str(int(float(y)))
-                except (ValueError, TypeError): return str(y).strip()
+                try:
+                    if pd.isna(y) or str(y).strip() in ["", "-", "nan", "None"]:
+                        return "-"
+                    return str(int(float(y)))
+                except Exception:
+                    return str(y).strip()
 
-            st.markdown(f"""<table class="custom-table"><tr style="background-color:#E0F2FE;"><th>Meteorological Metric</th><th>All-Time Record</th><th>Station / Location</th><th>Recorded Year</th></tr><tr><td>🔥 Highest Temperature</td><td style="color:#DC2626; font-weight:bold;">{record.get('highest_temperature_value', '-')} °C</td><td>{record.get('highest_temperature_location_en', '-')}</td><td>{format_year(record.get('highest_temperature_year', '-'))}</td></tr><tr><td>❄️ Lowest Temperature</td><td style="color:#0284C7; font-weight:bold;">{record.get('lowest_temperature_value', '-')} °C</td><td>{record.get('lowest_temperature_location_en', '-')}</td><td>{format_year(record.get('lowest_temperature_year', '-'))}</td></tr><tr><td>🌪️ Strongest Wind Gust</td><td style="color:#D97706; font-weight:bold;">{record.get('maximum_wind_value', '-')} km/h</td><td>{record.get('maximum_wind_location_en', '-')}</td><td>{format_year(record.get('maximum_wind_year', '-'))}</td></tr><tr><td>🌧️ Highest Rainfall</td><td style="color:#10B981; font-weight:bold;">{record.get('highest_rainfall_value', '-')} mm</td><td>{record.get('highest_rainfall_location_en', '-')}</td><td>{format_year(record.get('highest_rainfall_year', '-'))}</td></tr></table>""", unsafe_allow_html=True)
+            st.markdown(f"""<table class="custom-table"><tr style="background-color:rgba(8, 47, 73, 0.95);"><th style="color:white !important;">Meteorological Metric</th><th style="color:white !important;">All-Time Record</th><th style="color:white !important;">Station / Location</th><th style="color:white !important;">Recorded Year</th></tr><tr><td>🔥 Highest Temperature</td><td style="color:#DC2626; font-weight:bold;">{record.get('highest_temperature_value', '-')} °C</td><td>{record.get('highest_temperature_location_en', '-')}</td><td>{format_year(record.get('highest_temperature_year', '-'))}</td></tr><tr><td>❄️ Lowest Temperature</td><td style="color:#0284C7; font-weight:bold;">{record.get('lowest_temperature_value', '-')} °C</td><td>{record.get('lowest_temperature_location_en', '-')}</td><td>{format_year(record.get('lowest_temperature_year', '-'))}</td></tr><tr><td>🌪️ Strongest Wind Gust</td><td style="color:#D97706; font-weight:bold;">{record.get('maximum_wind_value', '-')} km/h</td><td>{record.get('maximum_wind_location_en', '-')}</td><td>{format_year(record.get('maximum_wind_year', '-'))}</td></tr><tr><td>🌧️ Highest Rainfall</td><td style="color:#10B981; font-weight:bold;">{record.get('highest_rainfall_value', '-')} mm</td><td>{record.get('highest_rainfall_location_en', '-')}</td><td>{format_year(record.get('highest_rainfall_year', '-'))}</td></tr></table>""", unsafe_allow_html=True)
         else: st.info(f"No extreme records found in the database for {target_date.strftime('%B %d')}.")
 
 with tab6:

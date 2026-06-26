@@ -24,113 +24,104 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. BULLETPROOF DYNAMIC BACKGROUND (AI + HERITAGE)
+# 2. ENTERPRISE AI & METEOROLOGY BACKGROUND
 # ==========================================
 st.markdown("""
-<div class="jm72-bg-layer"></div>
+<div class="jm72-bg-base"></div>
+<div class="jm72-bg-grid"></div>
 
 <style>
-    /* 1. Deep HTML Injection to make Streamlit's stubborn white backgrounds fully transparent */
-    html, body, #root, [data-testid="stAppViewContainer"], .stApp, [data-testid="stHeader"] {
-        background-color: transparent !important;
-        background-image: none !important;
+    /* Force Streamlit to drop default backgrounds completely */
+    html, body, [data-testid="stAppViewContainer"], .stApp, #root {
         background: transparent !important;
+        background-color: transparent !important;
+        overflow-x: hidden;
     }
-
-    /* 2. The Custom Background Screen (Fixed securely at the back) */
-    .jm72-bg-layer {
+    
+    /* 1. Solid Base Layer (Professional Slate) */
+    .jm72-bg-base {
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
         width: 100vw; height: 100vh;
-        z-index: -9999; /* Forces it behind absolutely everything */
-        background: linear-gradient(-45deg, #E0F2FE, #F0F9FF, #F8FAFC, #E0F2FE) !important;
-        background-size: 400% 400% !important;
-        animation: techWeatherBG 25s ease infinite !important;
+        z-index: -9999;
+        background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%) !important;
     }
 
-    /* 3. The Grid & Isobar Overlay */
-    .jm72-bg-layer::after {
-        content: "";
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
+    /* 2. Meteorological/AI Tech Grid (Precision coordinates + Heritage Isobars) */
+    .jm72-bg-grid {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100vw; height: 100vh;
+        z-index: -9998;
         background-image: 
-            /* AI Tech Grid */
-            radial-gradient(rgba(2, 132, 199, 0.15) 2px, transparent 2px),
-            /* Weather Isobars & Heritage Curves (Gold & Blue) */
-            url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M-20,200 C50,-20 150,-20 220,200' fill='none' stroke='%23D4AF37' stroke-width='1.5' opacity='0.4'/%3E%3Cpath d='M-20,100 C70,220 150,-20 220,100' fill='none' stroke='%230284C7' stroke-width='1' opacity='0.3'/%3E%3C/svg%3E");
-        background-size: 40px 40px, 200px 200px;
-        animation: panPattern 60s linear infinite;
-        opacity: 0.8;
+            /* Subtle AI Tech Grid */
+            linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+            /* Classic Topographic/Isobar Map Motif (Meteorological Heritage) */
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,50 Q100,0 200,50 T400,50' fill='none' stroke='%23082F49' stroke-width='0.5' opacity='0.08'/%3E%3Cpath d='M0,150 Q100,100 200,150 T400,150' fill='none' stroke='%23D4AF37' stroke-width='0.5' opacity='0.08'/%3E%3C/svg%3E");
+        background-size: 30px 30px, 30px 30px, 150px 150px;
+        background-position: center center;
     }
 
-    @keyframes techWeatherBG {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    
-    @keyframes panPattern {
-        0% { background-position: 0px 0px, 0px 0px; }
-        100% { background-position: 400px 400px, 600px 600px; }
-    }
-
-    /* 4. Glassmorphism for Main Container (Protects the eyes & adds luxury) */
+    /* 3. Main Container - Premium Frosted Glass Panel */
     .block-container, [data-testid="block-container"] {
-        background: rgba(255, 255, 255, 0.65) !important;
-        backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
-        border-radius: 20px !important;
-        border: 1px solid rgba(255, 255, 255, 0.8) !important;
-        box-shadow: 0 10px 40px rgba(8, 47, 73, 0.08) !important;
-        padding-top: 2.5rem !important;
-        padding-bottom: 2.5rem !important;
-        margin-top: 2rem !important;
+        z-index: 1;
+        position: relative;
+        background: rgba(255, 255, 255, 0.85) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(255, 255, 255, 1) !important;
+        box-shadow: 0 10px 40px rgba(8, 47, 73, 0.06) !important;
+        padding: 3rem !important;
+        margin-top: 1rem !important;
         margin-bottom: 2rem !important;
-        z-index: 1; /* Keeps content above the background */
     }
 
+    /* Clean up default headers */
+    [data-testid="stHeader"] { background: transparent !important; }
     [data-testid="stToolbar"] { visibility: hidden !important; }
 
-    /* Typography Override */
+    /* Strict Typography */
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { 
         color: #082F49 !important; font-weight: 900 !important; font-size: 16px !important; 
     }
 
-    /* 5. Custom Tabs */
-    .stTabs [data-baseweb="tab-list"] { background-color: transparent !important; }
-    .stTabs [data-baseweb="tab-panel"] { background-color: transparent !important; }
+    /* Enterprise Tabs */
+    .stTabs [data-baseweb="tab-list"] { background-color: transparent !important; border-bottom: 2px solid rgba(203, 213, 225, 0.5); }
+    .stTabs [data-baseweb="tab-panel"] { background-color: transparent !important; padding-top: 1.5rem !important; }
     button[data-baseweb="tab"] { 
-        background-color: rgba(255,255,255,0.7) !important; 
-        border: 1px solid rgba(203, 213, 225, 0.5) !important; 
-        border-radius: 10px 10px 0 0 !important; 
+        background-color: transparent !important; 
+        border: none !important; 
+        border-radius: 8px 8px 0 0 !important; 
         margin-right: 5px !important; 
         padding: 10px 20px !important; 
         transition: all 0.3s ease;
     }
-    button[data-baseweb="tab"]:hover { background-color: rgba(255,255,255,0.9) !important; }
+    button[data-baseweb="tab"]:hover { background-color: rgba(241, 245, 249, 0.8) !important; }
     button[data-baseweb="tab"][aria-selected="true"] { 
-        background-color: #082F49 !important; border-color: #082F49 !important; 
+        background-color: #082F49 !important; 
     }
     button[data-baseweb="tab"][aria-selected="true"] p { color: #FFFFFF !important; }
     
-    /* 6. Custom Components inside the glass */
-    .alert-banner { background-color: rgba(254, 242, 242, 0.9); color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; font-size: 16px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); line-height: 1.6; }
-    .sys-success { background-color: rgba(240, 253, 244, 0.9); color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; }
-    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: rgba(255,255,255,0.95); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 12px; text-align: center; font-size: 14px; }
-    .custom-table td { padding: 12px; border: 1px solid rgba(226, 232, 240, 0.6); color: #1e293b !important; font-weight: bold; text-align: center; font-size: 14px; }
+    /* Banners & Tables */
+    .alert-banner { background-color: rgba(254, 242, 242, 0.95); color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; font-size: 16px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #FEE2E2; }
+    .sys-success { background-color: rgba(240, 253, 244, 0.95); color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px; border: 1px solid #DCFCE7;}
+    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #E2E8F0;}
+    .custom-table th { background-color: #082F49; color: #ffffff !important; font-weight: bold; padding: 14px; text-align: center; font-size: 14px; letter-spacing: 0.5px; border-bottom: 3px solid #D4AF37;}
+    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #1e293b !important; font-weight: 700; text-align: center; font-size: 14px; }
     
     /* Windy Timeline */
-    .windy-timeline { background-color: rgba(75, 85, 99, 0.95) !important; padding: 20px 25px 5px 25px; border-radius: 10px; border-bottom: 5px solid #374151; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .windy-timeline { background-color: rgba(51, 65, 85, 0.95) !important; padding: 20px 25px 5px 25px; border-radius: 12px; border-bottom: 4px solid #1E293B; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); backdrop-filter: blur(5px);}
     .windy-timeline label { display: none !important; }
-    .windy-timeline div[data-testid="stTickBar"] { color: #D1D5DB !important; font-size: 14px !important; }
+    .windy-timeline div[data-testid="stTickBar"] { color: #E2E8F0 !important; font-size: 14px !important; }
     .windy-timeline div[role="slider"] { background-color: #D4AF37 !important; border: 2px solid #FFF !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-    .windy-timeline div[role="slider"] > div { background-color: #D4AF37 !important; color: #FFF !important; border-radius: 5px !important; padding: 5px 10px !important; font-size: 15px !important; font-weight: bold !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+    .windy-timeline div[role="slider"] > div { background-color: #D4AF37 !important; color: #FFF !important; border-radius: 6px !important; padding: 4px 10px !important; font-size: 14px !important; font-weight: bold !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. PERFECTLY CENTERED LOGO
+# 3. ORIGINAL CENTERED LOGO (CRISP & FIXED SIZE)
 # ==========================================
 svg_code = """
 <svg width="600" height="240" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
@@ -148,7 +139,7 @@ svg_code = """
 </svg>
 """
 b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
-st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 10px; margin-bottom: 30px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 500px; width: 100%; height: auto;" alt="JM72 AI Weather Model Logo" /></div>', unsafe_allow_html=True)
+st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 30px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 500px; width: 100%; height: auto;" alt="JM72 AI Weather Model Logo" /></div>', unsafe_allow_html=True)
 
 # ==========================================
 # 4. SMART ALERT FUNCTION (CENTRAL ENGINE)
@@ -496,12 +487,9 @@ with tab5:
             st.markdown(f"<p style='font-size:18px; color:#082F49;'><strong>Historical Extremes recorded on {target_date.strftime('%B %d')} across the UAE:</strong></p>", unsafe_allow_html=True)
             
             def format_year(y):
-                if pd.isna(y) or str(y).strip() in ["", "-", "nan"]:
-                    return "-"
-                try:
-                    return str(int(float(y)))
-                except (ValueError, TypeError):
-                    return str(y).strip()
+                if pd.isna(y) or str(y).strip() in ["", "-", "nan"]: return "-"
+                try: return str(int(float(y)))
+                except (ValueError, TypeError): return str(y).strip()
 
             st.markdown(f"""<table class="custom-table"><tr style="background-color:#E0F2FE;"><th>Meteorological Metric</th><th>All-Time Record</th><th>Station / Location</th><th>Recorded Year</th></tr><tr><td>🔥 Highest Temperature</td><td style="color:#DC2626; font-weight:bold;">{record.get('highest_temperature_value', '-')} °C</td><td>{record.get('highest_temperature_location_en', '-')}</td><td>{format_year(record.get('highest_temperature_year', '-'))}</td></tr><tr><td>❄️ Lowest Temperature</td><td style="color:#0284C7; font-weight:bold;">{record.get('lowest_temperature_value', '-')} °C</td><td>{record.get('lowest_temperature_location_en', '-')}</td><td>{format_year(record.get('lowest_temperature_year', '-'))}</td></tr><tr><td>🌪️ Strongest Wind Gust</td><td style="color:#D97706; font-weight:bold;">{record.get('maximum_wind_value', '-')} km/h</td><td>{record.get('maximum_wind_location_en', '-')}</td><td>{format_year(record.get('maximum_wind_year', '-'))}</td></tr><tr><td>🌧️ Highest Rainfall</td><td style="color:#10B981; font-weight:bold;">{record.get('highest_rainfall_value', '-')} mm</td><td>{record.get('highest_rainfall_location_en', '-')}</td><td>{format_year(record.get('highest_rainfall_year', '-'))}</td></tr></table>""", unsafe_allow_html=True)
         else: st.info(f"No extreme records found in the database for {target_date.strftime('%B %d')}.")

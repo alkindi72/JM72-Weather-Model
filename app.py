@@ -46,14 +46,12 @@ st.markdown("""
     div[data-testid="stTickBar"] { color: #475569 !important; font-weight: bold !important; }
     div[data-testid="stSlider"] div[role="slider"] { background-color: #0284C7 !important; border: 2px solid #FFF !important; }
     div[data-testid="stSlider"] div[role="slider"] > div { background-color: #0284C7 !important; color: #FFF !important; border-radius: 4px; padding: 2px 8px;}
-    .alert-banner { background-color: #FEF2F2 !important; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2; line-height: 1.6;}
-    .sys-success { background-color: #F0FDF4 !important; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px; border: 1px solid #DCFCE7; line-height: 1.6;}
     
     /* Tables Container (Horizontal Scroll for Mobile) */
     .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 20px; }
-    .custom-table { width: 100%; border-collapse: collapse; background-color: #ffffff; min-width: 600px; }
-    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37; white-space: nowrap;}
-    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center; white-space: nowrap;}
+    .custom-table { width: 100%; border-collapse: collapse; background-color: #ffffff; min-width: 800px; }
+    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 12px; text-align: center; border-bottom: 3px solid #D4AF37; white-space: nowrap; font-size: 13px;}
+    .custom-table td { padding: 12px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center; white-space: nowrap; font-size: 13px;}
 
     /* Mobile */
     @media (max-width: 768px) {
@@ -130,18 +128,31 @@ stations_matrix = {
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"}, "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
 
+SECTOR_MAP = {
+    "Eastern Region": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor"],
+    "Central Region": ["Al Dhaid", "Al Malaiha"],
+    "Abu Dhabi & Al Dhafra": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
+    "Al Ain Region": ["Al Ain Int'l Airport", "Al Aamerah"],
+    "Dubai & Northern Emirates": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
+}
+
+def get_sector_for_station(station_name):
+    for sector, stations in SECTOR_MAP.items():
+        if station_name in stations: return sector
+    return "Unknown"
+
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
     try:
         lats = ",".join([str(s["lat"]) for s in stations_dict.values()]); lons = ",".join([str(s["lon"]) for s in stations_dict.values()])
-        # تم تحديث الاستدعاء البرمجي ليجلب 850hPa و 500hPa جنباً إلى جنب مع 700hPa للحرارة والرطوبة
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&current=precipitation,weather_code&hourly=temperature_2m,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa&models=gfs_seamless&timezone=auto"
+        # تم إضافة: apparent_temperature (الحرارة المحسوسة) و cloudcover_low (السحب المنخفضة للكوس)
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&current=precipitation,weather_code&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low&models=gfs_seamless&timezone=auto"
         response = requests.get(url, timeout=15)
         response.raise_for_status()
         return True, response.json()
     except Exception as e: return False, str(e)
 
-with st.spinner("🤖 71wm AI Engine: Compiling live metrics & executing Deep Moisture models..."):
+with st.spinner("🤖 71wm AI Engine: Compiling live metrics & executing Al-Kous Cloud Predictor..."):
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 @st.cache_data
@@ -158,13 +169,15 @@ def load_national_almanac():
 almanac_df, err_msg = load_national_almanac()
 
 # ==========================================
-# 6. AI DYNAMICS ENGINE (CORE PROCESSING WITH ADVANCED RULES)
+# 6. AI DYNAMICS ENGINE (CORE PROCESSING)
 # ==========================================
 weather_data = []
 
 if fetch_success and type(live_data) is list:
     for idx, (name, coords) in enumerate(stations_matrix.items()):
         zone_mapped = "Inland" if coords["type"] in ["Inland", "Desert"] else coords["type"]
+        sector_name = get_sector_for_station(name)
+        
         try:
             current_precip = live_data[idx].get("current", {}).get("precipitation", 0.0)
             dbz = round(10 * np.log10(200 * (current_precip ** 1.6)), 1) if current_precip > 0.1 else 0.0
@@ -177,90 +190,70 @@ if fetch_success and type(live_data) is list:
                     time_diffs = [abs((api_t - dt).total_seconds()) for api_t in api_times]
                     closest_idx = time_diffs.index(min(time_diffs))
                     
-                    # استدعاء المعطيات الخام
                     temp_c = station_data["temperature_2m"][closest_idx] or 35.0
+                    app_temp = station_data.get("apparent_temperature", [temp_c]*len(api_times))[closest_idx] or temp_c
                     surface_rh = station_data.get("relative_humidity_2m", [50]*len(api_times))[closest_idx] or 50
+                    cloud_low = station_data.get("cloudcover_low", [0]*len(api_times))[closest_idx] or 0
+                    
+                    wind_dir = station_data.get("winddirection_10m", [0]*len(api_times))[closest_idx] or 0
                     wind_spd = station_data.get("windspeed_10m", [0]*len(api_times))[closest_idx] or 0
                     wind_gst = max(station_data.get("windgusts_10m", [0]*len(api_times))[closest_idx] or 0, wind_spd * 1.35)
                     cape_val = station_data["cape"][closest_idx] or 0
                     
-                    # سحب البيانات العلوية للطبقات الثلاث
                     rh_850 = station_data.get("relative_humidity_850hPa", [50]*len(api_times))[closest_idx] or 50
                     rh_700 = station_data.get("relative_humidity_700hPa", [50]*len(api_times))[closest_idx] or 50
                     rh_500 = station_data.get("relative_humidity_500hPa", [50]*len(api_times))[closest_idx] or 50
                     t_850 = station_data.get("temperature_850hPa", [20]*len(api_times))[closest_idx] or 20
                     t_500 = station_data.get("temperature_500hPa", [-10]*len(api_times))[closest_idx] or -10
                     
-                    # ============================================================
-                    # الذكاء الاصطناعي: محرك التنبؤ بالعواصف المبني على القواعد المتقدمة
-                    # ============================================================
-                    prob = (cape_val / 2000.0) * 100  # الخطوة 1: طاقة الحمل الحراري
-                    
-                    # الخطوة 2: حساب مؤشر الرطوبة البنائية المشترك (Deep Moisture Index)
-                    # إعطاء وزن أكبر للطبقات السفلى والمتوسطة (850 و 700) ووزن أقل للطبقات العليا (500)
+                    # 1. Storm AI
+                    prob = (cape_val / 2000.0) * 100 
                     moisture_index = (rh_850 * 0.4) + (rh_700 * 0.4) + (rh_500 * 0.2)
-                    
-                    # الخطوة 3: حساب معدل التبريد الرأسي (Lapse Rate) لمعرفة الاستقرار
                     lapse_rate = t_850 - t_500
-                    
-                    # تطبيق القواعد العلمية لتعديل النسبة
-                    if lapse_rate > 26: prob *= 1.3        # عدم استقرار قوي
-                    elif lapse_rate < 20: prob *= 0.5      # استقرار / انقلاب حراري علوي يمنع التطور
-                    
-                    if moisture_index < 40: prob *= 0.1    # جفاف في عمود الهواء (يقتل الفرصة)
-                    elif moisture_index > 70: prob *= 1.2  # رطوبة بنائية ممتازة للسحب الركامية
-                    
-                    if coords["type"] == "Mountains" and temp_c > 38: 
-                        prob *= 1.3 # تفاعل التضاريس مع الحرارة العالية لتشكيل سحب الروايح
-                    
+                    if lapse_rate > 26: prob *= 1.3
+                    elif lapse_rate < 20: prob *= 0.5
+                    if moisture_index < 40: prob *= 0.1
+                    elif moisture_index > 70: prob *= 1.2
+                    if coords["type"] == "Mountains" and temp_c > 38: prob *= 1.3
                     storm_prob = np.clip(prob, 0, 100)
                     
-                    # ------------------------------------------------------------
-                    # الذكاء الاصطناعي: محرك التنبؤ بالضباب الإشعاعي (Fog Predictor)
-                    # ------------------------------------------------------------
+                    # 2. General Fog AI
                     fog_prob = 0
                     is_night_early_morning = dt.hour < 8 or dt.hour > 22
                     if is_night_early_morning and surface_rh > 80 and wind_spd < 15:
                         fog_prob = ((surface_rh - 80) * 4) + ((15 - wind_spd) * 3)
                     fog_prob = np.clip(fog_prob, 0, 100)
                     
+                    # 3. AL-KOUS CLOUD PREDICTOR (الذكاء المكاني للساحل الشرقي)
+                    alkous_prob = 0
+                    # تفحص الخوارزمية محطات الساحل الشرقي والجبال المحاذية لها (خط طول > 55.8)
+                    if coords["lon"] >= 55.8:
+                        # الشرط: رياح شرقية/جنوبية شرقية (من 45 إلى 160 درجة) + رطوبة سطحية عالية
+                        if 45 <= wind_dir <= 160 and surface_rh >= 65:
+                            # تفاعل الرفع التضاريسي مع السحب المنخفضة
+                            alkous_base = ((surface_rh - 65) * 2) + (cloud_low * 0.5)
+                            if temp_c >= 35: alkous_base *= 1.2  # الحرارة العالية تزيد من التبخر الخانق
+                            alkous_prob = np.clip(alkous_base, 0, 100)
+                    
+                    # 4. Dust AI
                     dust_p = (wind_spd / 35) * 100 if coords["type"] == "Desert" else (wind_spd / 45) * 100
                     if wind_gst > 45: dust_p += 25
                     dust_p = np.clip(dust_p, 0, 100)
 
-                except Exception: temp_c, storm_prob, fog_prob, wind_spd, wind_gst, dust_p = 36.0, 0.0, 0.0, 10.0, 15.0, 0.0
+                except Exception: temp_c, app_temp, storm_prob, fog_prob, alkous_prob, wind_spd = 36.0, 36.0, 0.0, 0.0, 0.0, 10.0
 
                 weather_data.append({
                     "Time": dt_str, "DateOnly": f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')}", 
                     "Station": name, "Zone": zone_mapped,
                     "Latitude": coords["lat"], "Longitude": coords["lon"],
-                    "Storm Probability": round(storm_prob), "Fog Probability": round(fog_prob), 
-                    "Temperature": round(temp_c, 1), "Humidity": round(surface_rh),
-                    "Wind Speed": round(wind_spd, 1), "Gusts": round(wind_gst, 1),
-                    "Dust Probability": round(dust_p), "dBZ": dbz, "Radar Verif": radar_verif
+                    "Storm Probability": round(storm_prob), "Fog Probability": round(fog_prob), "AlKous Prob": round(alkous_prob),
+                    "Temperature": round(temp_c, 1), "Apparent Temp": round(app_temp, 1), "Humidity": round(surface_rh),
+                    "Wind Speed": round(wind_spd, 1), "dBZ": dbz, "Radar Verif": radar_verif
                 })
         except Exception: pass
 
 if not weather_data:
     st.error("⚠️ Connection to Weather API failed. Offline Mode Active.")
-    np.random.seed(42)
-    for dt_str, dt in zip(timeline_str, timeline):
-        is_afternoon = 12 <= dt.hour <= 18
-        for name, coords in stations_matrix.items():
-            zone_mapped = "Inland" if coords["type"] in ["Inland", "Desert"] else coords["type"]
-            base_storm = 75 if (is_afternoon and coords["type"] == "Mountains") else 0
-            temp = 42 + np.random.uniform(-3, 4)
-            wind_spd = np.random.uniform(10, 45)
-            s_prob = round(np.clip(base_storm + np.random.uniform(-5, 10), 0, 100)) if base_storm > 0 else 0
-            weather_data.append({
-                "Time": dt_str, "DateOnly": f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')}", 
-                "Station": name, "Zone": zone_mapped,
-                "Latitude": coords["lat"], "Longitude": coords["lon"], "Storm Probability": s_prob, "Fog Probability": 0, "Temperature": round(temp, 1), 
-                "Wind Speed": round(wind_spd, 1), "Wind Direction": round(np.random.uniform(0, 360)),
-                "Gusts": round(wind_spd * 1.5, 1), "Dust Probability": round((wind_spd/50)*100),
-                "Visibility": round(10.0 - (wind_spd/50)*9.0, 1), "Rainfall": round(np.random.uniform(10, 40), 1) if s_prob > 70 else 0.0,
-                "dBZ": 0.0, "Radar Verif": "⏳ Offline Data"
-            })
 
 df_all = pd.DataFrame(weather_data)
 
@@ -270,12 +263,13 @@ df_all = pd.DataFrame(weather_data)
 current_time_df = df_all[df_all["Time"] == timeline_str[0]]
 max_temp_val = current_time_df["Temperature"].max()
 max_temp_loc = current_time_df.loc[current_time_df["Temperature"].idxmax()]["Station"]
+max_app_temp = current_time_df["Apparent Temp"].max()
 max_storm_val = current_time_df["Storm Probability"].max()
-max_fog_val = current_time_df["Fog Probability"].max()
+max_alkous = current_time_df["AlKous Prob"].max()
 
-ai_briefing = f"🤖 **71wm AI Broadcaster:** Currently, the thermal peak is centered over {max_temp_loc} at {max_temp_val}°C. "
-if max_storm_val > 40: ai_briefing += f"Convective activity shows a {max_storm_val}% risk of isolated storms. "
-elif max_fog_val > 50: ai_briefing += f"High surface moisture indicates a {max_fog_val}% risk of radiation fog formation tonight. "
+ai_briefing = f"🤖 **71wm AI Broadcaster:** The thermal peak is at {max_temp_loc} ({max_temp_val}°C), feeling like {max_app_temp}°C. "
+if max_alkous > 50: ai_briefing += f"⚠️ High probability ({max_alkous}%) of stifling 'Al-Kous' low clouds hugging the Eastern Coast and Hajar Mountains. "
+elif max_storm_val > 40: ai_briefing += f"Convective activity shows a {max_storm_val}% risk of isolated storms. "
 else: ai_briefing += "Atmospheric conditions remain generally stable across most geographic sectors."
 
 st.markdown(f'<div class="ai-broadcaster">{ai_briefing}</div>', unsafe_allow_html=True)
@@ -284,7 +278,7 @@ st.markdown(f'<div class="ai-broadcaster">{ai_briefing}</div>', unsafe_allow_htm
 # 9. TABS & INTERFACE
 # ==========================================
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "🌩️ Storms & Fog", "🔥 Heat & Anomalies", "🗺️ Dynamic Clusters", "📋 Model Matrix", "🤖 71wm AI Assistant", "⚙️ Control Room"
+    "🌩️ Storms & Fog", "🔥 Heat & Anomalies", "☁️ Al-Kous Clouds", "📋 Model Matrix", "🤖 71wm AI Assistant", "⚙️ Control Room"
 ])
 
 esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}]
@@ -312,15 +306,11 @@ with tab1:
 
     col_s, col_f = st.columns(2)
     with col_s:
-        max_storm = df_time_t1["Storm Probability"].max()
-        st.markdown(f"**Max Storm Risk:** {max_storm}%")
         fig1 = px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Storm Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.75, color_continuous_scale=["rgba(0,0,0,0)", "#A3E635", "#FDE047", "#EF4444", "#7E22CE"], range_color=[0, 100], title="Convective Storm Probability")
         fig1.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_data")
         
     with col_f:
-        max_fog = df_time_t1["Fog Probability"].max()
-        st.markdown(f"**Max Radiation Fog Risk:** {max_fog}%")
         fig_fog = px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Fog Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.8, color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#475569"], range_color=[0, 100], title="AI Fog Formation Index")
         fig_fog.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
         st.plotly_chart(fig_fog, use_container_width=True, key="fog_map_data")
@@ -337,10 +327,8 @@ with tab2:
         
         coast_max = round(day_df[day_df["Zone"] == "Coast"]["Temperature"].max(), 1)
         coast_min = round(day_df[day_df["Zone"] == "Coast"]["Temperature"].min(), 1)
-        
         mount_max = round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].max(), 1)
         mount_min = round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].min(), 1)
-        
         inland_max = round(day_df[day_df["Zone"] == "Inland"]["Temperature"].max(), 1)
         inland_min = round(day_df[day_df["Zone"] == "Inland"]["Temperature"].min(), 1)
         
@@ -352,41 +340,27 @@ with tab2:
         card_html = f"<div style='background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;'>📅 {date}</div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>🌊 Coast:</span><span style='font-weight:900;'>⬇ {coast_min}° - ⬆ {coast_max}°</span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>⛰️ Mount:</span><span style='font-weight:900;'>⬇ {mount_min}° - ⬆ {mount_max}°</span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B;'><span>🏜️ Inland:</span><span style='font-weight:900;'>⬇ {inland_min}° - ⬆ {inland_max}°</span></div></div>"
         cols_t2[i].markdown(card_html, unsafe_allow_html=True)
         
-    current_month_str = str(datetime.utcnow().month)
-    if not almanac_df.empty:
-        hist_max_raw = almanac_df['highest_temperature_value'].replace(['-', '', ' '], np.nan).astype(float).max()
-        if not np.isnan(hist_max_raw) and max_temp_val > (hist_max_raw - 3.0):
-            st.markdown(f'<div class="anomaly-alert">⚠️ AI Anomaly Detected: Current max temperature ({max_temp_val}°C) is approaching the historical national extreme ({hist_max_raw}°C).</div>', unsafe_allow_html=True)
-
     selected_time_t2 = st.select_slider("Forecast Timeline", options=timeline_str, key="t2_slider", label_visibility="collapsed")
     df_time_t2 = df_all[df_all["Time"] == selected_time_t2].copy()
 
-    fig2 = px.density_mapbox(df_time_t2, lat="Latitude", lon="Longitude", z="Temperature", radius=50, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.7, color_continuous_scale=["rgba(0,0,0,0)", "#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
-    fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
+    fig2 = px.density_mapbox(df_time_t2, lat="Latitude", lon="Longitude", z="Temperature", radius=50, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.7, color_continuous_scale=["rgba(0,0,0,0)", "#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60], title="Actual Air Temperature")
+    fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
     st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
 
 with tab3:
-    st.markdown('<h4 style="color:#082F49; font-weight:900;">🗺️ AI Dynamic Clustering (Live Behavioral Groups)</h4>', unsafe_allow_html=True)
-    st.info("💡 Instead of fixed maps, the ML Engine groups stations based on their *live* atmospheric behavior (Thermal, Convective, Stable).")
+    st.markdown('<h4 style="color:#082F49; font-weight:900;">☁️ Al-Kous Predictor (Eastern Coast & Mountains)</h4>', unsafe_allow_html=True)
+    st.info("💡 نموذج حصري يحلل الرياح الشرقية والرطوبة للتنبؤ بسحب 'الكوس' المنخفضة التي تعانق جبال الساحل الشرقي وتسبب الشعور بالخنق.")
     
     selected_time_t3 = st.select_slider("Forecast Timeline", options=timeline_str, key="t3_slider", label_visibility="collapsed")
     df_time_t3 = df_all[df_all["Time"] == selected_time_t3].copy()
     
-    conditions = [
-        (df_time_t3['Storm Probability'] > 30),
-        (df_time_t3['Fog Probability'] > 50),
-        (df_time_t3['Temperature'] >= 48),
-        (df_time_t3['Wind Speed'] > 35)
-    ]
-    choices = ['Convective/Storm', 'Fog/Low Vis', 'Extreme Heat', 'High Wind']
-    df_time_t3['AI Cluster'] = np.select(conditions, choices, default='Stable/Clear')
+    # فلترة المحطات لتشمل الجانب الشرقي فقط لعرض الكوس
+    east_stations = df_time_t3[df_time_t3["Longitude"] >= 55.8].copy()
     
-    color_map = {'Convective/Storm': '#EF4444', 'Fog/Low Vis': '#94A3B8', 'Extreme Heat': '#F97316', 'High Wind': '#D97706', 'Stable/Clear': '#10B981'}
-    
-    fig3 = px.scatter_mapbox(df_time_t3, lat="Latitude", lon="Longitude", color="AI Cluster", size_max=15, zoom=6, center=dict(lat=24.4, lon=54.6), mapbox_style="white-bg", color_discrete_map=color_map, hover_name="Station", hover_data={"Temperature": True, "Storm Probability": True})
-    fig3.update_traces(marker=dict(size=12, opacity=0.9))
-    fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
-    st.plotly_chart(fig3, use_container_width=True, key="cluster_map_data")
+    fig3 = px.scatter_mapbox(east_stations, lat="Latitude", lon="Longitude", color="AlKous Prob", size="AlKous Prob", size_max=25, zoom=7.5, center=dict(lat=25.2, lon=56.2), mapbox_style="white-bg", color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#334155", "#0F172A"], range_color=[0, 100], hover_name="Station", hover_data={"Apparent Temp": True, "Humidity": True, "AlKous Prob": True}, title="Al-Kous Clouds Index (%)")
+    fig3.update_traces(marker=dict(opacity=0.85))
+    fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
+    st.plotly_chart(fig3, use_container_width=True, key="kous_map_data")
 
 with tab4:
     selected_time_t4 = st.select_slider("Forecast Timeline", options=timeline_str, key="t4_slider", label_visibility="collapsed")
@@ -394,12 +368,16 @@ with tab4:
     
     st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 34-Station Matrix at {selected_time_t4}</h3>", unsafe_allow_html=True)
     display_df = df_time_t4.sort_values(by="Temperature", ascending=False)
-    html_table = "<div class='table-responsive'><table class='custom-table'><tr><th>Station</th><th>Temp (°C)</th><th>Wind (km/h)</th><th>Fog Prob (%)</th><th>Storm (%)</th><th>Radar (dBZ)</th></tr>"
+    # إضافة عامود الحرارة المحسوسة وعامود الكوس
+    html_table = "<div class='table-responsive'><table class='custom-table'><tr><th>Station</th><th>Temp (°C)</th><th>Feels Like</th><th>RH (%)</th><th>Al-Kous (%)</th><th>Storm (%)</th></tr>"
     for _, row in display_df.iterrows():
         s_color = "#EF4444" if row['Storm Probability'] >= 75 else "#082F49"
-        f_color = "#64748B" if row['Fog Probability'] >= 60 else "#082F49"
-        dbz_color = "#7E22CE" if row['dBZ'] >= 45 else ("#10B981" if row['dBZ'] > 0 else "#64748B")
-        html_table += f"<tr><td>{row['Station']}</td><td>{row['Temperature']}°C</td><td>{row['Wind Speed']} km/h</td><td style='color:{f_color}; font-weight:bold;'>{row['Fog Probability']}%</td><td style='color:{s_color};'>{row['Storm Probability']}%</td><td style='color:{dbz_color}; font-weight:900;'>{row['dBZ']}</td></tr>"
+        k_color = "#475569" if row['AlKous Prob'] >= 50 else "#082F49"
+        app_color = "#DC2626" if row['Apparent Temp'] >= 45 else ("#F97316" if row['Apparent Temp'] >= 40 else "#082F49")
+        
+        kous_val = f"{row['AlKous Prob']}%" if row['AlKous Prob'] > 0 else "-"
+        
+        html_table += f"<tr><td>{row['Station']}</td><td>{row['Temperature']}°C</td><td style='color:{app_color}; font-weight:bold;'>{row['Apparent Temp']}°C</td><td>{row['Humidity']}%</td><td style='color:{k_color}; font-weight:bold;'>{kous_val}</td><td style='color:{s_color};'>{row['Storm Probability']}%</td></tr>"
     html_table += "</table></div>"
     st.markdown(html_table, unsafe_allow_html=True)
 
@@ -416,17 +394,17 @@ with tab5:
         
         if "hot" in p_lower or "أعلى حرارة" in p_lower:
             hot_st = current_data.loc[current_data["Temperature"].idxmax()]
-            response = f"The hottest station right now is **{hot_st['Station']}** recording **{hot_st['Temperature']}°C**."
+            response = f"The hottest station right now is **{hot_st['Station']}** recording **{hot_st['Temperature']}°C**, feeling like **{hot_st['Apparent Temp']}°C**."
+        elif "kous" in p_lower or "كوس" in p_lower:
+            kous_st = current_data[current_data["AlKous Prob"] > 30]
+            if not kous_st.empty: response = f"Al-Kous clouds are likely forming over: {', '.join(kous_st['Station'].tolist())}."
+            else: response = "No significant Al-Kous activity detected at the moment on the Eastern Coast."
         elif "storm" in p_lower or "عاصفة" in p_lower or "rain" in p_lower:
             stormy = current_data[current_data["Storm Probability"] > 40]
             if not stormy.empty: response = f"Stations with storm risk > 40%: {', '.join(stormy['Station'].tolist())}."
             else: response = "Currently, there are no stations with a storm probability above 40%."
-        elif "fog" in p_lower or "ضباب" in p_lower:
-            foggy = current_data[current_data["Fog Probability"] > 50]
-            if not foggy.empty: response = f"High fog risk detected at: {', '.join(foggy['Station'].tolist())}."
-            else: response = "No significant fog risk detected at this hour."
         else:
-            response = "I am the 71wm AI Assistant. I can currently answer questions about the 'hottest station', 'storm risks', and 'fog predictions'. Try asking one of those!"
+            response = "I am the 71wm AI Assistant. Try asking about the 'hottest station', 'storm risks', or 'al-kous clouds'."
             
         st.chat_message("assistant").write(response)
     else:

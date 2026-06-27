@@ -48,6 +48,8 @@ st.markdown("""
     .custom-table { width: 100%; border-collapse: collapse; background-color: #ffffff; min-width: 850px; }
     .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37; white-space: nowrap;}
     .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center; white-space: nowrap;}
+    
+    .log-box { background-color: #1E293B; color: #10B981; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; height: 150px; overflow-y: auto; margin-bottom: 15px;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -81,32 +83,41 @@ st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; m
 # ==========================================
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 
-if "admin_password" not in st.session_state: st.session_state["admin_password"] = "Jumah71"  # الرمز الافتراضي الأولي
+if "admin_password" not in st.session_state: st.session_state["admin_password"] = "Jumah71"
 if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 if "email_enabled" not in st.session_state: st.session_state["email_enabled"] = False
 if "email_sender" not in st.session_state: st.session_state["email_sender"] = ""
 if "email_receiver" not in st.session_state: st.session_state["email_receiver"] = ""
 if "email_password" not in st.session_state: st.session_state["email_password"] = ""
 if "email_sent_track" not in st.session_state: st.session_state["email_sent_track"] = {}
+if "alert_logs" not in st.session_state: st.session_state["alert_logs"] = []
 
+# دالة الإرسال المتعدد والمحسنة مع سجل العمليات
 def send_secure_alert_email(subject, body_text):
-    if not st.session_state["email_enabled"]: return False
-    if not st.session_state["email_sender"] or not st.session_state["email_password"]: return False
+    if not st.session_state["email_enabled"]: 
+        return False, "النظام معطل يدوياً"
+    if not st.session_state["email_sender"] or not st.session_state["email_password"] or not st.session_state["email_receiver"]: 
+        return False, "بيانات المرسل أو المستلم ناقصة"
     
     try:
+        # تفكيك الإيميلات في حال كان هناك أكثر من مستلم (بناءً على الفاصلة)
+        receivers_list = [email.strip() for email in st.session_state["email_receiver"].split(",") if email.strip()]
+        if not receivers_list:
+            return False, "تنسيق الإيميلات غير صحيح"
+
         msg = MIMEText(body_text, 'plain', 'utf-8')
         msg['Subject'] = Header(subject, 'utf-8')
         msg['From'] = st.session_state["email_sender"]
-        msg['To'] = st.session_state["email_receiver"]
+        msg['To'] = ", ".join(receivers_list) # وضع جميع الإيميلات في الحقل
         
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(st.session_state["email_sender"], st.session_state["email_password"])
-        server.sendmail(st.session_state["email_sender"], [st.session_state["email_receiver"]], msg.as_string())
+        server.sendmail(st.session_state["email_sender"], receivers_list, msg.as_string())
         server.quit()
-        return True
-    except Exception:
-        return False
+        return True, f"تم بنجاح لـ {len(receivers_list)} مستلم(ين)"
+    except Exception as e:
+        return False, f"خطأ الخادم: {str(e)}"
 
 # ==========================================
 # 5. TIMELINE & STATIONS MATRIX
@@ -142,10 +153,6 @@ stations_matrix = {
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"}, "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
 
-SECTOR_MAP = {
-    "Eastern Region": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"]
-}
-
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
     try:
@@ -156,7 +163,7 @@ def fetch_stable_live_data(stations_dict):
         return True, response.json()
     except Exception as e: return False, str(e)
 
-with st.spinner("🤖 71wm AI Engine: Compiling live metrics & computing Orographic Drizzle index..."):
+with st.spinner("🤖 71wm AI Engine: Compiling live metrics & computing microclimate parameters..."):
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 # ==========================================
@@ -168,10 +175,6 @@ if fetch_success and type(live_data) is list:
     for idx, (name, coords) in enumerate(stations_matrix.items()):
         zone_mapped = "Inland" if coords["type"] in ["Inland", "Desert"] else coords["type"]
         try:
-            current_precip = live_data[idx].get("current", {}).get("precipitation", 0.0)
-            dbz = round(10 * np.log10(200 * (current_precip ** 1.6)), 1) if current_precip > 0.1 else 0.0
-            radar_verif = "🚨 Extreme" if dbz >= 45 else ("✅ Active Storm" if dbz >= 25 else ("⚠️ Light Rain" if dbz > 0 else "⏳ Clear"))
-
             station_data = live_data[idx]["hourly"]
             api_times = [datetime.fromisoformat(t).replace(tzinfo=None) for t in station_data["time"]]
             for dt_str, dt in zip(timeline_str, timeline):
@@ -184,9 +187,7 @@ if fetch_success and type(live_data) is list:
                     cloud_low = station_data.get("cloudcover_low", [0]*len(api_times))[closest_idx] or 0
                     wind_dir = station_data.get("winddirection_10m", [0]*len(api_times))[closest_idx] or 0
                     wind_spd = station_data.get("windspeed_10m", [0]*len(api_times))[closest_idx] or 0
-                    wind_gst = max(station_data.get("windgusts_10m", [0]*len(api_times))[closest_idx] or 0, wind_spd * 1.35)
                     cape_val = station_data["cape"][closest_idx] or 0
-                    
                     rh_850 = station_data.get("relative_humidity_850hPa", [50]*len(api_times))[closest_idx] or 50
                     rh_700 = station_data.get("relative_humidity_700hPa", [50]*len(api_times))[closest_idx] or 50
                     rh_500 = station_data.get("relative_humidity_500hPa", [50]*len(api_times))[closest_idx] or 50
@@ -207,26 +208,20 @@ if fetch_success and type(live_data) is list:
                     
                     # Fog AI
                     fog_prob = 0
-                    is_night_early_morning = dt.hour < 8 or dt.hour > 22
-                    if is_night_early_morning and surface_rh > 80 and wind_spd < 15:
-                        fog_prob = ((surface_rh - 80) * 4) + ((15 - wind_spd) * 3)
-                    fog_prob = np.clip(fog_prob, 0, 100)
+                    if (dt.hour < 8 or dt.hour > 22) and surface_rh > 80 and wind_spd < 15:
+                        fog_prob = np.clip(((surface_rh - 80) * 4) + ((15 - wind_spd) * 3), 0, 100)
                     
-                    # AL-KOUS CLOUD PREDICTOR
+                    # Al-Kous AI
                     alkous_prob = 0
-                    if coords["lon"] >= 55.8:
-                        if 45 <= wind_dir <= 160 and surface_rh >= 65:
-                            alkous_base = ((surface_rh - 65) * 2) + (cloud_low * 0.5)
-                            if temp_c >= 35: alkous_base *= 1.2
-                            alkous_prob = np.clip(alkous_base, 0, 100)
+                    if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and surface_rh >= 65:
+                        alkous_base = ((surface_rh - 65) * 2) + (cloud_low * 0.5)
+                        if temp_c >= 35: alkous_base *= 1.2
+                        alkous_prob = np.clip(alkous_base, 0, 100)
                     
-                    # AL-KOUS OROGRAPHIC DRIZZLE ENGINE
+                    # Drizzle AI
                     drizzle_prob = 0
-                    if coords["lon"] >= 55.8:
-                        is_drizzle_window = 3 <= dt.hour <= 9 
-                        if is_drizzle_window and 45 <= wind_dir <= 160 and surface_rh >= 85 and cloud_low >= 75:
-                            drizzle_calc = ((surface_rh - 85) * 4) + ((cloud_low - 75) * 2) + (wind_spd * 0.8)
-                            drizzle_prob = np.clip(drizzle_calc, 0, 100)
+                    if coords["lon"] >= 55.8 and (3 <= dt.hour <= 9) and 45 <= wind_dir <= 160 and surface_rh >= 85 and cloud_low >= 75:
+                        drizzle_prob = np.clip(((surface_rh - 85) * 4) + ((cloud_low - 75) * 2) + (wind_spd * 0.8), 0, 100)
 
                 except Exception: temp_c, app_temp, storm_prob, fog_prob, alkous_prob, drizzle_prob = 36.0, 36.0, 0.0, 0.0, 0.0, 0.0
 
@@ -242,26 +237,39 @@ if fetch_success and type(live_data) is list:
 df_all = pd.DataFrame(weather_data)
 
 # ==========================================
-# 7. CRITICAL ANTI-SPAM ALERTS LOGIC
+# 7. CRITICAL ANTI-SPAM ALERTS LOGIC WITH LIVE LOGGING
 # ==========================================
 current_time_df = df_all[df_all["Time"] == timeline_str[0]]
 max_storm_now = current_time_df["Storm Probability"].max()
 max_drizzle_now = current_time_df["Drizzle Prob"].max()
+current_time_stamp = datetime.now().strftime("%H:%M:%S")
 
 if st.session_state["email_enabled"]:
     today_key = unique_dates_display[0]
     if today_key not in st.session_state["email_sent_track"]:
         st.session_state["email_sent_track"][today_key] = {"storm": False, "drizzle": False}
         
+    # تحقق وإرسال تنبيه العاصفة
     if max_storm_now >= 75 and not st.session_state["email_sent_track"][today_key]["storm"]:
-        sub = "🚨 71wm AI Model: Severe Convective Storm Warning Detected"
-        body = f"Alert Triggered on {today_key}.\nSevere convective storm risk reached {max_storm_now}% over mountain terrains."
-        if send_secure_alert_email(sub, body): st.session_state["email_sent_track"][today_key]["storm"] = True
+        sub = "🚨 71wm AI Model: Severe Convective Storm Warning"
+        body = f"Alert Triggered on {today_key} ({current_time_stamp}).\nSevere convective storm risk reached {max_storm_now}% over mountain terrains."
+        success, msg_info = send_secure_alert_email(sub, body)
+        if success:
+            st.session_state["email_sent_track"][today_key]["storm"] = True
+            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (عاصفة): {msg_info}")
+        else:
+            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ❌ فشل (عاصفة): {msg_info}")
             
+    # تحقق وإرسال تنبيه الرذاذ الجبلي
     if max_drizzle_now >= 60 and not st.session_state["email_sent_track"][today_key]["drizzle"]:
         sub = "🌧️ 71wm AI Model: Orographic Al-Kous Drizzle Warning"
-        body = f"Alert Triggered on {today_key}.\nMechanical orographic saturation caused drizzle index to reach {max_drizzle_now}% over the Eastern Ridges."
-        if send_secure_alert_email(sub, body): st.session_state["email_sent_track"][today_key]["drizzle"] = True
+        body = f"Alert Triggered on {today_key} ({current_time_stamp}).\nMechanical orographic saturation caused drizzle index to reach {max_drizzle_now}% over the Eastern Ridges."
+        success, msg_info = send_secure_alert_email(sub, body)
+        if success:
+            st.session_state["email_sent_track"][today_key]["drizzle"] = True
+            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (رذاذ): {msg_info}")
+        else:
+            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ❌ فشل (رذاذ): {msg_info}")
 
 # ==========================================
 # 8. AI GENERATIVE BRIEFING
@@ -280,7 +288,6 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🌩️ Storms & Fog", "🔥 Heat & Anomalies", "☁️ Al-Kous & Drizzle", "📋 Model Matrix", "🤖 71wm AI Assistant", "⚙️ Control Room"
 ])
 
-# (محتويات التبويبات من 1 إلى 5 تبقى ثابتة ومكتملة تماماً كما هي)
 with tab1:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (National)</h4>', unsafe_allow_html=True)
     cols_t1 = st.columns(5)
@@ -294,8 +301,6 @@ with tab1:
     c1, c2 = st.columns(2)
     c1.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Storm Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.75, color_continuous_scale=["rgba(0,0,0,0)", "#A3E635", "#FDE047", "#EF4444", "#7E22CE"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":0,"l":0,"b":0}), use_container_width=True)
     c2.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Fog Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.8, color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#475569"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":0,"l":0,"b":0}), use_container_width=True)
-    st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery</h3>', unsafe_allow_html=True)
-    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;"><span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ 71wm SATELLITE LIVE</span></div></div>""", height=520)
 
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)
@@ -348,29 +353,22 @@ with tab5:
         st.chat_message("assistant").write(res)
 
 # ==========================================
-# 🛑 TABS 6: SECURE CONTROL ROOM (WITH PASSWORD MANAGEMENT)
+# 🛑 TABS 6: SECURE CONTROL ROOM
 # ==========================================
 with tab6:
     st.markdown("### ⚙️ 71wm Secure Control Room")
     
-    # بوابه جدار الحماية - التحقق من القفل
     if not st.session_state["admin_logged_in"]:
         st.warning("🔒 هذه الغرفة مقفلة أمنياً ومخصصة لمدير النظام فقط.")
-        st.write("الرجاء إدخال الرمز السري للوصول إلى إعدادات النظام:")
-        
-        # الكود يقارن الآن بالرمز المخزن ديناميكياً في الـ session_state
         admin_pwd = st.text_input("الرمز السري الحالي (PIN):", type="password", key="login_pin_input")
-        
         if st.button("🔓 فتح الغرفة"):
             if admin_pwd == st.session_state["admin_password"]:
                 st.session_state["admin_logged_in"] = True
                 st.rerun()
             else:
                 st.error("❌ الرمز السري غير صحيح، تم رفض الوصول.")
-                
     else:
         st.success("✅ تم فتح القفل. أهلاً بك في غرفة التحكم الآمنة.")
-        
         col_logout, col_empty = st.columns([2, 8])
         with col_logout:
             if st.button("🔒 قفل الغرفة (تسجيل الخروج)"):
@@ -378,30 +376,38 @@ with tab6:
                 st.rerun()
             
         st.markdown("---")
-        
-        # ----------------------------------------------------
-        # 🔑 الميزة الجديدة: قسم تغيير الرمز السري من الواجهة
-        # ----------------------------------------------------
         st.markdown("#### 🔑 تغيير الرمز السري للمشرف")
-        st.write("يمكنك تحديث رمز الدخول الخاص بالمنصة من هنا مباشرة دون الحاجة لتغيير الكود:")
-        
         new_pwd_input = st.text_input("أدخل الرمز السري الجديد:", type="password", key="change_pin_field")
-        
         if st.button("💾 حفظ الرمز السري الجديد"):
             if new_pwd_input.strip() != "":
-                # تحديث الرمز في ذاكرة السيرفر الحية فوراً
                 st.session_state["admin_password"] = new_pwd_input.strip()
-                st.success("✅ تأكيد: تم تغيير الرمز السري بنجاح! سيتم اعتماده في المرة القادمة التي تقفل فيها الغرفة.")
+                st.success("✅ تأكيد: تم تغيير الرمز السري بنجاح!")
             else:
                 st.error("❌ خطأ: لا يمكن إدخال رمز سري فارغ.")
                 
         st.markdown("---")
         st.markdown("#### 📧 إعدادات خادم التنبيهات والبريد الإلكتروني")
-        st.session_state["email_enabled"] = st.checkbox("تفعيل نظام الإرسال التلقائي للإنذارات الطارئة (Email Alerts Active)", value=st.session_state["email_enabled"])
+        st.session_state["email_enabled"] = st.checkbox("تفعيل نظام الإرسال التلقائي (Email Alerts Active)", value=st.session_state["email_enabled"])
         st.session_state["email_sender"] = st.text_input("بريد المرسل (Gmail)", value=st.session_state["email_sender"])
         st.session_state["email_password"] = st.text_input("كلمة مرور التطبيقات السرية (16 حرفاً من جوجل)", type="password", value=st.session_state["email_password"])
-        st.session_state["email_receiver"] = st.text_input("بريد المستلم الرئيسي للإشعارات", value=st.session_state["email_receiver"])
         
-        if st.button("🔄 تصفير ذاكرة الإرسال لإعادة التجربة فوراً"):
+        # تنبيه إرشادي بكيفية إضافة إيميلات متعددة
+        st.info("💡 **تلميح:** يمكنك إضافة عدة إيميلات لاستلام التنبيهات. فقط افصل بينها بفاصلة (,) مثال: `one@ncm.ae, two@ncm.ae`")
+        st.session_state["email_receiver"] = st.text_input("بريد المستلم (أو قائمة الإيميلات)", value=st.session_state["email_receiver"])
+        
+        if st.button("🔄 تصفير الذاكرة وإجبار الإرسال الآن"):
             st.session_state["email_sent_track"] = {}
-            st.success("تم تصفير الذاكرة! إذا كانت هناك حالة إنذار قائمة ومفتاح الإرسال مفعل، سيصلك إيميل فوراً.")
+            st.success("تم التصفير! سيقوم النظام الآن بإعادة تقييم الطقس ومحاولة الإرسال فوراً...")
+            st.rerun()
+
+        st.markdown("---")
+        st.markdown("#### 📡 سجل عمليات الإرسال الحي (Live Delivery Log)")
+        # صندوق يعرض حالة الإيميلات المرسلة أو الفاشلة في الوقت الفعلي
+        logs_html = "<div class='log-box'>"
+        if not st.session_state["alert_logs"]:
+            logs_html += ">> النظام في وضع الاستعداد. لم يتم رصد أي عمليات إرسال في هذه الجلسة حتى الآن..."
+        else:
+            for log in st.session_state["alert_logs"]:
+                logs_html += f">> {log}<br>"
+        logs_html += "</div>"
+        st.markdown(logs_html, unsafe_allow_html=True)

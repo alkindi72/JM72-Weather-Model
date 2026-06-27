@@ -21,56 +21,48 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. CLEAN & STABLE CSS
+# 2. RESCUE CSS (FORCES BRIGHT MODE & SHOWS MENU)
 # ==========================================
 st.markdown("""
 <style>
-    /* إخفاء الشريط العلوي الافتراضي */
-    [data-testid="stHeader"] { display: none !important; }
-    [data-testid="stToolbar"] { display: none !important; }
+    /* 1. إظهار القائمة العلوية التي كانت مخفية لكي تستطيع الدخول للإعدادات */
+    [data-testid="stHeader"] { visibility: visible !important; display: block !important; background-color: #ffffff !important; }
+    [data-testid="stToolbar"] { visibility: visible !important; display: flex !important; }
 
-    /* خطوط النصوص */
+    /* 2. فرض الخلفية البيضاء الساطعة لإنقاذ الشاشة من الظلام */
+    html, body, [data-testid="stAppViewContainer"], .stApp, #root {
+        background-color: #ffffff !important;
+        background-image: none !important;
+    }
+
+    /* 3. فرض اللون الداكن على جميع النصوص لكي تصبح مقروءة 100% */
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { 
         color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; 
     }
 
-    /* تنسيق التبويبات (Tabs) */
-    div[data-testid="stTabs"] [data-baseweb="tab-list"] { 
-        background-color: transparent !important; 
-        border-bottom: 2px solid #E2E8F0; 
-    }
-    div[data-testid="stTabs"] button { 
-        background-color: #F8FAFC !important; 
-        border: 1px solid #E2E8F0 !important; 
-        border-radius: 8px 8px 0 0 !important; 
-        margin-right: 5px !important; 
-        padding: 10px 20px !important; 
-        transition: 0.3s;
-    }
+    /* تنسيق التبويبات */
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #E2E8F0; }
+    div[data-testid="stTabs"] button { background-color: #F8FAFC !important; border: 1px solid #E2E8F0 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
     
-    /* شريط الوقت الاحترافي */
-    div[data-testid="stSlider"] {
-        background-color: #1E293B !important;
-        padding: 20px 25px 20px 25px !important;
-        border-radius: 12px !important;
-        margin-bottom: 25px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
-    }
-    div[data-testid="stTickBar"], div[data-testid="stTickBar"] span { color: #E2E8F0 !important; }
-    div[data-testid="stSlider"] div[role="slider"] { background-color: #D4AF37 !important; border: 2px solid #FFF !important; }
-    div[data-testid="stSlider"] div[role="slider"] > div { background-color: #D4AF37 !important; color: #FFF !important; }
+    /* شريط الوقت */
+    div[data-testid="stSlider"] { background-color: #F1F5F9 !important; padding: 20px !important; border-radius: 12px !important; margin-bottom: 25px !important; border: 1px solid #E2E8F0 !important; }
+    div[data-testid="stTickBar"] { color: #475569 !important; font-weight: bold !important; }
+    div[data-testid="stSlider"] div[role="slider"] { background-color: #0284C7 !important; border: 2px solid #FFF !important; }
+    div[data-testid="stSlider"] div[role="slider"] > div { background-color: #0284C7 !important; color: #FFF !important; }
 
-    /* الجداول */
-    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #E2E8F0;}
+    /* الجداول والتنبيهات */
+    .alert-banner { background-color: #FEF2F2 !important; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2;}
+    .sys-success { background-color: #F0FDF4 !important; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px; border: 1px solid #DCFCE7;}
+    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #E2E8F0;}
     .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37;}
     .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center;}
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. CENTERED LOGO (CRISP & FIXED SIZE)
+# 3. CENTERED LOGO
 # ==========================================
 svg_code = """
 <svg width="600" height="240" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
@@ -97,6 +89,7 @@ with open("jm72_icon.svg", "w", encoding="utf-8") as f:
 # 4. SESSION STATE
 # ==========================================
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
+if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 
 # ==========================================
 # 5. REST-API & GEOGRAPHICAL SECTORS
@@ -185,7 +178,7 @@ almanac_df, err_msg = load_national_almanac()
 weather_data = []
 
 if fetch_success and type(live_data) is list:
-    st.success("🟢 LIVE OPERATIONS ACTIVE: Model dynamically executing orographic convergence & Radar Nowcasting verification.")
+    st.markdown('<div class="sys-success">🟢 LIVE OPERATIONS ACTIVE: Model dynamically executing orographic convergence & Radar Nowcasting verification.</div>', unsafe_allow_html=True)
     for idx, (name, coords) in enumerate(stations_matrix.items()):
         try:
             current_precip = live_data[idx].get("current", {}).get("precipitation", 0.0)
@@ -270,9 +263,9 @@ with tab1:
     for i, date in enumerate(unique_dates_display[:5]):
         daily_max_storm = df_all[df_all["DateOnly"] == date]["Storm Probability"].max()
         with cols_t1[i]:
-            if daily_max_storm >= 75: st.error(f"🔴 **{date}**\n\n**Severe Risk**\n\n### {daily_max_storm}%")
-            elif daily_max_storm >= 40: st.warning(f"🟡 **{date}**\n\n**Localized**\n\n### {daily_max_storm}%")
-            else: st.success(f"🟢 **{date}**\n\n**Stable**\n\n### {daily_max_storm}%")
+            if daily_max_storm >= 75: st.markdown(f'<div class="alert-banner" style="text-align:center;">🔴 <b>{date}</b><br><br><b>Severe Risk</b><br><br><h3 style="margin:0;">{daily_max_storm}%</h3></div>', unsafe_allow_html=True)
+            elif daily_max_storm >= 40: st.markdown(f'<div class="alert-banner" style="background-color:#FFFBEB; border-left-color:#FDE047; color:#92400E !important; text-align:center;">🟡 <b>{date}</b><br><br><b>Localized</b><br><br><h3 style="margin:0; color:#92400E;">{daily_max_storm}%</h3></div>', unsafe_allow_html=True)
+            else: st.markdown(f'<div class="sys-success" style="text-align:center;">🟢 <b>{date}</b><br><br><b>Stable</b><br><br><h3 style="margin:0; color:#065F46;">{daily_max_storm}%</h3></div>', unsafe_allow_html=True)
     
     selected_time_t1 = st.select_slider("Forecast Timeline", options=timeline_str, key="t1_slider", label_visibility="collapsed")
     df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()
@@ -282,7 +275,7 @@ with tab1:
         affected_stations = df_time_t1[df_time_t1["Storm Probability"] >= 75]["Station"].tolist()
         target_str = ", ".join(get_clustered_sectors(affected_stations))
         target_radar = df_time_t1.loc[df_time_t1["Storm Probability"].idxmax(), "Radar Verif"]
-        st.error(f"**🚨 RED ALERT:** Severe Convective Storm Risk ({max_storm}%) detected over:\n📍 {target_str} \n\n 📡 Radar Nowcast: {target_radar}")
+        st.markdown(f'<div class="alert-banner"><strong>🚨 RED ALERT:</strong> Severe Convective Storm Risk ({max_storm}%) detected over:<br>📍 {target_str} <br><br> 📡 Radar Nowcast: {target_radar}</div>', unsafe_allow_html=True)
     
     df_plot_storm = df_time_t1[df_time_t1["Storm Probability"] > 0].copy()
     if df_plot_storm.empty:
@@ -295,7 +288,7 @@ with tab1:
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_data")
         
     st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery & Streams</h3>', unsafe_allow_html=True)
-    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe></div>""", height=520)
+    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;"><span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ JM72 SATELLITE LIVE</span></div></div>""", height=520)
 
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Forecast</h4>', unsafe_allow_html=True)
@@ -304,9 +297,9 @@ with tab2:
         d_max_t = df_all[df_all["DateOnly"] == date]["Temperature"].max()
         d_min_t = df_all[df_all["DateOnly"] == date]["Temperature"].min()
         with cols_t2[i]:
-            if d_max_t >= 48.0: st.error(f"🔴 **{date}**\n\n**Extreme Heat**\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
-            elif d_max_t >= 40.0: st.warning(f"🟡 **{date}**\n\n**High Heat**\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
-            else: st.success(f"🟢 **{date}**\n\n**Moderate**\n\n### ⬆ {d_max_t}° | ⬇ {d_min_t}°")
+            if d_max_t >= 48.0: st.markdown(f'<div class="alert-banner" style="text-align:center;">🔴 <b>{date}</b><br><br><b>Extreme Heat</b><br><br><h3 style="margin:0;">⬆ {d_max_t}° | ⬇ {d_min_t}°</h3></div>', unsafe_allow_html=True)
+            elif d_max_t >= 40.0: st.markdown(f'<div class="alert-banner" style="background-color:#FFFBEB; border-left-color:#FDE047; color:#92400E !important; text-align:center;">🟡 <b>{date}</b><br><br><b>High Heat</b><br><br><h3 style="margin:0; color:#92400E;">⬆ {d_max_t}° | ⬇ {d_min_t}°</h3></div>', unsafe_allow_html=True)
+            else: st.markdown(f'<div class="sys-success" style="text-align:center;">🟢 <b>{date}</b><br><br><b>Moderate</b><br><br><h3 style="margin:0; color:#065F46;">⬆ {d_max_t}° | ⬇ {d_min_t}°</h3></div>', unsafe_allow_html=True)
     
     selected_time_t2 = st.select_slider("Forecast Timeline", options=timeline_str, key="t2_slider", label_visibility="collapsed")
     df_time_t2 = df_all[df_all["Time"] == selected_time_t2].copy()
@@ -315,7 +308,7 @@ with tab2:
     if max_temp >= 50.0:
         affected_heat_stations = df_time_t2[df_time_t2["Temperature"] >= 50.0]["Station"].tolist()
         target_heat_str = ", ".join(get_clustered_sectors(affected_heat_stations))
-        st.error(f"**🚨 HEAT ALERT:** Extreme Thermal Heat Dome ({max_temp}°C) over:\n📍 {target_heat_str}")
+        st.markdown(f'<div class="alert-banner"><strong>🚨 HEAT ALERT:</strong> Extreme Thermal Heat Dome ({max_temp}°C) over:<br>📍 {target_heat_str}</div>', unsafe_allow_html=True)
 
     df_plot_heat = df_time_t2[df_time_t2["Temperature"] >= 50].copy()
     if df_plot_heat.empty:
@@ -338,7 +331,7 @@ with tab3:
         affected_dust_stations = df_time_t3[df_time_t3["Dust Probability"] >= 60]["Station"].tolist()
         target_dust_str = ", ".join(get_clustered_sectors(affected_dust_stations))
         target_dust_row = df_time_t3.loc[df_time_t3["Dust Probability"].idxmax()]
-        st.warning(f"**⚠️ DUST ALERT:** High probability of sandstorms ({max_dust}%) detected over:\n📍 {target_dust_str}\n\n• Max Wind Speed: {target_dust_row['Wind Speed']} km/h (Gusts: {target_dust_row['Gusts']} km/h)")
+        st.markdown(f'''<div class="alert-banner" style="background-color: #FFFBEB !important; color: #92400E !important; border-left-color: #D97706 !important;"><strong>⚠️ DUST ALERT:</strong> High probability of sandstorms ({max_dust}%) detected over:<br>📍 {target_dust_str}<br><br>• Max Wind Speed: {target_dust_row["Wind Speed"]} km/h (Gusts: {target_dust_row["Gusts"]} km/h)<br></div>''', unsafe_allow_html=True)
 
     fig3 = px.density_mapbox(df_time_t3, lat="Latitude", lon="Longitude", z="Dust Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.75, hover_data={"Station": True, "Wind Speed": True, "Wind Direction": True, "Visibility": True}, color_continuous_scale=["rgba(0,0,0,0)", "#FEF3C7", "#FCD34D", "#D97706", "#78350F"], range_color=[0, 100])
     fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
@@ -352,8 +345,8 @@ with tab4:
     display_df = df_time_t4.sort_values(by="Temperature", ascending=False)
     html_table = "<table class='custom-table'><tr><th>Observation Station</th><th>Temp (°C)</th><th>Wind (km/h)</th><th>Visibility (km)</th><th>Storm (%)</th><th>Radar (dBZ)</th><th>Verification</th></tr>"
     for _, row in display_df.iterrows():
-        s_color = "#EF4444" if row['Storm Probability'] >= 75 else "#1E293B"
-        vis_color = "#991B1B" if row['Visibility'] <= 2.0 else "#1E293B"
+        s_color = "#EF4444" if row['Storm Probability'] >= 75 else "#082F49"
+        vis_color = "#991B1B" if row['Visibility'] <= 2.0 else "#082F49"
         dbz_color = "#7E22CE" if row['dBZ'] >= 45 else ("#10B981" if row['dBZ'] > 0 else "#64748B")
         html_table += f"<tr><td>{row['Station']}</td><td>{row['Temperature']}°C</td><td>{row['Wind Speed']} km/h</td><td style='color:{vis_color};'>{row['Visibility']} km</td><td style='color:{s_color};'>{row['Storm Probability']}%</td><td style='color:{dbz_color}; font-weight:900;'>{row['dBZ']}</td><td style='color:{dbz_color};'>{row['Radar Verif']}</td></tr>"
     html_table += "</table>"

@@ -114,24 +114,6 @@ stations_matrix = {
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"}, "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
 
-SECTOR_MAP = {
-    "Eastern Region": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor"],
-    "Central Region": ["Al Dhaid", "Al Malaiha"],
-    "Abu Dhabi & Al Dhafra": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
-    "Al Ain Region": ["Al Ain Int'l Airport", "Al Aamerah"],
-    "Dubai & Northern Emirates": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
-}
-
-def get_clustered_sectors(station_list):
-    sectors = set()
-    for station in station_list:
-        found = False
-        for sector, stations in SECTOR_MAP.items():
-            if station in stations:
-                sectors.add(sector); found = True; break
-        if not found: sectors.add(station)
-    return list(sectors)
-
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
     try:
@@ -185,21 +167,18 @@ if fetch_success and type(live_data) is list:
                     wind_gst = max(station_data.get("windgusts_10m", [0]*len(api_times))[closest_idx] or 0, wind_spd * 1.35)
                     cape_val = station_data["cape"][closest_idx] or 0
                     
-                    # Storm Probability Logic
                     prob = (cape_val / 2000) * 100
                     if rh_700 < 45: prob *= 0.05
                     elif rh_700 < 55: prob *= 0.3
                     if coords["type"] == "Mountains" and temp_c > 38: prob *= 1.3
                     storm_prob = np.clip(prob, 0, 100)
                     
-                    # FOG PREDICTOR LOGIC
                     fog_prob = 0
                     is_night_early_morning = dt.hour < 8 or dt.hour > 22
                     if is_night_early_morning and surface_rh > 80 and wind_spd < 15:
                         fog_prob = ((surface_rh - 80) * 4) + ((15 - wind_spd) * 3)
                     fog_prob = np.clip(fog_prob, 0, 100)
                     
-                    # Dust Logic
                     dust_p = (wind_spd / 35) * 100 if coords["type"] == "Desert" else (wind_spd / 45) * 100
                     if wind_gst > 45: dust_p += 25
                     dust_p = np.clip(dust_p, 0, 100)
@@ -219,7 +198,6 @@ if fetch_success and type(live_data) is list:
 
 if not weather_data:
     st.error("⚠️ Connection to Weather API failed. Offline Mode Active.")
-    # Fallback dummy data
     np.random.seed(42)
     for dt_str, dt in zip(timeline_str, timeline):
         is_afternoon = 12 <= dt.hour <= 18
@@ -269,7 +247,6 @@ esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https
 with tab1:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (By Zone)</h4>', unsafe_allow_html=True)
     
-    # 3-ZONES 5-DAY STORM & FOG CARDS - FIXED WITH FLEXBOX
     cols_t1 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
@@ -286,26 +263,8 @@ with tab1:
         elif max_overall >= 30: border, bg = "#FDE047", "#FFFBEB"
         else: border, bg = "#86EFAC", "#F0FDF4"
         
-        card_html = f"""
-        <div style="background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;">📅 {date}</div>
-            
-            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;">
-                <span>🌊 Coast:</span>
-                <span style="font-weight:900;"><span style="color:#EF4444;">⛈️ {coast_storm}%</span> &nbsp; <span style="color:#64748B;">🌫️ {coast_fog}%</span></span>
-            </div>
-            
-            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;">
-                <span>⛰️ Mount:</span>
-                <span style="font-weight:900;"><span style="color:#EF4444;">⛈️ {mount_storm}%</span> &nbsp; <span style="color:#64748B;">🌫️ {mount_fog}%</span></span>
-            </div>
-            
-            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B;">
-                <span>🏜️ Inland:</span>
-                <span style="font-weight:900;"><span style="color:#EF4444;">⛈️ {inland_storm}%</span> &nbsp; <span style="color:#64748B;">🌫️ {inland_fog}%</span></span>
-            </div>
-        </div>
-        """
+        # Flattened HTML to bypass Streamlit markdown code block parsing
+        card_html = f"<div style='background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;'>📅 {date}</div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>🌊 Coast:</span><span style='font-weight:900;'><span style='color:#EF4444;'>⛈️ {coast_storm}%</span> &nbsp; <span style='color:#64748B;'>🌫️ {coast_fog}%</span></span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>⛰️ Mount:</span><span style='font-weight:900;'><span style='color:#EF4444;'>⛈️ {mount_storm}%</span> &nbsp; <span style='color:#64748B;'>🌫️ {mount_fog}%</span></span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B;'><span>🏜️ Inland:</span><span style='font-weight:900;'><span style='color:#EF4444;'>⛈️ {inland_storm}%</span> &nbsp; <span style='color:#64748B;'>🌫️ {inland_fog}%</span></span></div></div>"
         cols_t1[i].markdown(card_html, unsafe_allow_html=True)
 
     selected_time_t1 = st.select_slider("Forecast Timeline", options=timeline_str, key="t1_slider", label_visibility="collapsed")
@@ -329,7 +288,6 @@ with tab1:
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)
     
-    # 3-ZONES 5-DAY MIN-MAX TEMPERATURE CARDS - FIXED WITH FLEXBOX
     cols_t2 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
@@ -348,29 +306,10 @@ with tab2:
         elif max_overall >= 40: border, bg = "#FDE047", "#FFFBEB"
         else: border, bg = "#86EFAC", "#F0FDF4"
         
-        card_html = f"""
-        <div style="background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;">📅 {date}</div>
-            
-            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;">
-                <span>🌊 Coast:</span>
-                <span style="font-weight:900;">⬇ {coast_min}° - ⬆ {coast_max}°</span>
-            </div>
-            
-            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;">
-                <span>⛰️ Mount:</span>
-                <span style="font-weight:900;">⬇ {mount_min}° - ⬆ {mount_max}°</span>
-            </div>
-            
-            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B;">
-                <span>🏜️ Inland:</span>
-                <span style="font-weight:900;">⬇ {inland_min}° - ⬆ {inland_max}°</span>
-            </div>
-        </div>
-        """
+        # Flattened HTML to bypass Streamlit markdown code block parsing
+        card_html = f"<div style='background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;'>📅 {date}</div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>🌊 Coast:</span><span style='font-weight:900;'>⬇ {coast_min}° - ⬆ {coast_max}°</span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>⛰️ Mount:</span><span style='font-weight:900;'>⬇ {mount_min}° - ⬆ {mount_max}°</span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B;'><span>🏜️ Inland:</span><span style='font-weight:900;'>⬇ {inland_min}° - ⬆ {inland_max}°</span></div></div>"
         cols_t2[i].markdown(card_html, unsafe_allow_html=True)
         
-    # ANOMALY DETECTION
     current_month_str = str(datetime.utcnow().month)
     if not almanac_df.empty:
         hist_max_raw = almanac_df['highest_temperature_value'].replace(['-', '', ' '], np.nan).astype(float).max()

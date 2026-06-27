@@ -25,10 +25,10 @@ st.set_page_config(
 # ==========================================
 st.markdown("""
 <style>
-    /* Clean Bright UI */
+    /* Clean Bright UI Globally */
     html, body, [data-testid="stAppViewContainer"], .stApp, #root { background-color: #F8FAFC !important; }
-    .block-container { background-color: #FFFFFF !important; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important; padding: 2rem !important; margin: 1rem auto !important; border: 1px solid #E2E8F0 !important; }
-    [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
+    .block-container { background-color: #FFFFFF !important; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important; padding: 2rem !important; margin: 1rem auto !important; border: 1px solid #E2E8F0 !important; max-width: 95% !important;}
+    [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; visibility: hidden !important;}
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; }
     
     /* Tabs */
@@ -92,7 +92,7 @@ for dt in timeline:
     if d_str not in unique_dates_display: unique_dates_display.append(d_str)
 
 # ==========================================
-# 5. DATA FETCHING (ADDED RELATIVE HUMIDITY FOR FOG)
+# 5. DATA FETCHING & 3-ZONES MAPPING
 # ==========================================
 stations_matrix = {
     "Abu Dhabi": {"lat": 24.4760, "lon": 54.3290, "type": "Coast"}, "ADNOC HQ": {"lat": 24.4621, "lon": 54.3241, "type": "Coast"},
@@ -118,7 +118,6 @@ stations_matrix = {
 def fetch_stable_live_data(stations_dict):
     try:
         lats = ",".join([str(s["lat"]) for s in stations_dict.values()]); lons = ",".join([str(s["lon"]) for s in stations_dict.values()])
-        # Added relative_humidity_2m for Fog AI prediction
         url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&current=precipitation,weather_code&hourly=temperature_2m,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_700hPa&models=gfs_seamless&timezone=auto"
         response = requests.get(url, timeout=15)
         response.raise_for_status()
@@ -148,6 +147,9 @@ weather_data = []
 
 if fetch_success and type(live_data) is list:
     for idx, (name, coords) in enumerate(stations_matrix.items()):
+        # تخصيص المناطق إلى 3 بدلاً من 4 لتتناسب مع طلبك
+        zone_mapped = "Inland" if coords["type"] in ["Inland", "Desert"] else coords["type"]
+        
         try:
             current_precip = live_data[idx].get("current", {}).get("precipitation", 0.0)
             dbz = round(10 * np.log10(200 * (current_precip ** 1.6)), 1) if current_precip > 0.1 else 0.0
@@ -174,7 +176,7 @@ if fetch_success and type(live_data) is list:
                     if coords["type"] == "Mountains" and temp_c > 38: prob *= 1.3
                     storm_prob = np.clip(prob, 0, 100)
                     
-                    # AI 2: FOG PREDICTOR LOGIC (Idea 4)
+                    # AI 2: FOG PREDICTOR LOGIC
                     fog_prob = 0
                     is_night_early_morning = dt.hour < 8 or dt.hour > 22
                     if is_night_early_morning and surface_rh > 80 and wind_spd < 15:
@@ -189,7 +191,8 @@ if fetch_success and type(live_data) is list:
                 except Exception: temp_c, storm_prob, fog_prob, wind_spd, wind_gst, dust_p = 36.0, 0.0, 0.0, 10.0, 15.0, 0.0
 
                 weather_data.append({
-                    "Time": dt_str, "DateOnly": f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')}", "Station": name,
+                    "Time": dt_str, "DateOnly": f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')}", 
+                    "Station": name, "Zone": zone_mapped,
                     "Latitude": coords["lat"], "Longitude": coords["lon"],
                     "Storm Probability": round(storm_prob), "Fog Probability": round(fog_prob), 
                     "Temperature": round(temp_c, 1), "Humidity": round(surface_rh),
@@ -200,12 +203,30 @@ if fetch_success and type(live_data) is list:
 
 if not weather_data:
     st.error("⚠️ Connection to Weather API failed. Offline Mode Active.")
-    # Fallback dummy data generation omitted for brevity but assumed populated safely.
+    # Fallback dummy data
+    np.random.seed(42)
+    for dt_str, dt in zip(timeline_str, timeline):
+        is_afternoon = 12 <= dt.hour <= 18
+        for name, coords in stations_matrix.items():
+            zone_mapped = "Inland" if coords["type"] in ["Inland", "Desert"] else coords["type"]
+            base_storm = 75 if (is_afternoon and coords["type"] == "Mountains") else 0
+            temp = 42 + np.random.uniform(-3, 4)
+            wind_spd = np.random.uniform(10, 45)
+            s_prob = round(np.clip(base_storm + np.random.uniform(-5, 10), 0, 100)) if base_storm > 0 else 0
+            weather_data.append({
+                "Time": dt_str, "DateOnly": f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')}", 
+                "Station": name, "Zone": zone_mapped,
+                "Latitude": coords["lat"], "Longitude": coords["lon"], "Storm Probability": s_prob, "Fog Probability": 0, "Temperature": round(temp, 1), 
+                "Wind Speed": round(wind_spd, 1), "Wind Direction": round(np.random.uniform(0, 360)),
+                "Gusts": round(wind_spd * 1.5, 1), "Dust Probability": round((wind_spd/50)*100),
+                "Visibility": round(10.0 - (wind_spd/50)*9.0, 1), "Rainfall": round(np.random.uniform(10, 40), 1) if s_prob > 70 else 0.0,
+                "dBZ": 0.0, "Radar Verif": "⏳ Offline Data"
+            })
 
 df_all = pd.DataFrame(weather_data)
 
 # ==========================================
-# AI IDEA 1 & 2: DYNAMIC GENERATIVE BRIEFING & CLUSTERING
+# AI GENERATIVE BRIEFING (Top Banner)
 # ==========================================
 current_time_df = df_all[df_all["Time"] == timeline_str[0]]
 max_temp_val = current_time_df["Temperature"].max()
@@ -213,25 +234,53 @@ max_temp_loc = current_time_df.loc[current_time_df["Temperature"].idxmax()]["Sta
 max_storm_val = current_time_df["Storm Probability"].max()
 max_fog_val = current_time_df["Fog Probability"].max()
 
-ai_briefing = f"🤖 **JM72 AI Analysis:** Currently, the thermal peak is centered over {max_temp_loc} at {max_temp_val}°C. "
+ai_briefing = f"🤖 **JM72 AI Broadcaster:** Currently, the thermal peak is centered over {max_temp_loc} at {max_temp_val}°C. "
 if max_storm_val > 40: ai_briefing += f"Convective activity shows a {max_storm_val}% risk of isolated storms. "
 elif max_fog_val > 50: ai_briefing += f"High surface moisture indicates a {max_fog_val}% risk of radiation fog formation tonight. "
-else: ai_briefing += "Atmospheric conditions remain generally stable across most sectors."
+else: ai_briefing += "Atmospheric conditions remain generally stable across most geographic sectors."
 
 st.markdown(f'<div class="ai-broadcaster">{ai_briefing}</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 9. TABS & INTERFACE (WITH 5 AI IDEAS)
+# 9. TABS & INTERFACE
 # ==========================================
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🌩️ Storms & Fog", "🔥 Heat & Anomalies", "🗺️ Dynamic Clusters", "📋 Model Matrix", "🤖 JM72 AI Assistant", "⚙️ Control Room"
 ])
 
-# MAP STYLING
 esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}]
 
 with tab1:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">🌩️ Convective & 🌫️ Fog Predictor (AI Driven)</h4>', unsafe_allow_html=True)
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Convective Forecast (By 3 Zones)</h4>', unsafe_allow_html=True)
+    
+    # 3-ZONES 5-DAY STORM FORECAST CARDS
+    cols_t1 = st.columns(len(unique_dates_display[:5]))
+    for i, date in enumerate(unique_dates_display[:5]):
+        day_df = df_all[df_all["DateOnly"] == date]
+        
+        # استخراج أقصى قيمة لكل منطقة
+        coast_storm = int(day_df[day_df["Zone"] == "Coast"]["Storm Probability"].max())
+        mount_storm = int(day_df[day_df["Zone"] == "Mountains"]["Storm Probability"].max())
+        inland_storm = int(day_df[day_df["Zone"] == "Inland"]["Storm Probability"].max())
+        
+        max_overall = max(coast_storm, mount_storm, inland_storm)
+        if max_overall >= 75: border, bg = "#FCA5A5", "#FEF2F2"
+        elif max_overall >= 40: border, bg = "#FDE047", "#FFFBEB"
+        else: border, bg = "#86EFAC", "#F0FDF4"
+        
+        # HTML تصميم مربع احترافي
+        card_html = f"""
+        <div style="background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color:#082F49; font-size:15px; font-weight:900; margin-bottom:8px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 5px;">📅 {date}</div>
+            <div style="font-size:14px; color:#1E293B; line-height:1.8;">
+                🌊 Coast: <span style="float:right; font-weight:900;">{coast_storm}%</span><br>
+                ⛰️ Mount: <span style="float:right; font-weight:900;">{mount_storm}%</span><br>
+                🏜️ Inland: <span style="float:right; font-weight:900;">{inland_storm}%</span>
+            </div>
+        </div>
+        """
+        cols_t1[i].markdown(card_html, unsafe_allow_html=True)
+
     selected_time_t1 = st.select_slider("Forecast Timeline", options=timeline_str, key="t1_slider", label_visibility="collapsed")
     df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()
 
@@ -251,12 +300,37 @@ with tab1:
         st.plotly_chart(fig_fog, use_container_width=True, key="fog_map_data")
 
 with tab2:
-    st.markdown('<h4 style="color:#082F49; font-weight:900;">🔥 Thermal Tracker & Historical Anomaly Detection</h4>', unsafe_allow_html=True)
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Forecast (By 3 Zones)</h4>', unsafe_allow_html=True)
     
-    # AI IDEA 3: ANOMALY DETECTION (Historical comparison)
+    # 3-ZONES 5-DAY TEMPERATURE CARDS
+    cols_t2 = st.columns(len(unique_dates_display[:5]))
+    for i, date in enumerate(unique_dates_display[:5]):
+        day_df = df_all[df_all["DateOnly"] == date]
+        
+        coast_temp = round(day_df[day_df["Zone"] == "Coast"]["Temperature"].max(), 1)
+        mount_temp = round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].max(), 1)
+        inland_temp = round(day_df[day_df["Zone"] == "Inland"]["Temperature"].max(), 1)
+        
+        max_overall = max(coast_temp, mount_temp, inland_temp)
+        if max_overall >= 48: border, bg = "#FCA5A5", "#FEF2F2"
+        elif max_overall >= 40: border, bg = "#FDE047", "#FFFBEB"
+        else: border, bg = "#86EFAC", "#F0FDF4"
+        
+        card_html = f"""
+        <div style="background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color:#082F49; font-size:15px; font-weight:900; margin-bottom:8px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 5px;">📅 {date}</div>
+            <div style="font-size:14px; color:#1E293B; line-height:1.8;">
+                🌊 Coast: <span style="float:right; font-weight:900;">{coast_temp}°C</span><br>
+                ⛰️ Mount: <span style="float:right; font-weight:900;">{mount_temp}°C</span><br>
+                🏜️ Inland: <span style="float:right; font-weight:900;">{inland_temp}°C</span>
+            </div>
+        </div>
+        """
+        cols_t2[i].markdown(card_html, unsafe_allow_html=True)
+        
+    # AI IDEA 4: ANOMALY DETECTION
     current_month_str = str(datetime.utcnow().month)
     if not almanac_df.empty:
-        # Extract highest recorded ever for context
         hist_max_raw = almanac_df['highest_temperature_value'].replace(['-', '', ' '], np.nan).astype(float).max()
         if not np.isnan(hist_max_raw) and max_temp_val > (hist_max_raw - 3.0):
             st.markdown(f'<div class="anomaly-alert">⚠️ AI Anomaly Detected: Current max temperature ({max_temp_val}°C) is approaching the historical national extreme ({hist_max_raw}°C).</div>', unsafe_allow_html=True)
@@ -339,4 +413,4 @@ with tab5:
 
 with tab6:
     st.markdown("### 🚨 JM72 Alert Control Room")
-    st.info("ℹ️ The automated email alert engine has been permanently physically severed from the codebase to ensure zero spam. Alerts will only trigger visually inside this dashboard.")
+    st.info("ℹ️ The automated email alert engine has been permanently severed from the codebase to ensure zero spam. Alerts will only trigger visually inside this dashboard.")

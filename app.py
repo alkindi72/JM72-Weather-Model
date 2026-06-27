@@ -21,7 +21,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. CLEAN, BRIGHT & MOBILE-RESPONSIVE CSS
+# 2. CLEAN & BRIGHT CSS
 # ==========================================
 st.markdown("""
 <style>
@@ -32,26 +32,27 @@ st.markdown("""
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; }
     
     /* Tabs */
-    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; flex-wrap: wrap; }
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; }
     div[data-testid="stTabs"] button { background-color: #FFFFFF !important; border: 1px solid #CBD5E1 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
     
     /* AI Components */
-    .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); line-height: 1.6; }
-    .anomaly-alert { background-color: #FFFBEB; border: 1px solid #FEF08A; padding: 10px 15px; border-radius: 6px; color: #92400E; font-weight: bold; margin-bottom: 10px; font-size: 14px; line-height: 1.6;}
+    .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); }
+    .anomaly-alert { background-color: #FFFBEB; border: 1px solid #FEF08A; padding: 10px 15px; border-radius: 6px; color: #92400E; font-weight: bold; margin-bottom: 10px; font-size: 14px;}
     
-    /* Timeline & Elements */
+    /* Timeline & Tables */
     div[data-testid="stSlider"] { background-color: #F1F5F9 !important; padding: 20px !important; border-radius: 12px !important; margin-bottom: 25px !important; border: 1px solid #E2E8F0 !important; }
     div[data-testid="stTickBar"] { color: #475569 !important; font-weight: bold !important; }
     div[data-testid="stSlider"] div[role="slider"] { background-color: #0284C7 !important; border: 2px solid #FFF !important; }
     div[data-testid="stSlider"] div[role="slider"] > div { background-color: #0284C7 !important; color: #FFF !important; border-radius: 4px; padding: 2px 8px;}
+    .alert-banner { background-color: #FEF2F2 !important; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2;}
+    .sys-success { background-color: #F0FDF4 !important; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px; border: 1px solid #DCFCE7;}
     
-    /* Tables Container (Horizontal Scroll for Mobile) */
     .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 20px; }
     .custom-table { width: 100%; border-collapse: collapse; background-color: #ffffff; min-width: 800px; }
-    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 12px; text-align: center; border-bottom: 3px solid #D4AF37; white-space: nowrap; font-size: 13px;}
-    .custom-table td { padding: 12px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center; white-space: nowrap; font-size: 13px;}
+    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37; white-space: nowrap; font-size: 13px;}
+    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center; white-space: nowrap; font-size: 13px;}
 
     /* Mobile */
     @media (max-width: 768px) {
@@ -65,7 +66,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. CENTERED LOGO (MODERN GEOMETRIC 71wm)
+# 3. CENTERED LOGO
 # ==========================================
 svg_code = """
 <svg width="600" height="220" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
@@ -74,7 +75,7 @@ svg_code = """
         <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#F8FAFC" stroke="#082F49" stroke-width="1.5"/>
         <circle cx="60" cy="60" r="25" fill="#FDE047" opacity="0.4" />
         <path d="M 30,35 L 70,35 L 55,65 L 65,65 L 40,95 L 45,70 L 35,70 Z" fill="#D4AF37" />
-        <polygon points="75,35 90,35 90,95 75,95" fill="#0284C7" />
+        <path d="M 75,35 L 90,35 L 90,95 L 75,95 Z" fill="#0284C7" />
         <g transform="translate(31, 108)">
             <rect x="0" y="0" width="10" height="10" fill="#EF4444" rx="2" transform="rotate(45 5 5)"/>
             <rect x="16" y="0" width="10" height="10" fill="#10B981" rx="2" transform="rotate(45 5 5)"/>
@@ -128,31 +129,17 @@ stations_matrix = {
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"}, "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
 
-SECTOR_MAP = {
-    "Eastern Region": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor"],
-    "Central Region": ["Al Dhaid", "Al Malaiha"],
-    "Abu Dhabi & Al Dhafra": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
-    "Al Ain Region": ["Al Ain Int'l Airport", "Al Aamerah"],
-    "Dubai & Northern Emirates": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
-}
-
-def get_sector_for_station(station_name):
-    for sector, stations in SECTOR_MAP.items():
-        if station_name in stations: return sector
-    return "Unknown"
-
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
     try:
         lats = ",".join([str(s["lat"]) for s in stations_dict.values()]); lons = ",".join([str(s["lon"]) for s in stations_dict.values()])
-        # تم إضافة: apparent_temperature (الحرارة المحسوسة) و cloudcover_low (السحب المنخفضة للكوس)
         url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&current=precipitation,weather_code&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low&models=gfs_seamless&timezone=auto"
         response = requests.get(url, timeout=15)
         response.raise_for_status()
         return True, response.json()
     except Exception as e: return False, str(e)
 
-with st.spinner("🤖 71wm AI Engine: Compiling live metrics & executing Al-Kous Cloud Predictor..."):
+with st.spinner("🤖 71wm AI Engine: Compiling live metrics..."):
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 @st.cache_data
@@ -169,15 +156,13 @@ def load_national_almanac():
 almanac_df, err_msg = load_national_almanac()
 
 # ==========================================
-# 6. AI DYNAMICS ENGINE (CORE PROCESSING)
+# 6. AI DYNAMICS ENGINE
 # ==========================================
 weather_data = []
 
 if fetch_success and type(live_data) is list:
     for idx, (name, coords) in enumerate(stations_matrix.items()):
         zone_mapped = "Inland" if coords["type"] in ["Inland", "Desert"] else coords["type"]
-        sector_name = get_sector_for_station(name)
-        
         try:
             current_precip = live_data[idx].get("current", {}).get("precipitation", 0.0)
             dbz = round(10 * np.log10(200 * (current_precip ** 1.6)), 1) if current_precip > 0.1 else 0.0
@@ -206,7 +191,7 @@ if fetch_success and type(live_data) is list:
                     t_850 = station_data.get("temperature_850hPa", [20]*len(api_times))[closest_idx] or 20
                     t_500 = station_data.get("temperature_500hPa", [-10]*len(api_times))[closest_idx] or -10
                     
-                    # 1. Storm AI
+                    # Storm AI
                     prob = (cape_val / 2000.0) * 100 
                     moisture_index = (rh_850 * 0.4) + (rh_700 * 0.4) + (rh_500 * 0.2)
                     lapse_rate = t_850 - t_500
@@ -217,25 +202,21 @@ if fetch_success and type(live_data) is list:
                     if coords["type"] == "Mountains" and temp_c > 38: prob *= 1.3
                     storm_prob = np.clip(prob, 0, 100)
                     
-                    # 2. General Fog AI
+                    # General Fog AI
                     fog_prob = 0
                     is_night_early_morning = dt.hour < 8 or dt.hour > 22
                     if is_night_early_morning and surface_rh > 80 and wind_spd < 15:
                         fog_prob = ((surface_rh - 80) * 4) + ((15 - wind_spd) * 3)
                     fog_prob = np.clip(fog_prob, 0, 100)
                     
-                    # 3. AL-KOUS CLOUD PREDICTOR (الذكاء المكاني للساحل الشرقي)
+                    # AL-KOUS CLOUD PREDICTOR
                     alkous_prob = 0
-                    # تفحص الخوارزمية محطات الساحل الشرقي والجبال المحاذية لها (خط طول > 55.8)
                     if coords["lon"] >= 55.8:
-                        # الشرط: رياح شرقية/جنوبية شرقية (من 45 إلى 160 درجة) + رطوبة سطحية عالية
                         if 45 <= wind_dir <= 160 and surface_rh >= 65:
-                            # تفاعل الرفع التضاريسي مع السحب المنخفضة
                             alkous_base = ((surface_rh - 65) * 2) + (cloud_low * 0.5)
-                            if temp_c >= 35: alkous_base *= 1.2  # الحرارة العالية تزيد من التبخر الخانق
+                            if temp_c >= 35: alkous_base *= 1.2
                             alkous_prob = np.clip(alkous_base, 0, 100)
                     
-                    # 4. Dust AI
                     dust_p = (wind_spd / 35) * 100 if coords["type"] == "Desert" else (wind_spd / 45) * 100
                     if wind_gst > 45: dust_p += 25
                     dust_p = np.clip(dust_p, 0, 100)
@@ -252,13 +233,10 @@ if fetch_success and type(live_data) is list:
                 })
         except Exception: pass
 
-if not weather_data:
-    st.error("⚠️ Connection to Weather API failed. Offline Mode Active.")
-
 df_all = pd.DataFrame(weather_data)
 
 # ==========================================
-# AI GENERATIVE BRIEFING (Top Banner)
+# AI GENERATIVE BRIEFING
 # ==========================================
 current_time_df = df_all[df_all["Time"] == timeline_str[0]]
 max_temp_val = current_time_df["Temperature"].max()
@@ -289,7 +267,6 @@ with tab1:
     cols_t1 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
-        
         daily_max_storm = int(day_df["Storm Probability"].max())
         daily_max_fog = int(day_df["Fog Probability"].max())
         
@@ -315,7 +292,7 @@ with tab1:
         fig_fog.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
         st.plotly_chart(fig_fog, use_container_width=True, key="fog_map_data")
 
-    st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery & Streams</h3>', unsafe_allow_html=True)
+    st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery</h3>', unsafe_allow_html=True)
     components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;"><span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ 71wm SATELLITE LIVE</span></div></div>""", height=520)
 
 with tab2:
@@ -324,7 +301,6 @@ with tab2:
     cols_t2 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
-        
         coast_max = round(day_df[day_df["Zone"] == "Coast"]["Temperature"].max(), 1)
         coast_min = round(day_df[day_df["Zone"] == "Coast"]["Temperature"].min(), 1)
         mount_max = round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].max(), 1)
@@ -343,24 +319,49 @@ with tab2:
     selected_time_t2 = st.select_slider("Forecast Timeline", options=timeline_str, key="t2_slider", label_visibility="collapsed")
     df_time_t2 = df_all[df_all["Time"] == selected_time_t2].copy()
 
-    fig2 = px.density_mapbox(df_time_t2, lat="Latitude", lon="Longitude", z="Temperature", radius=50, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.7, color_continuous_scale=["rgba(0,0,0,0)", "#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60], title="Actual Air Temperature")
-    fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
+    fig2 = px.density_mapbox(df_time_t2, lat="Latitude", lon="Longitude", z="Temperature", radius=50, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.7, color_continuous_scale=["rgba(0,0,0,0)", "#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
+    fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
     st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
 
 with tab3:
-    st.markdown('<h4 style="color:#082F49; font-weight:900;">☁️ Al-Kous Predictor (Eastern Coast & Mountains)</h4>', unsafe_allow_html=True)
-    st.info("💡 نموذج حصري يحلل الرياح الشرقية والرطوبة للتنبؤ بسحب 'الكوس' المنخفضة التي تعانق جبال الساحل الشرقي وتسبب الشعور بالخنق.")
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Al-Kous Cloud Forecast (Eastern Coast & Mountains)</h4>', unsafe_allow_html=True)
     
+    cols_t3 = st.columns(len(unique_dates_display[:5]))
+    for i, date in enumerate(unique_dates_display[:5]):
+        day_df = df_all[df_all["DateOnly"] == date]
+        max_kous_day = int(day_df["AlKous Prob"].max())
+        
+        if max_kous_day >= 60: border, bg = "#CBD5E1", "#F1F5F9"
+        elif max_kous_day >= 30: border, bg = "#E2E8F0", "#F8FAFC"
+        else: border, bg = "#86EFAC", "#F0FDF4"
+        
+        card_html_kous = f"<div style='background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); text-align:center;'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; border-bottom: 1px solid {border}; padding-bottom: 8px;'>📅 {date}</div><div style='font-size:18px; font-weight:900; color:#334155; margin-bottom:4px;'>☁️ الكوس: {max_kous_day}%</div></div>"
+        cols_t3[i].markdown(card_html_kous, unsafe_allow_html=True)
+
     selected_time_t3 = st.select_slider("Forecast Timeline", options=timeline_str, key="t3_slider", label_visibility="collapsed")
     df_time_t3 = df_all[df_all["Time"] == selected_time_t3].copy()
     
-    # فلترة المحطات لتشمل الجانب الشرقي فقط لعرض الكوس
     east_stations = df_time_t3[df_time_t3["Longitude"] >= 55.8].copy()
     
-    fig3 = px.scatter_mapbox(east_stations, lat="Latitude", lon="Longitude", color="AlKous Prob", size="AlKous Prob", size_max=25, zoom=7.5, center=dict(lat=25.2, lon=56.2), mapbox_style="white-bg", color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#334155", "#0F172A"], range_color=[0, 100], hover_name="Station", hover_data={"Apparent Temp": True, "Humidity": True, "AlKous Prob": True}, title="Al-Kous Clouds Index (%)")
-    fig3.update_traces(marker=dict(opacity=0.85))
+    # =========================================================================
+    # 🛑 تم الإصلاح الجذري هنا: تحويل الخريطة إلى الخارطة الحرارية الانسيابية بالكامل
+    # =========================================================================
+    fig3 = px.density_mapbox(
+        east_stations, 
+        lat="Latitude", 
+        lon="Longitude", 
+        z="AlKous Prob", 
+        radius=55, 
+        center=dict(lat=25.1, lon=56.2), 
+        zoom=7.5, 
+        mapbox_style="white-bg", 
+        opacity=0.85, 
+        color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#475569", "#1E293B"], 
+        range_color=[0, 100], 
+        title="Al-Kous Cloud Density Matrix"
+    )
     fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
-    st.plotly_chart(fig3, use_container_width=True, key="kous_map_data")
+    st.plotly_chart(fig3, use_container_width=True, key="kous_heatmap_data")
 
 with tab4:
     selected_time_t4 = st.select_slider("Forecast Timeline", options=timeline_str, key="t4_slider", label_visibility="collapsed")
@@ -368,13 +369,11 @@ with tab4:
     
     st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 34-Station Matrix at {selected_time_t4}</h3>", unsafe_allow_html=True)
     display_df = df_time_t4.sort_values(by="Temperature", ascending=False)
-    # إضافة عامود الحرارة المحسوسة وعامود الكوس
     html_table = "<div class='table-responsive'><table class='custom-table'><tr><th>Station</th><th>Temp (°C)</th><th>Feels Like</th><th>RH (%)</th><th>Al-Kous (%)</th><th>Storm (%)</th></tr>"
     for _, row in display_df.iterrows():
         s_color = "#EF4444" if row['Storm Probability'] >= 75 else "#082F49"
         k_color = "#475569" if row['AlKous Prob'] >= 50 else "#082F49"
         app_color = "#DC2626" if row['Apparent Temp'] >= 45 else ("#F97316" if row['Apparent Temp'] >= 40 else "#082F49")
-        
         kous_val = f"{row['AlKous Prob']}%" if row['AlKous Prob'] > 0 else "-"
         
         html_table += f"<tr><td>{row['Station']}</td><td>{row['Temperature']}°C</td><td style='color:{app_color}; font-weight:bold;'>{row['Apparent Temp']}°C</td><td>{row['Humidity']}%</td><td style='color:{k_color}; font-weight:bold;'>{kous_val}</td><td style='color:{s_color};'>{row['Storm Probability']}%</td></tr>"
@@ -383,9 +382,8 @@ with tab4:
 
 with tab5:
     st.markdown('<h4 style="color:#082F49; font-weight:900;">🤖 71wm AI Data Assistant (Interactive Chatbot)</h4>', unsafe_allow_html=True)
-    st.write("Ask the AI to instantly analyze the massive weather matrix for you.")
     
-    prompt = st.chat_input("Ask a question (e.g., 'What is the hottest station right now?')")
+    prompt = st.chat_input("Ask a question...")
     if prompt:
         st.chat_message("user").write(prompt)
         p_lower = prompt.lower()

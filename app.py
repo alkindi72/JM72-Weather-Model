@@ -391,14 +391,27 @@ with tab6:
         st.session_state["email_sender"] = st.text_input("بريد المرسل (Gmail)", value=st.session_state["email_sender"])
         st.session_state["email_password"] = st.text_input("كلمة مرور التطبيقات السرية (16 حرفاً من جوجل)", type="password", value=st.session_state["email_password"])
         
-        # تنبيه إرشادي بكيفية إضافة إيميلات متعددة
-        st.info("💡 **تلميح:** يمكنك إضافة عدة إيميلات لاستلام التنبيهات. فقط افصل بينها بفاصلة (,) مثال: `one@ncm.ae, two@ncm.ae`")
-        st.session_state["email_receiver"] = st.text_input("بريد المستلم (أو قائمة الإيميلات)", value=st.session_state["email_receiver"])
+        st.markdown("##### 📥 قائمة المشتركين في الإنذارات")
+        col_add1, col_add2 = st.columns([7, 3])
+        with col_add1:
+            new_sub = st.text_input("إضافة إيميل جديد للقائمة:", key="new_subscriber")
+        with col_add2:
+            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+            if st.button("➕ إضافة للقائمة"):
+                if new_sub.strip():
+                    if not st.session_state["email_receiver"]:
+                        st.session_state["email_receiver"] = new_sub.strip()
+                    else:
+                        current_list = [e.strip() for e in st.session_state["email_receiver"].split(",")]
+                        if new_sub.strip() not in current_list:
+                            st.session_state["email_receiver"] += f", {new_sub.strip()}"
+                            
+        st.info("💡 **تلميح:** يمكنك أيضاً التعديل على القائمة يدوياً أدناه (تأكد من وجود فاصلة `,` بين الإيميلات).")
+        st.session_state["email_receiver"] = st.text_area("الإيميلات المسجلة حالياً:", value=st.session_state["email_receiver"], height=100)
         
-        if st.button("🔄 تصفير الذاكرة وإجبار الإرسال الآن"):
+        if st.button("🔄 تصفير ذاكرة الإرسال لإعادة التجربة فوراً"):
             st.session_state["email_sent_track"] = {}
-            st.success("تم التصفير! سيقوم النظام الآن بإعادة تقييم الطقس ومحاولة الإرسال فوراً...")
-            st.rerun()
+            st.success("تم تصفير الذاكرة! إذا كانت هناك حالة إنذار قائمة ومفتاح الإرسال مفعل، سيصلك إيميل فوراً.")
 
         st.markdown("---")
         st.markdown("#### 📡 سجل عمليات الإرسال الحي (Live Delivery Log)")

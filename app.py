@@ -15,7 +15,7 @@ import base64
 # 1. PLATFORM SETTINGS
 # ==========================================
 st.set_page_config(
-    page_title="JM72 AI Weather Model", 
+    page_title="71wm AI Weather Model", 
     page_icon="🌩️", 
     layout="wide"
 )
@@ -48,42 +48,40 @@ st.markdown("""
     div[data-testid="stSlider"] div[role="slider"] > div { background-color: #0284C7 !important; color: #FFF !important; border-radius: 4px; padding: 2px 8px;}
     .alert-banner { background-color: #FEF2F2 !important; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2;}
     .sys-success { background-color: #F0FDF4 !important; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px; border: 1px solid #DCFCE7;}
-    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 20px; }
-    .custom-table { width: 100%; border-collapse: collapse; background-color: #ffffff; min-width: 600px; }
-    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37; white-space: nowrap;}
-    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center; white-space: nowrap;}
-
-    /* Mobile */
-    @media (max-width: 768px) {
-        .block-container { padding: 1rem !important; margin: 0.5rem auto !important; max-width: 100% !important; border-radius: 0px !important; border: none !important; }
-        .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { font-size: 13px !important; }
-        div[data-testid="stTabs"] button { padding: 8px 10px !important; font-size: 13px !important; flex-grow: 1; text-align: center; }
-        .ai-broadcaster { font-size: 14px; padding: 12px 15px; }
-        div[data-testid="stSlider"] { padding: 15px 10px !important; }
-    }
+    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #E2E8F0;}
+    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37;}
+    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center;}
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. CENTERED LOGO
+# 3. CENTERED LOGO (MODERN GEOMETRIC 71wm)
 # ==========================================
 svg_code = """
-<svg width="600" height="240" viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
-    <path id="textArcPath" d="M 70,160 Q 300,0 530,160" fill="transparent" />
-    <text font-family="'Arial Black', 'Segoe UI Black', sans-serif" font-weight="900" font-size="36" fill="#082F49">
-        <textPath href="#textArcPath" startOffset="50%" text-anchor="middle">
-            JM72 AI Weather Model
-        </textPath>
-    </text>
-    <g transform="translate(230, 110)">
-        <path d="M 10,70 L 40,25 L 70,55 L 100,15 L 130,70 Z" fill="#D4AF37" />
-        <path d="M -5,70 Q 35,55 70,70 T 145,70 L 145,85 L -5,85 Z" fill="#0284C7" />
-        <text x="70" y="55" font-family="'Arial Black', sans-serif" font-weight="900" font-size="24" fill="#082F49" text-anchor="middle" letter-spacing="1">JM72</text>
+<svg width="600" height="220" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(240, 10)">
+        <polygon points="60,0 112,30 112,90 60,120 8,90 8,30" fill="none" stroke="#E2E8F0" stroke-width="3"/>
+        <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#F8FAFC" stroke="#082F49" stroke-width="1.5"/>
+        
+        <circle cx="60" cy="60" r="25" fill="#FDE047" opacity="0.4" />
+        
+        <path d="M 30,35 L 70,35 L 55,65 L 65,65 L 40,95 L 45,70 L 35,70 Z" fill="#D4AF37" />
+        <polygon points="75,35 90,35 90,95 75,95" fill="#0284C7" />
+        
+        <g transform="translate(31, 108)">
+            <rect x="0" y="0" width="10" height="10" fill="#EF4444" rx="2" transform="rotate(45 5 5)"/>
+            <rect x="16" y="0" width="10" height="10" fill="#10B981" rx="2" transform="rotate(45 5 5)"/>
+            <rect x="32" y="0" width="10" height="10" fill="#CBD5E1" rx="2" transform="rotate(45 5 5)"/>
+            <rect x="48" y="0" width="10" height="10" fill="#1E293B" rx="2" transform="rotate(45 5 5)"/>
+        </g>
     </g>
+    
+    <text x="300" y="180" font-family="'Arial Black', system-ui, sans-serif" font-weight="900" font-size="34" fill="#082F49" text-anchor="middle" letter-spacing="1">71wm AI</text>
+    <text x="300" y="205" font-family="system-ui, sans-serif" font-weight="800" font-size="14" fill="#64748B" text-anchor="middle" letter-spacing="6">WEATHER MODEL • U.A.E</text>
 </svg>
 """
 b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
-st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 15px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="JM72 Logo" /></div>', unsafe_allow_html=True)
+st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 15px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="71wm Logo" /></div>', unsafe_allow_html=True)
 
 # ==========================================
 # 4. SESSION & TIMELINE SETUP
@@ -134,7 +132,7 @@ def fetch_stable_live_data(stations_dict):
         return True, response.json()
     except Exception as e: return False, str(e)
 
-with st.spinner("🤖 JM72 AI Engine: Compiling live metrics & executing models..."):
+with st.spinner("🤖 71wm AI Engine: Compiling live metrics & executing models..."):
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 @st.cache_data
@@ -238,7 +236,7 @@ max_temp_loc = current_time_df.loc[current_time_df["Temperature"].idxmax()]["Sta
 max_storm_val = current_time_df["Storm Probability"].max()
 max_fog_val = current_time_df["Fog Probability"].max()
 
-ai_briefing = f"🤖 **JM72 AI Broadcaster:** Currently, the thermal peak is centered over {max_temp_loc} at {max_temp_val}°C. "
+ai_briefing = f"🤖 **71wm AI Broadcaster:** Currently, the thermal peak is centered over {max_temp_loc} at {max_temp_val}°C. "
 if max_storm_val > 40: ai_briefing += f"Convective activity shows a {max_storm_val}% risk of isolated storms. "
 elif max_fog_val > 50: ai_briefing += f"High surface moisture indicates a {max_fog_val}% risk of radiation fog formation tonight. "
 else: ai_briefing += "Atmospheric conditions remain generally stable across most geographic sectors."
@@ -249,7 +247,7 @@ st.markdown(f'<div class="ai-broadcaster">{ai_briefing}</div>', unsafe_allow_htm
 # 9. TABS & INTERFACE
 # ==========================================
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "🌩️ Storms & Fog", "🔥 Heat & Anomalies", "🗺️ Dynamic Clusters", "📋 Model Matrix", "🤖 JM72 AI Assistant", "⚙️ Control Room"
+    "🌩️ Storms & Fog", "🔥 Heat & Anomalies", "🗺️ Dynamic Clusters", "📋 Model Matrix", "🤖 71wm AI Assistant", "⚙️ Control Room"
 ])
 
 esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}]
@@ -290,9 +288,8 @@ with tab1:
         fig_fog.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
         st.plotly_chart(fig_fog, use_container_width=True, key="fog_map_data")
 
-    # RESTORED SATELLITE IMAGERY BLOCK
     st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery & Streams</h3>', unsafe_allow_html=True)
-    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;"><span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ JM72 SATELLITE LIVE</span></div></div>""", height=520)
+    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;"><span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ 71wm SATELLITE LIVE</span></div></div>""", height=520)
 
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)
@@ -370,7 +367,7 @@ with tab4:
     st.markdown(html_table, unsafe_allow_html=True)
 
 with tab5:
-    st.markdown('<h4 style="color:#082F49; font-weight:900;">🤖 JM72 AI Data Assistant (Interactive Chatbot)</h4>', unsafe_allow_html=True)
+    st.markdown('<h4 style="color:#082F49; font-weight:900;">🤖 71wm AI Data Assistant (Interactive Chatbot)</h4>', unsafe_allow_html=True)
     st.write("Ask the AI to instantly analyze the massive weather matrix for you.")
     
     prompt = st.chat_input("Ask a question (e.g., 'What is the hottest station right now?')")
@@ -392,12 +389,12 @@ with tab5:
             if not foggy.empty: response = f"High fog risk detected at: {', '.join(foggy['Station'].tolist())}."
             else: response = "No significant fog risk detected at this hour."
         else:
-            response = "I am the JM72 AI Assistant. I can currently answer questions about the 'hottest station', 'storm risks', and 'fog predictions'. Try asking one of those!"
+            response = "I am the 71wm AI Assistant. I can currently answer questions about the 'hottest station', 'storm risks', and 'fog predictions'. Try asking one of those!"
             
         st.chat_message("assistant").write(response)
     else:
-        st.chat_message("assistant").write("Hello Jumah! I am ready to analyze the 34-station data array. What would you like to know?")
+        st.chat_message("assistant").write("Hello! I am ready to analyze the 34-station data array. What would you like to know?")
 
 with tab6:
-    st.markdown("### 🚨 JM72 Alert Control Room")
+    st.markdown("### 🚨 71wm Alert Control Room")
     st.info("ℹ️ The automated email alert engine has been permanently physically severed from the codebase to ensure zero spam. Alerts will only trigger visually inside this dashboard.")

@@ -147,9 +147,7 @@ weather_data = []
 
 if fetch_success and type(live_data) is list:
     for idx, (name, coords) in enumerate(stations_matrix.items()):
-        # تخصيص المناطق إلى 3 بدلاً من 4 لتتناسب مع طلبك
         zone_mapped = "Inland" if coords["type"] in ["Inland", "Desert"] else coords["type"]
-        
         try:
             current_precip = live_data[idx].get("current", {}).get("precipitation", 0.0)
             dbz = round(10 * np.log10(200 * (current_precip ** 1.6)), 1) if current_precip > 0.1 else 0.0
@@ -169,14 +167,14 @@ if fetch_success and type(live_data) is list:
                     wind_gst = max(station_data.get("windgusts_10m", [0]*len(api_times))[closest_idx] or 0, wind_spd * 1.35)
                     cape_val = station_data["cape"][closest_idx] or 0
                     
-                    # AI 1: Storm Probability Logic
+                    # Storm Probability Logic
                     prob = (cape_val / 2000) * 100
                     if rh_700 < 45: prob *= 0.05
                     elif rh_700 < 55: prob *= 0.3
                     if coords["type"] == "Mountains" and temp_c > 38: prob *= 1.3
                     storm_prob = np.clip(prob, 0, 100)
                     
-                    # AI 2: FOG PREDICTOR LOGIC
+                    # FOG PREDICTOR LOGIC
                     fog_prob = 0
                     is_night_early_morning = dt.hour < 8 or dt.hour > 22
                     if is_night_early_morning and surface_rh > 80 and wind_spd < 15:
@@ -251,31 +249,32 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}]
 
 with tab1:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Convective Forecast (By 3 Zones)</h4>', unsafe_allow_html=True)
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (By Zone)</h4>', unsafe_allow_html=True)
     
-    # 3-ZONES 5-DAY STORM FORECAST CARDS
+    # 3-ZONES 5-DAY STORM & FOG CARDS
     cols_t1 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
         
-        # استخراج أقصى قيمة لكل منطقة
         coast_storm = int(day_df[day_df["Zone"] == "Coast"]["Storm Probability"].max())
+        coast_fog = int(day_df[day_df["Zone"] == "Coast"]["Fog Probability"].max())
         mount_storm = int(day_df[day_df["Zone"] == "Mountains"]["Storm Probability"].max())
+        mount_fog = int(day_df[day_df["Zone"] == "Mountains"]["Fog Probability"].max())
         inland_storm = int(day_df[day_df["Zone"] == "Inland"]["Storm Probability"].max())
+        inland_fog = int(day_df[day_df["Zone"] == "Inland"]["Fog Probability"].max())
         
-        max_overall = max(coast_storm, mount_storm, inland_storm)
-        if max_overall >= 75: border, bg = "#FCA5A5", "#FEF2F2"
-        elif max_overall >= 40: border, bg = "#FDE047", "#FFFBEB"
+        max_overall = max(coast_storm, mount_storm, inland_storm, coast_fog, mount_fog, inland_fog)
+        if max_overall >= 60: border, bg = "#FCA5A5", "#FEF2F2"
+        elif max_overall >= 30: border, bg = "#FDE047", "#FFFBEB"
         else: border, bg = "#86EFAC", "#F0FDF4"
         
-        # HTML تصميم مربع احترافي
         card_html = f"""
         <div style="background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
             <div style="color:#082F49; font-size:15px; font-weight:900; margin-bottom:8px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 5px;">📅 {date}</div>
             <div style="font-size:14px; color:#1E293B; line-height:1.8;">
-                🌊 Coast: <span style="float:right; font-weight:900;">{coast_storm}%</span><br>
-                ⛰️ Mount: <span style="float:right; font-weight:900;">{mount_storm}%</span><br>
-                🏜️ Inland: <span style="float:right; font-weight:900;">{inland_storm}%</span>
+                🌊 Coast: <span style="float:right; font-weight:900; color:#EF4444;">⛈️ {coast_storm}%</span> <span style="float:right; margin-right:10px; font-weight:900; color:#64748B;">🌫️ {coast_fog}%</span><br>
+                ⛰️ Mount: <span style="float:right; font-weight:900; color:#EF4444;">⛈️ {mount_storm}%</span> <span style="float:right; margin-right:10px; font-weight:900; color:#64748B;">🌫️ {mount_fog}%</span><br>
+                🏜️ Inland: <span style="float:right; font-weight:900; color:#EF4444;">⛈️ {inland_storm}%</span> <span style="float:right; margin-right:10px; font-weight:900; color:#64748B;">🌫️ {inland_fog}%</span>
             </div>
         </div>
         """
@@ -300,18 +299,23 @@ with tab1:
         st.plotly_chart(fig_fog, use_container_width=True, key="fog_map_data")
 
 with tab2:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Forecast (By 3 Zones)</h4>', unsafe_allow_html=True)
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)
     
-    # 3-ZONES 5-DAY TEMPERATURE CARDS
+    # 3-ZONES 5-DAY MIN-MAX TEMPERATURE CARDS
     cols_t2 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
         
-        coast_temp = round(day_df[day_df["Zone"] == "Coast"]["Temperature"].max(), 1)
-        mount_temp = round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].max(), 1)
-        inland_temp = round(day_df[day_df["Zone"] == "Inland"]["Temperature"].max(), 1)
+        coast_max = round(day_df[day_df["Zone"] == "Coast"]["Temperature"].max(), 1)
+        coast_min = round(day_df[day_df["Zone"] == "Coast"]["Temperature"].min(), 1)
         
-        max_overall = max(coast_temp, mount_temp, inland_temp)
+        mount_max = round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].max(), 1)
+        mount_min = round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].min(), 1)
+        
+        inland_max = round(day_df[day_df["Zone"] == "Inland"]["Temperature"].max(), 1)
+        inland_min = round(day_df[day_df["Zone"] == "Inland"]["Temperature"].min(), 1)
+        
+        max_overall = max(coast_max, mount_max, inland_max)
         if max_overall >= 48: border, bg = "#FCA5A5", "#FEF2F2"
         elif max_overall >= 40: border, bg = "#FDE047", "#FFFBEB"
         else: border, bg = "#86EFAC", "#F0FDF4"
@@ -320,15 +324,15 @@ with tab2:
         <div style="background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
             <div style="color:#082F49; font-size:15px; font-weight:900; margin-bottom:8px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 5px;">📅 {date}</div>
             <div style="font-size:14px; color:#1E293B; line-height:1.8;">
-                🌊 Coast: <span style="float:right; font-weight:900;">{coast_temp}°C</span><br>
-                ⛰️ Mount: <span style="float:right; font-weight:900;">{mount_temp}°C</span><br>
-                🏜️ Inland: <span style="float:right; font-weight:900;">{inland_temp}°C</span>
+                🌊 Coast: <span style="float:right; font-weight:900;">⬇ {coast_min}° - ⬆ {coast_max}°</span><br>
+                ⛰️ Mount: <span style="float:right; font-weight:900;">⬇ {mount_min}° - ⬆ {mount_max}°</span><br>
+                🏜️ Inland: <span style="float:right; font-weight:900;">⬇ {inland_min}° - ⬆ {inland_max}°</span>
             </div>
         </div>
         """
         cols_t2[i].markdown(card_html, unsafe_allow_html=True)
         
-    # AI IDEA 4: ANOMALY DETECTION
+    # ANOMALY DETECTION
     current_month_str = str(datetime.utcnow().month)
     if not almanac_df.empty:
         hist_max_raw = almanac_df['highest_temperature_value'].replace(['-', '', ' '], np.nan).astype(float).max()
@@ -349,7 +353,6 @@ with tab3:
     selected_time_t3 = st.select_slider("Forecast Timeline", options=timeline_str, key="t3_slider", label_visibility="collapsed")
     df_time_t3 = df_all[df_all["Time"] == selected_time_t3].copy()
     
-    # AI IDEA 2: Dynamic Logic Clustering
     conditions = [
         (df_time_t3['Storm Probability'] > 30),
         (df_time_t3['Fog Probability'] > 50),
@@ -385,7 +388,6 @@ with tab5:
     st.markdown('<h4 style="color:#082F49; font-weight:900;">🤖 JM72 AI Data Assistant (Interactive Chatbot)</h4>', unsafe_allow_html=True)
     st.write("Ask the AI to instantly analyze the massive weather matrix for you.")
     
-    # AI IDEA 5: DATA CHATBOT
     prompt = st.chat_input("Ask a question (e.g., 'What is the hottest station right now?')")
     if prompt:
         st.chat_message("user").write(prompt)
@@ -413,4 +415,4 @@ with tab5:
 
 with tab6:
     st.markdown("### 🚨 JM72 Alert Control Room")
-    st.info("ℹ️ The automated email alert engine has been permanently severed from the codebase to ensure zero spam. Alerts will only trigger visually inside this dashboard.")
+    st.info("ℹ️ The automated email alert engine has been permanently physically severed from the codebase to ensure zero spam. Alerts will only trigger visually inside this dashboard.")

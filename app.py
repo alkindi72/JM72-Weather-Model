@@ -21,7 +21,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. CLEAN, BRIGHT & MOBILE-RESPONSIVE CSS
+# 2. CLEAN & BRIGHT CSS
 # ==========================================
 st.markdown("""
 <style>
@@ -32,56 +32,34 @@ st.markdown("""
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; }
     
     /* Tabs */
-    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; flex-wrap: wrap; }
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; }
     div[data-testid="stTabs"] button { background-color: #FFFFFF !important; border: 1px solid #CBD5E1 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
     
     /* AI Components */
-    .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); line-height: 1.6; }
-    .anomaly-alert { background-color: #FFFBEB; border: 1px solid #FEF08A; padding: 10px 15px; border-radius: 6px; color: #92400E; font-weight: bold; margin-bottom: 10px; font-size: 14px; line-height: 1.6;}
+    .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); }
+    .anomaly-alert { background-color: #FFFBEB; border: 1px solid #FEF08A; padding: 10px 15px; border-radius: 6px; color: #92400E; font-weight: bold; margin-bottom: 10px; font-size: 14px;}
     
-    /* Timeline & Elements */
+    /* Timeline & Tables */
     div[data-testid="stSlider"] { background-color: #F1F5F9 !important; padding: 20px !important; border-radius: 12px !important; margin-bottom: 25px !important; border: 1px solid #E2E8F0 !important; }
     div[data-testid="stTickBar"] { color: #475569 !important; font-weight: bold !important; }
     div[data-testid="stSlider"] div[role="slider"] { background-color: #0284C7 !important; border: 2px solid #FFF !important; }
     div[data-testid="stSlider"] div[role="slider"] > div { background-color: #0284C7 !important; color: #FFF !important; border-radius: 4px; padding: 2px 8px;}
-    .alert-banner { background-color: #FEF2F2 !important; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2; line-height: 1.6;}
-    .sys-success { background-color: #F0FDF4 !important; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px; border: 1px solid #DCFCE7; line-height: 1.6;}
-    
-    /* Tables Container (Horizontal Scroll for Mobile) */
+    .alert-banner { background-color: #FEF2F2 !important; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2;}
+    .sys-success { background-color: #F0FDF4 !important; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px; border: 1px solid #DCFCE7;}
     .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 20px; }
     .custom-table { width: 100%; border-collapse: collapse; background-color: #ffffff; min-width: 600px; }
     .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37; white-space: nowrap;}
     .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center; white-space: nowrap;}
 
-    /* =======================================
-       📱 MOBILE SPECIFIC ADJUSTMENTS 
-       ======================================= */
+    /* Mobile */
     @media (max-width: 768px) {
-        .block-container {
-            padding: 1rem !important; 
-            margin: 0.5rem auto !important; 
-            max-width: 100% !important;
-            border-radius: 0px !important;
-            border: none !important;
-        }
-        .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { 
-            font-size: 13px !important; 
-        }
-        div[data-testid="stTabs"] button {
-            padding: 8px 10px !important;
-            font-size: 13px !important;
-            flex-grow: 1; /* جعل الأزرار تملأ الشاشة */
-            text-align: center;
-        }
-        .ai-broadcaster {
-            font-size: 14px;
-            padding: 12px 15px;
-        }
-        div[data-testid="stSlider"] { 
-            padding: 15px 10px !important; 
-        }
+        .block-container { padding: 1rem !important; margin: 0.5rem auto !important; max-width: 100% !important; border-radius: 0px !important; border: none !important; }
+        .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { font-size: 13px !important; }
+        div[data-testid="stTabs"] button { padding: 8px 10px !important; font-size: 13px !important; flex-grow: 1; text-align: center; }
+        .ai-broadcaster { font-size: 14px; padding: 12px 15px; }
+        div[data-testid="stSlider"] { padding: 15px 10px !important; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -311,6 +289,10 @@ with tab1:
         fig_fog = px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Fog Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.8, color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#475569"], range_color=[0, 100], title="AI Fog Formation Index")
         fig_fog.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
         st.plotly_chart(fig_fog, use_container_width=True, key="fog_map_data")
+
+    # RESTORED SATELLITE IMAGERY BLOCK
+    st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery & Streams</h3>', unsafe_allow_html=True)
+    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;"><span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ JM72 SATELLITE LIVE</span></div></div>""", height=520)
 
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)

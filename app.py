@@ -114,6 +114,24 @@ stations_matrix = {
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"}, "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
 
+SECTOR_MAP = {
+    "Eastern Region": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor"],
+    "Central Region": ["Al Dhaid", "Al Malaiha"],
+    "Abu Dhabi & Al Dhafra": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
+    "Al Ain Region": ["Al Ain Int'l Airport", "Al Aamerah"],
+    "Dubai & Northern Emirates": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
+}
+
+def get_clustered_sectors(station_list):
+    sectors = set()
+    for station in station_list:
+        found = False
+        for sector, stations in SECTOR_MAP.items():
+            if station in stations:
+                sectors.add(sector); found = True; break
+        if not found: sectors.add(station)
+    return list(sectors)
+
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
     try:
@@ -251,7 +269,7 @@ esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https
 with tab1:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (By Zone)</h4>', unsafe_allow_html=True)
     
-    # 3-ZONES 5-DAY STORM & FOG CARDS
+    # 3-ZONES 5-DAY STORM & FOG CARDS - FIXED WITH FLEXBOX
     cols_t1 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
@@ -269,12 +287,22 @@ with tab1:
         else: border, bg = "#86EFAC", "#F0FDF4"
         
         card_html = f"""
-        <div style="background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="color:#082F49; font-size:15px; font-weight:900; margin-bottom:8px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 5px;">📅 {date}</div>
-            <div style="font-size:14px; color:#1E293B; line-height:1.8;">
-                🌊 Coast: <span style="float:right; font-weight:900; color:#EF4444;">⛈️ {coast_storm}%</span> <span style="float:right; margin-right:10px; font-weight:900; color:#64748B;">🌫️ {coast_fog}%</span><br>
-                ⛰️ Mount: <span style="float:right; font-weight:900; color:#EF4444;">⛈️ {mount_storm}%</span> <span style="float:right; margin-right:10px; font-weight:900; color:#64748B;">🌫️ {mount_fog}%</span><br>
-                🏜️ Inland: <span style="float:right; font-weight:900; color:#EF4444;">⛈️ {inland_storm}%</span> <span style="float:right; margin-right:10px; font-weight:900; color:#64748B;">🌫️ {inland_fog}%</span>
+        <div style="background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;">📅 {date}</div>
+            
+            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;">
+                <span>🌊 Coast:</span>
+                <span style="font-weight:900;"><span style="color:#EF4444;">⛈️ {coast_storm}%</span> &nbsp; <span style="color:#64748B;">🌫️ {coast_fog}%</span></span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;">
+                <span>⛰️ Mount:</span>
+                <span style="font-weight:900;"><span style="color:#EF4444;">⛈️ {mount_storm}%</span> &nbsp; <span style="color:#64748B;">🌫️ {mount_fog}%</span></span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B;">
+                <span>🏜️ Inland:</span>
+                <span style="font-weight:900;"><span style="color:#EF4444;">⛈️ {inland_storm}%</span> &nbsp; <span style="color:#64748B;">🌫️ {inland_fog}%</span></span>
             </div>
         </div>
         """
@@ -301,7 +329,7 @@ with tab1:
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)
     
-    # 3-ZONES 5-DAY MIN-MAX TEMPERATURE CARDS
+    # 3-ZONES 5-DAY MIN-MAX TEMPERATURE CARDS - FIXED WITH FLEXBOX
     cols_t2 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
@@ -321,12 +349,22 @@ with tab2:
         else: border, bg = "#86EFAC", "#F0FDF4"
         
         card_html = f"""
-        <div style="background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div style="color:#082F49; font-size:15px; font-weight:900; margin-bottom:8px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 5px;">📅 {date}</div>
-            <div style="font-size:14px; color:#1E293B; line-height:1.8;">
-                🌊 Coast: <span style="float:right; font-weight:900;">⬇ {coast_min}° - ⬆ {coast_max}°</span><br>
-                ⛰️ Mount: <span style="float:right; font-weight:900;">⬇ {mount_min}° - ⬆ {mount_max}°</span><br>
-                🏜️ Inland: <span style="float:right; font-weight:900;">⬇ {inland_min}° - ⬆ {inland_max}°</span>
+        <div style="background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;">📅 {date}</div>
+            
+            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;">
+                <span>🌊 Coast:</span>
+                <span style="font-weight:900;">⬇ {coast_min}° - ⬆ {coast_max}°</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;">
+                <span>⛰️ Mount:</span>
+                <span style="font-weight:900;">⬇ {mount_min}° - ⬆ {mount_max}°</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; font-size:14px; color:#1E293B;">
+                <span>🏜️ Inland:</span>
+                <span style="font-weight:900;">⬇ {inland_min}° - ⬆ {inland_max}°</span>
             </div>
         </div>
         """

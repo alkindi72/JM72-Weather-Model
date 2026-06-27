@@ -205,25 +205,39 @@ if fetch_success and type(live_data) is list:
                     t_850 = station_data.get("temperature_850hPa", [20]*len(api_times))[closest_idx] or 20
                     t_500 = station_data.get("temperature_500hPa", [-10]*len(api_times))[closest_idx] or -10
                     
-                    # 1. Storm AI (Advanced Rules)
+                    # ----------------------------------------------------
+                    # 1. Storm AI (Diurnal Heating + Advanced Rules)
+                    # ----------------------------------------------------
                     prob = (cape_val / 2000.0) * 100 
                     moisture_index = (rh_850 * 0.4) + (rh_700 * 0.4) + (rh_500 * 0.2)
                     lapse_rate = t_850 - t_500
+                    
                     if lapse_rate > 26: prob *= 1.3
                     elif lapse_rate < 20: prob *= 0.5
+                    
                     if moisture_index < 40: prob *= 0.1
                     elif moisture_index > 70: prob *= 1.2
+                    
                     if coords["type"] == "Mountains" and temp_c > 38: prob *= 1.3
+                    
+                    # 🛑 الفلتر الليلي: سحق احتمالية العواصف في الليل لغياب التسخين الشمسي
+                    if dt.hour < 12 or dt.hour > 19:
+                        prob *= 0.1  # خفض الاحتمالية بنسبة 90%
+                        
                     storm_prob = np.clip(prob, 0, 100)
                     
+                    # ----------------------------------------------------
                     # 2. General Fog AI
+                    # ----------------------------------------------------
                     fog_prob = 0
                     is_night_early_morning = dt.hour < 8 or dt.hour > 22
                     if is_night_early_morning and surface_rh > 80 and wind_spd < 15:
                         fog_prob = ((surface_rh - 80) * 4) + ((15 - wind_spd) * 3)
                     fog_prob = np.clip(fog_prob, 0, 100)
                     
+                    # ----------------------------------------------------
                     # 3. AL-KOUS CLOUD PREDICTOR
+                    # ----------------------------------------------------
                     alkous_prob = 0
                     if coords["lon"] >= 55.8:
                         if 45 <= wind_dir <= 160 and surface_rh >= 65:
@@ -250,11 +264,26 @@ if fetch_success and type(live_data) is list:
 
 if not weather_data:
     st.error("⚠️ Connection to Weather API failed. Offline Mode Active.")
+    np.random.seed(42)
+    for dt_str, dt in zip(timeline_str, timeline):
+        is_afternoon = 12 <= dt.hour <= 18
+        for name, coords in stations_matrix.items():
+            zone_mapped = "Inland" if coords["type"] in ["Inland", "Desert"] else coords["type"]
+            base_storm = 75 if (is_afternoon and coords["type"] == "Mountains") else 0
+            temp = 42 + np.random.uniform(-3, 4)
+            wind_spd = np.random.uniform(10, 45)
+            s_prob = round(np.clip(base_storm + np.random.uniform(-5, 10), 0, 100)) if base_storm > 0 else 0
+            weather_data.append({
+                "Time": dt_str, "DateOnly": f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')}", 
+                "Station": name, "Zone": zone_mapped,
+                "Latitude": coords["lat"], "Longitude": coords["lon"], "Storm Probability": s_prob, "Fog Probability": 0, "AlKous Prob": 0, "Temperature": round(temp, 1), "Apparent Temp": round(temp, 1), "Humidity": 50,
+                "Wind Speed": round(wind_spd, 1), "dBZ": 0.0, "Radar Verif": "⏳ Offline Data"
+            })
 
 df_all = pd.DataFrame(weather_data)
 
 # ==========================================
-# AI GENERATIVE BRIEFING
+# AI GENERATIVE BRIEFING (Top Banner)
 # ==========================================
 current_time_df = df_all[df_all["Time"] == timeline_str[0]]
 max_temp_val = current_time_df["Temperature"].max()
@@ -333,12 +362,17 @@ with tab2:
         
         card_html = f"<div style='background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;'>📅 {date}</div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>🌊 Coast:</span><span style='font-weight:900;'>⬇ {coast_min}° - ⬆ {coast_max}°</span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>⛰️ Mount:</span><span style='font-weight:900;'>⬇ {mount_min}° - ⬆ {mount_max}°</span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B;'><span>🏜️ Inland:</span><span style='font-weight:900;'>⬇ {inland_min}° - ⬆ {inland_max}°</span></div></div>"
         cols_t2[i].markdown(card_html, unsafe_allow_html=True)
+        
+    if not almanac_df.empty:
+        hist_max_raw = almanac_df['highest_temperature_value'].replace(['-', '', ' '], np.nan).astype(float).max()
+        if not np.isnan(hist_max_raw) and max_temp_val > (hist_max_raw - 3.0):
+            st.markdown(f'<div class="anomaly-alert">⚠️ AI Anomaly Detected: Current max temperature ({max_temp_val}°C) is approaching the historical national extreme ({hist_max_raw}°C).</div>', unsafe_allow_html=True)
 
     selected_time_t2 = st.select_slider("Forecast Timeline", options=timeline_str, key="t2_slider", label_visibility="collapsed")
     df_time_t2 = df_all[df_all["Time"] == selected_time_t2].copy()
 
     fig2 = px.density_mapbox(df_time_t2, lat="Latitude", lon="Longitude", z="Temperature", radius=50, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.7, color_continuous_scale=["rgba(0,0,0,0)", "#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60], title="Actual Air Temperature")
-    fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
+    fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
     st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
 
 with tab3:

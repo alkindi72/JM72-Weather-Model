@@ -21,7 +21,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. CLEAN & BRIGHT CSS
+# 2. CLEAN, BRIGHT & MOBILE-RESPONSIVE CSS
 # ==========================================
 st.markdown("""
 <style>
@@ -32,25 +32,57 @@ st.markdown("""
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; }
     
     /* Tabs */
-    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; }
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; flex-wrap: wrap; }
     div[data-testid="stTabs"] button { background-color: #FFFFFF !important; border: 1px solid #CBD5E1 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
     
     /* AI Components */
-    .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); }
-    .anomaly-alert { background-color: #FFFBEB; border: 1px solid #FEF08A; padding: 10px 15px; border-radius: 6px; color: #92400E; font-weight: bold; margin-bottom: 10px; font-size: 14px;}
+    .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); line-height: 1.6; }
+    .anomaly-alert { background-color: #FFFBEB; border: 1px solid #FEF08A; padding: 10px 15px; border-radius: 6px; color: #92400E; font-weight: bold; margin-bottom: 10px; font-size: 14px; line-height: 1.6;}
     
-    /* Timeline & Tables */
+    /* Timeline & Elements */
     div[data-testid="stSlider"] { background-color: #F1F5F9 !important; padding: 20px !important; border-radius: 12px !important; margin-bottom: 25px !important; border: 1px solid #E2E8F0 !important; }
     div[data-testid="stTickBar"] { color: #475569 !important; font-weight: bold !important; }
     div[data-testid="stSlider"] div[role="slider"] { background-color: #0284C7 !important; border: 2px solid #FFF !important; }
     div[data-testid="stSlider"] div[role="slider"] > div { background-color: #0284C7 !important; color: #FFF !important; border-radius: 4px; padding: 2px 8px;}
-    .alert-banner { background-color: #FEF2F2 !important; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2;}
-    .sys-success { background-color: #F0FDF4 !important; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px; border: 1px solid #DCFCE7;}
-    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #E2E8F0;}
-    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37;}
-    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center;}
+    .alert-banner { background-color: #FEF2F2 !important; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2; line-height: 1.6;}
+    .sys-success { background-color: #F0FDF4 !important; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px; border: 1px solid #DCFCE7; line-height: 1.6;}
+    
+    /* Tables Container (Horizontal Scroll for Mobile) */
+    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 20px; }
+    .custom-table { width: 100%; border-collapse: collapse; background-color: #ffffff; min-width: 600px; }
+    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37; white-space: nowrap;}
+    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center; white-space: nowrap;}
+
+    /* =======================================
+       📱 MOBILE SPECIFIC ADJUSTMENTS 
+       ======================================= */
+    @media (max-width: 768px) {
+        .block-container {
+            padding: 1rem !important; 
+            margin: 0.5rem auto !important; 
+            max-width: 100% !important;
+            border-radius: 0px !important;
+            border: none !important;
+        }
+        .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { 
+            font-size: 13px !important; 
+        }
+        div[data-testid="stTabs"] button {
+            padding: 8px 10px !important;
+            font-size: 13px !important;
+            flex-grow: 1; /* جعل الأزرار تملأ الشاشة */
+            text-align: center;
+        }
+        .ai-broadcaster {
+            font-size: 14px;
+            padding: 12px 15px;
+        }
+        div[data-testid="stSlider"] { 
+            padding: 15px 10px !important; 
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -113,24 +145,6 @@ stations_matrix = {
     "Fujairah Int'l Airport": {"lat": 25.1122, "lon": 56.3240, "type": "Inland"}, "Al Ain Int'l Airport": {"lat": 24.2617, "lon": 55.6092, "type": "Inland"},
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"}, "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
-
-SECTOR_MAP = {
-    "Eastern Region": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor"],
-    "Central Region": ["Al Dhaid", "Al Malaiha"],
-    "Abu Dhabi & Al Dhafra": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
-    "Al Ain Region": ["Al Ain Int'l Airport", "Al Aamerah"],
-    "Dubai & Northern Emirates": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
-}
-
-def get_clustered_sectors(station_list):
-    sectors = set()
-    for station in station_list:
-        found = False
-        for sector, stations in SECTOR_MAP.items():
-            if station in stations:
-                sectors.add(sector); found = True; break
-        if not found: sectors.add(station)
-    return list(sectors)
 
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
@@ -265,7 +279,6 @@ esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https
 with tab1:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (National)</h4>', unsafe_allow_html=True)
     
-    # 5-DAY NATIONAL OVERALL STORM & FOG CARDS
     cols_t1 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
@@ -278,7 +291,6 @@ with tab1:
         elif max_overall >= 30: border, bg = "#FDE047", "#FFFBEB"
         else: border, bg = "#86EFAC", "#F0FDF4"
         
-        # Flattened HTML for clean rendering
         card_html_flat = f"<div style='background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); text-align:center;'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; border-bottom: 1px solid {border}; padding-bottom: 8px;'>📅 {date}</div><div style='font-size:16px; font-weight:900; color:#EF4444; margin-bottom:8px;'>⛈️ Storm: {daily_max_storm}%</div><div style='font-size:16px; font-weight:900; color:#64748B;'>🌫️ Fog: {daily_max_fog}%</div></div>"
         cols_t1[i].markdown(card_html_flat, unsafe_allow_html=True)
 
@@ -303,7 +315,6 @@ with tab1:
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)
     
-    # 3-ZONES 5-DAY MIN-MAX TEMPERATURE CARDS
     cols_t2 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
@@ -367,13 +378,13 @@ with tab4:
     
     st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 34-Station Matrix at {selected_time_t4}</h3>", unsafe_allow_html=True)
     display_df = df_time_t4.sort_values(by="Temperature", ascending=False)
-    html_table = "<table class='custom-table'><tr><th>Station</th><th>Temp (°C)</th><th>Wind (km/h)</th><th>Fog Prob (%)</th><th>Storm (%)</th><th>Radar (dBZ)</th></tr>"
+    html_table = "<div class='table-responsive'><table class='custom-table'><tr><th>Station</th><th>Temp (°C)</th><th>Wind (km/h)</th><th>Fog Prob (%)</th><th>Storm (%)</th><th>Radar (dBZ)</th></tr>"
     for _, row in display_df.iterrows():
         s_color = "#EF4444" if row['Storm Probability'] >= 75 else "#082F49"
         f_color = "#64748B" if row['Fog Probability'] >= 60 else "#082F49"
         dbz_color = "#7E22CE" if row['dBZ'] >= 45 else ("#10B981" if row['dBZ'] > 0 else "#64748B")
         html_table += f"<tr><td>{row['Station']}</td><td>{row['Temperature']}°C</td><td>{row['Wind Speed']} km/h</td><td style='color:{f_color}; font-weight:bold;'>{row['Fog Probability']}%</td><td style='color:{s_color};'>{row['Storm Probability']}%</td><td style='color:{dbz_color}; font-weight:900;'>{row['dBZ']}</td></tr>"
-    html_table += "</table>"
+    html_table += "</table></div>"
     st.markdown(html_table, unsafe_allow_html=True)
 
 with tab5:

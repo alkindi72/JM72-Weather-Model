@@ -114,6 +114,24 @@ stations_matrix = {
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"}, "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
 
+SECTOR_MAP = {
+    "Eastern Region": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor"],
+    "Central Region": ["Al Dhaid", "Al Malaiha"],
+    "Abu Dhabi & Al Dhafra": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
+    "Al Ain Region": ["Al Ain Int'l Airport", "Al Aamerah"],
+    "Dubai & Northern Emirates": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
+}
+
+def get_clustered_sectors(station_list):
+    sectors = set()
+    for station in station_list:
+        found = False
+        for sector, stations in SECTOR_MAP.items():
+            if station in stations:
+                sectors.add(sector); found = True; break
+        if not found: sectors.add(station)
+    return list(sectors)
+
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
     try:
@@ -245,27 +263,24 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 esri_topo_layer = [{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}]
 
 with tab1:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (By Zone)</h4>', unsafe_allow_html=True)
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (National)</h4>', unsafe_allow_html=True)
     
+    # 5-DAY NATIONAL OVERALL STORM & FOG CARDS
     cols_t1 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
         
-        coast_storm = int(day_df[day_df["Zone"] == "Coast"]["Storm Probability"].max())
-        coast_fog = int(day_df[day_df["Zone"] == "Coast"]["Fog Probability"].max())
-        mount_storm = int(day_df[day_df["Zone"] == "Mountains"]["Storm Probability"].max())
-        mount_fog = int(day_df[day_df["Zone"] == "Mountains"]["Fog Probability"].max())
-        inland_storm = int(day_df[day_df["Zone"] == "Inland"]["Storm Probability"].max())
-        inland_fog = int(day_df[day_df["Zone"] == "Inland"]["Fog Probability"].max())
+        daily_max_storm = int(day_df["Storm Probability"].max())
+        daily_max_fog = int(day_df["Fog Probability"].max())
         
-        max_overall = max(coast_storm, mount_storm, inland_storm, coast_fog, mount_fog, inland_fog)
+        max_overall = max(daily_max_storm, daily_max_fog)
         if max_overall >= 60: border, bg = "#FCA5A5", "#FEF2F2"
         elif max_overall >= 30: border, bg = "#FDE047", "#FFFBEB"
         else: border, bg = "#86EFAC", "#F0FDF4"
         
-        # Flattened HTML to bypass Streamlit markdown code block parsing
-        card_html = f"<div style='background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;'>📅 {date}</div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>🌊 Coast:</span><span style='font-weight:900;'><span style='color:#EF4444;'>⛈️ {coast_storm}%</span> &nbsp; <span style='color:#64748B;'>🌫️ {coast_fog}%</span></span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>⛰️ Mount:</span><span style='font-weight:900;'><span style='color:#EF4444;'>⛈️ {mount_storm}%</span> &nbsp; <span style='color:#64748B;'>🌫️ {mount_fog}%</span></span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B;'><span>🏜️ Inland:</span><span style='font-weight:900;'><span style='color:#EF4444;'>⛈️ {inland_storm}%</span> &nbsp; <span style='color:#64748B;'>🌫️ {inland_fog}%</span></span></div></div>"
-        cols_t1[i].markdown(card_html, unsafe_allow_html=True)
+        # Flattened HTML for clean rendering
+        card_html_flat = f"<div style='background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); text-align:center;'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; border-bottom: 1px solid {border}; padding-bottom: 8px;'>📅 {date}</div><div style='font-size:16px; font-weight:900; color:#EF4444; margin-bottom:8px;'>⛈️ Storm: {daily_max_storm}%</div><div style='font-size:16px; font-weight:900; color:#64748B;'>🌫️ Fog: {daily_max_fog}%</div></div>"
+        cols_t1[i].markdown(card_html_flat, unsafe_allow_html=True)
 
     selected_time_t1 = st.select_slider("Forecast Timeline", options=timeline_str, key="t1_slider", label_visibility="collapsed")
     df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()
@@ -288,6 +303,7 @@ with tab1:
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)
     
+    # 3-ZONES 5-DAY MIN-MAX TEMPERATURE CARDS
     cols_t2 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
@@ -306,7 +322,6 @@ with tab2:
         elif max_overall >= 40: border, bg = "#FDE047", "#FFFBEB"
         else: border, bg = "#86EFAC", "#F0FDF4"
         
-        # Flattened HTML to bypass Streamlit markdown code block parsing
         card_html = f"<div style='background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;'>📅 {date}</div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>🌊 Coast:</span><span style='font-weight:900;'>⬇ {coast_min}° - ⬆ {coast_max}°</span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>⛰️ Mount:</span><span style='font-weight:900;'>⬇ {mount_min}° - ⬆ {mount_max}°</span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B;'><span>🏜️ Inland:</span><span style='font-weight:900;'>⬇ {inland_min}° - ⬆ {inland_max}°</span></div></div>"
         cols_t2[i].markdown(card_html, unsafe_allow_html=True)
         

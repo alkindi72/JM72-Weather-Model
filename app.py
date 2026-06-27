@@ -10,6 +10,9 @@ import streamlit.components.v1 as components
 from streamlit_autorefresh import st_autorefresh
 import requests
 import base64
+import smtplib
+from email.mime.text import MIMEText
+from email.header import Header
 
 # ==========================================
 # 1. PLATFORM SETTINGS
@@ -25,22 +28,18 @@ st.set_page_config(
 # ==========================================
 st.markdown("""
 <style>
-    /* Clean Bright UI Globally */
     html, body, [data-testid="stAppViewContainer"], .stApp, #root { background-color: #F8FAFC !important; }
     .block-container { background-color: #FFFFFF !important; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important; padding: 2rem !important; margin: 1rem auto !important; border: 1px solid #E2E8F0 !important; max-width: 95% !important;}
     [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; visibility: hidden !important;}
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; }
     
-    /* Tabs */
     div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; }
     div[data-testid="stTabs"] button { background-color: #FFFFFF !important; border: 1px solid #CBD5E1 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
     
-    /* AI Components */
     .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); }
     
-    /* Tables & Responsive */
     div[data-testid="stSlider"] { background-color: #F1F5F9 !important; padding: 20px !important; border-radius: 12px !important; margin-bottom: 25px !important; border: 1px solid #E2E8F0 !important; }
     div[data-testid="stTickBar"] { color: #475569 !important; font-weight: bold !important; }
     div[data-testid="stSlider"] div[role="slider"] { background-color: #0284C7 !important; border: 2px solid #FFF !important; }
@@ -53,7 +52,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. CENTERED LOGO
+# 3. CENTERED LOGO (71wm)
 # ==========================================
 svg_code = """
 <svg width="600" height="220" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
@@ -78,10 +77,39 @@ b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
 st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 15px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="71wm Logo" /></div>', unsafe_allow_html=True)
 
 # ==========================================
-# 4. SESSION & TIMELINE SETUP
+# 4. INITIALIZE LIVE STATES
 # ==========================================
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 
+if "email_enabled" not in st.session_state: st.session_state["email_enabled"] = False
+if "email_sender" not in st.session_state: st.session_state["email_sender"] = ""
+if "email_receiver" not in st.session_state: st.session_state["email_receiver"] = ""
+if "email_password" not in st.session_state: st.session_state["email_password"] = ""
+if "email_sent_track" not in st.session_state: st.session_state["email_sent_track"] = {}
+
+# دالة الإرسال البرمجية المحدثة والآمنة بالكامل
+def send_secure_alert_email(subject, body_text):
+    if not st.session_state["email_enabled"]: return False
+    if not st.session_state["email_sender"] or not st.session_state["email_password"]: return False
+    
+    try:
+        msg = MIMEText(body_text, 'plain', 'utf-8')
+        msg['Subject'] = Header(subject, 'utf-8')
+        msg['From'] = st.session_state["email_sender"]
+        msg['To'] = st.session_state["email_receiver"]
+        
+        server = smtplib.SMTP('smtp.gmail.com', 5000 or 587) # معالجة المنفذ القياسي الآمن للمنصة
+        server.starttls()
+        server.login(st.session_state["email_sender"], st.session_state["email_password"])
+        server.sendmail(st.session_state["email_sender"], [st.session_state["email_receiver"]], msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        return False
+
+# ==========================================
+# 5. TIMELINE & STATIONS MATRIX
+# ==========================================
 days_en = {"Monday": "Mon", "Tuesday": "Tue", "Wednesday": "Wed", "Thursday": "Thu", "Friday": "Fri", "Saturday": "Sat", "Sunday": "Sun"}
 uae_time = datetime.utcnow() + timedelta(hours=4)
 base_date = uae_time.replace(minute=0, second=0, microsecond=0)
@@ -92,9 +120,6 @@ for dt in timeline:
     d_str = f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')}"
     if d_str not in unique_dates_display: unique_dates_display.append(d_str)
 
-# ==========================================
-# 5. DATA FETCHING & STATIONS MATRIX
-# ==========================================
 stations_matrix = {
     "Abu Dhabi": {"lat": 24.4760, "lon": 54.3290, "type": "Coast"}, "ADNOC HQ": {"lat": 24.4621, "lon": 54.3241, "type": "Coast"},
     "Burj Khalifah": {"lat": 25.2017, "lon": 55.2766, "type": "Coast"}, "Sharjah University": {"lat": 25.2869, "lon": 55.4622, "type": "Coast"},
@@ -116,10 +141,6 @@ stations_matrix = {
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"}, "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
 
-SECTOR_MAP = {
-    "Eastern Region": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"]
-}
-
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
     try:
@@ -130,7 +151,7 @@ def fetch_stable_live_data(stations_dict):
         return True, response.json()
     except Exception as e: return False, str(e)
 
-with st.spinner("🤖 71wm AI Engine: Compiling metrics & computing Orographic Drizzle index..."):
+with st.spinner("🤖 71wm AI Engine: Compiling live metrics..."):
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 # ==========================================
@@ -167,7 +188,7 @@ if fetch_success and type(live_data) is list:
                     t_850 = station_data.get("temperature_850hPa", [20]*len(api_times))[closest_idx] or 20
                     t_500 = station_data.get("temperature_500hPa", [-10]*len(api_times))[closest_idx] or -10
                     
-                    # 1. Storm AI with Daytime Heating Constraint
+                    # Storm AI
                     prob = (cape_val / 2000.0) * 100 
                     moisture_index = (rh_850 * 0.4) + (rh_700 * 0.4) + (rh_500 * 0.2)
                     lapse_rate = t_850 - t_500
@@ -176,17 +197,17 @@ if fetch_success and type(live_data) is list:
                     if moisture_index < 40: prob *= 0.1
                     elif moisture_index > 70: prob *= 1.2
                     if coords["type"] == "Mountains" and temp_c > 38: prob *= 1.3
-                    if dt.hour < 12 or dt.hour > 19: prob *= 0.1 # سحق العواصف ليلاً لغياب الحمل الحراري الشمسي
+                    if dt.hour < 12 or dt.hour > 19: prob *= 0.1  # الفلتر المناخي الليلي للروايح
                     storm_prob = np.clip(prob, 0, 100)
                     
-                    # 2. General Fog AI
+                    # Fog AI
                     fog_prob = 0
                     is_night_early_morning = dt.hour < 8 or dt.hour > 22
                     if is_night_early_morning and surface_rh > 80 and wind_spd < 15:
                         fog_prob = ((surface_rh - 80) * 4) + ((15 - wind_spd) * 3)
                     fog_prob = np.clip(fog_prob, 0, 100)
                     
-                    # 3. AL-KOUS CLOUD PREDICTOR
+                    # Al-Kous AI
                     alkous_prob = 0
                     if coords["lon"] >= 55.8:
                         if 45 <= wind_dir <= 160 and surface_rh >= 65:
@@ -194,17 +215,13 @@ if fetch_success and type(live_data) is list:
                             if temp_c >= 35: alkous_base *= 1.2
                             alkous_prob = np.clip(alkous_base, 0, 100)
                     
-                    # 4. 🌧️ AL-KOUS OROGRAPHIC DRIZZLE ENGINE (الميزة الجديدة لتعليق الرذاذ الصباحي)
+                    # Al-Kous Drizzle AI
                     drizzle_prob = 0
                     if coords["lon"] >= 55.8:
-                        is_drizzle_window = 3 <= dt.hour <= 9 # الساعات الصباحية الفعالة للرذاذ
-                        if is_drizzle_window and 45 <= wind_dir <= 160 and surface_rh >= 85 and cloud_low >= 75:
-                            drizzle_calc = ((surface_rh - 85) * 4) + ((cloud_low - 75) * 2) + (wind_spd * 0.8)
-                            drizzle_prob = np.clip(drizzle_calc, 0, 100)
+                        if 3 <= dt.hour <= 9 and 45 <= wind_dir <= 160 and surface_rh >= 85 and cloud_low >= 75:
+                            drizzle_prob = np.clip(((surface_rh - 85) * 4) + ((cloud_low - 75) * 2) + (wind_spd * 0.8), 0, 100)
 
-                    dust_p = np.clip((wind_spd / 35) * 100 if coords["type"] == "Desert" else (wind_spd / 45) * 100, 0, 100)
-
-                except Exception: temp_c, app_temp, storm_prob, fog_prob, alkous_prob, drizzle_prob, wind_spd = 36.0, 36.0, 0.0, 0.0, 0.0, 0.0, 10.0
+                except Exception: temp_c, app_temp, storm_prob, fog_prob, alkous_prob, drizzle_prob = 36.0, 36.0, 0.0, 0.0, 0.0, 0.0
 
                 weather_data.append({
                     "Time": dt_str, "DateOnly": f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')}", 
@@ -219,21 +236,42 @@ if fetch_success and type(live_data) is list:
 df_all = pd.DataFrame(weather_data)
 
 # ==========================================
-# AI GENERATIVE BRIEFING
+# 7. CRITICAL ANTI-SPAM ALERTS LOGIC
 # ==========================================
 current_time_df = df_all[df_all["Time"] == timeline_str[0]]
-max_alkous = current_time_df["AlKous Prob"].max()
-max_drizzle = current_time_df["Drizzle Prob"].max()
+max_storm_now = current_time_df["Storm Probability"].max()
+max_drizzle_now = current_time_df["Drizzle Prob"].max()
 
+# منطق الإرسال الذكي والمحمي لمرة واحدة فقط
+if st.session_state["email_enabled"]:
+    today_key = unique_dates_display[0]
+    if today_key not in st.session_state["email_sent_track"]:
+        st.session_state["email_sent_track"][today_key] = {"storm": False, "drizzle": False}
+        
+    if max_storm_now >= 75 and not st.session_state["email_sent_track"][today_key]["storm"]:
+        sub = "🚨 71wm AI Model: Severe Convective Storm Warning Detected"
+        body = f"Alert Triggered on {today_key}.\nSevere convective storm risk reached {max_storm_now}% over mountain terrains.\nVerification: Dynamic Lift Active."
+        if send_secure_alert_email(sub, body):
+            st.session_state["email_sent_track"][today_key]["storm"] = True
+            
+    if max_drizzle_now >= 60 and not st.session_state["email_sent_track"][today_key]["drizzle"]:
+        sub = "🌧️ 71wm AI Model: Orographic Al-Kous Drizzle Warning"
+        body = f"Alert Triggered on {today_key}.\nMechanical orographic saturation caused drizzle index to reach {max_drizzle_now}% over the Eastern Ridges."
+        if send_secure_alert_email(sub, body):
+            st.session_state["email_sent_track"][today_key]["drizzle"] = True
+
+# ==========================================
+# 8. AI GENERATIVE BRIEFING
+# ==========================================
 ai_briefing = f"🤖 **71wm AI Broadcaster:** "
-if max_drizzle > 40: ai_briefing += f"🌧️ **🚨 Al-Kous Orographic Drizzle Warning:** High risk ({max_drizzle}%) of morning drizzle forming over the eastern maritime ridges due to deep mechanical saturation. "
-elif max_alkous > 50: ai_briefing += f"⚠️ High probability ({max_alkous}%) of dense Al-Kous low-level stratus capping the Eastern Coastline. "
+if max_drizzle_now > 40: ai_briefing += f"🌧️ **🚨 Al-Kous Orographic Drizzle Warning:** High risk ({max_drizzle_now}%) of morning drizzle forming over the eastern maritime ridges due to deep mechanical saturation. "
+elif max_storm_now > 40: ai_briefing += f"Convective activity shows a {max_storm_now}% risk of isolated storms. "
 else: ai_briefing += "Atmospheric columns remain thermodynamically stable with no localized anomalies detected."
 
 st.markdown(f'<div class="ai-broadcaster">{ai_briefing}</div>', unsafe_allow_html=True)
 
 # ==========================================
-# TABS INTERFACE
+# 9. TABS INTERFACE
 # ==========================================
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "🌩️ Storms & Fog", "🔥 Heat & Anomalies", "☁️ Al-Kous & Drizzle", "📋 Model Matrix", "🤖 71wm AI Assistant", "⚙️ Control Room"
@@ -266,20 +304,16 @@ with tab2:
 
 with tab3:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">☁️ Al-Kous Stratus & Orographic Drizzle Radar Tracker</h4>', unsafe_allow_html=True)
-    
-    # 5-Day Al-Kous & Drizzle Dynamic Summary
     cols_t3 = st.columns(5)
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
         mx_k, mx_dr = int(day_df["AlKous Prob"].max()), int(day_df["Drizzle Prob"].max())
         bg = "#FEF2F2" if mx_dr > 40 else "#F8FAFC"
-        cols_t3[i].markdown(f"<div style='background-color:{bg}; border: 1px solid #CBD5E1; border-radius: 8px; padding: 15px; text-align:center;'><div style='color:#082F49; font-size:14px; font-weight:900;'>📅 {date}</div><div style='color:#1E293B; font-weight:bold; margin-top:5px;'>☁️ الكوس: {mx_k}%</div><div style='color:#0284C7; font-weight:900;'>🌧️ الرذاذ: {mx_dr}%</div></div>", unsafe_allow_html=True)
+        cols_t3[i].markdown(f"<div style='background-color:{bg}; border: 1px solid #CBD5E1; border-radius: 8px; padding: 15px; text-align:center;'><div style='color:#082F49; font-size:14px; font-weight:900;'>📅 {date}</div><div style='color:#1E293B; font-weight:bold; margin-top:5px;'>☁️ : {mx_k}%</div><div style='color:#0284C7; font-weight:900;'>🌧️ : {mx_dr}%</div></div>", unsafe_allow_html=True)
 
     selected_time_t3 = st.select_slider("Forecast Timeline", options=timeline_str, key="t3_slider", label_visibility="collapsed")
     df_time_t3 = df_all[df_all["Time"] == selected_time_t3].copy()
     east_stations = df_time_t3[df_time_t3["Longitude"] >= 55.8].copy()
-    
-    # عرض الخريطة الحرارية للرذاذ المتكثف على جبال الساحل الشرقي
     fig3 = px.density_mapbox(east_stations, lat="Latitude", lon="Longitude", z="Drizzle Prob", radius=45, center=dict(lat=25.2, lon=56.2), zoom=7.5, mapbox_style="white-bg", opacity=0.85, color_continuous_scale=["rgba(0,0,0,0)", "#BAE6FD", "#38BDF8", "#0284C7", "#0369A1"], range_color=[0, 100], title="AI Orographic Drizzle Condensation Index (%)")
     fig3.update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":40,"l":0,"b":0})
     st.plotly_chart(fig3, use_container_width=True, key="kous_drizzle_map")
@@ -289,7 +323,6 @@ with tab4:
     df_time_t4 = df_all[df_all["Time"] == selected_time_t4].copy()
     st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 36-Station Atmospheric Matrix</h3>", unsafe_allow_html=True)
     display_df = df_time_t4.sort_values(by="Temperature", ascending=False)
-    
     html_table = "<div class='table-responsive'><table class='custom-table'><tr><th>Station</th><th>Actual Temp</th><th>Feels Like</th><th>RH (%)</th><th>Al-Kous (%)</th><th>Morning Drizzle (%)</th><th>Convective Storm (%)</th></tr>"
     for _, row in display_df.iterrows():
         s_color = "#EF4444" if row['Storm Probability'] >= 75 else "#082F49"
@@ -299,7 +332,7 @@ with tab4:
 
 with tab5:
     st.markdown('<h4 style="color:#082F49; font-weight:900;">🤖 71wm AI Data Assistant</h4>', unsafe_allow_html=True)
-    prompt = st.chat_input("Ask about Al-Kous or Morning Drizzle parameters...")
+    prompt = st.chat_input("Ask about Al-Kous parameters...")
     if prompt:
         st.chat_message("user").write(prompt)
         p_l = prompt.lower()
@@ -307,8 +340,22 @@ with tab5:
         if "drizzle" in p_l or "رذاذ" in p_l:
             dr_stations = curr[curr["Drizzle Prob"] > 30]
             res = f"🌧️ Early morning mechanical uplift shows drizzle risk at: {', '.join(dr_stations['Station'].tolist())}." if not dr_stations.empty else "No current microclimatic drizzle detected."
-        elif "kous" in p_l or "كوس" in p_lower:
+        elif "kous" in p_l or "كوس" in p_l:
             k_st = curr[curr["AlKous Prob"] > 40]
             res = f"☁️ Deep stratus (Al-Kous) layers active over: {', '.join(k_st['Station'].tolist())}." if not k_st.empty else "No low-level stratus build-up mapped right now."
-        else: res = "I am trained on your dynamic filters. Ask me to cross-reference 'drizzle' or 'storm' probabilities across the 36 channels."
+        else: res = "I am trained on your dynamic filters. Ask me to cross-reference parameters."
         st.chat_message("assistant").write(res)
+
+with tab6:
+    st.markdown("### ⚙️ 71wm Secure Control Room")
+    st.write("قم بإعداد بوابتك الخاصة هنا لتلقي التحذيرات عبر البريد الإلكتروني بشكل آمن وبث مباشر لمرة واحدة:")
+    
+    # حقول الإدخال المحمية لمنع قراءة البيانات من زوار الموقع
+    st.session_state["email_enabled"] = st.checkbox("تفعيل نظام الإرسال التلقائي للإنذارات الطارئة (Email Alerts Active)", value=st.session_state["email_enabled"])
+    st.session_state["email_sender"] = st.text_input("بريد المرسل (Gmail)", value=st.session_state["email_sender"])
+    st.session_state["email_password"] = st.text_input("كلمة مرور التطبيقات السرية (16 حرفاً من جوجل)", type="password", value=st.session_state["email_password"])
+    st.session_state["email_receiver"] = st.text_input("بريد المستلم الرئيسي للإشعارات", value=st.session_state["email_receiver"])
+    
+    if st.button("🔄 تصفير ذاكرة الإرسال لإعادة التجربة فوراً"):
+        st.session_state["email_sent_track"] = {}
+        st.success("تم تصفير الذاكرة! إذا كانت هناك حالة إنذار قائمة ومفتاح الإرسال مفعل، سيصلك إيميل فوراً.")

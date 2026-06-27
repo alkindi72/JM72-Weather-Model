@@ -21,7 +21,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. CLEAN & BRIGHT CSS
+# 2. CLEAN, BRIGHT & MOBILE-RESPONSIVE CSS
 # ==========================================
 st.markdown("""
 <style>
@@ -32,25 +32,37 @@ st.markdown("""
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; }
     
     /* Tabs */
-    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; }
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; flex-wrap: wrap; }
     div[data-testid="stTabs"] button { background-color: #FFFFFF !important; border: 1px solid #CBD5E1 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
     
     /* AI Components */
-    .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); }
-    .anomaly-alert { background-color: #FFFBEB; border: 1px solid #FEF08A; padding: 10px 15px; border-radius: 6px; color: #92400E; font-weight: bold; margin-bottom: 10px; font-size: 14px;}
+    .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); line-height: 1.6; }
+    .anomaly-alert { background-color: #FFFBEB; border: 1px solid #FEF08A; padding: 10px 15px; border-radius: 6px; color: #92400E; font-weight: bold; margin-bottom: 10px; font-size: 14px; line-height: 1.6;}
     
-    /* Timeline & Tables */
+    /* Timeline & Elements */
     div[data-testid="stSlider"] { background-color: #F1F5F9 !important; padding: 20px !important; border-radius: 12px !important; margin-bottom: 25px !important; border: 1px solid #E2E8F0 !important; }
     div[data-testid="stTickBar"] { color: #475569 !important; font-weight: bold !important; }
     div[data-testid="stSlider"] div[role="slider"] { background-color: #0284C7 !important; border: 2px solid #FFF !important; }
     div[data-testid="stSlider"] div[role="slider"] > div { background-color: #0284C7 !important; color: #FFF !important; border-radius: 4px; padding: 2px 8px;}
-    .alert-banner { background-color: #FEF2F2 !important; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2;}
-    .sys-success { background-color: #F0FDF4 !important; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px; border: 1px solid #DCFCE7;}
-    .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #E2E8F0;}
-    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37;}
-    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center;}
+    .alert-banner { background-color: #FEF2F2 !important; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FEE2E2; line-height: 1.6;}
+    .sys-success { background-color: #F0FDF4 !important; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px; border: 1px solid #DCFCE7; line-height: 1.6;}
+    
+    /* Tables Container (Horizontal Scroll for Mobile) */
+    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 20px; }
+    .custom-table { width: 100%; border-collapse: collapse; background-color: #ffffff; min-width: 600px; }
+    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37; white-space: nowrap;}
+    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center; white-space: nowrap;}
+
+    /* Mobile */
+    @media (max-width: 768px) {
+        .block-container { padding: 1rem !important; margin: 0.5rem auto !important; max-width: 100% !important; border-radius: 0px !important; border: none !important; }
+        .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { font-size: 13px !important; }
+        div[data-testid="stTabs"] button { padding: 8px 10px !important; font-size: 13px !important; flex-grow: 1; text-align: center; }
+        .ai-broadcaster { font-size: 14px; padding: 12px 15px; }
+        div[data-testid="stSlider"] { padding: 15px 10px !important; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -62,12 +74,9 @@ svg_code = """
     <g transform="translate(240, 10)">
         <polygon points="60,0 112,30 112,90 60,120 8,90 8,30" fill="none" stroke="#E2E8F0" stroke-width="3"/>
         <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#F8FAFC" stroke="#082F49" stroke-width="1.5"/>
-        
         <circle cx="60" cy="60" r="25" fill="#FDE047" opacity="0.4" />
-        
         <path d="M 30,35 L 70,35 L 55,65 L 65,65 L 40,95 L 45,70 L 35,70 Z" fill="#D4AF37" />
         <polygon points="75,35 90,35 90,95 75,95" fill="#0284C7" />
-        
         <g transform="translate(31, 108)">
             <rect x="0" y="0" width="10" height="10" fill="#EF4444" rx="2" transform="rotate(45 5 5)"/>
             <rect x="16" y="0" width="10" height="10" fill="#10B981" rx="2" transform="rotate(45 5 5)"/>
@@ -75,7 +84,6 @@ svg_code = """
             <rect x="48" y="0" width="10" height="10" fill="#1E293B" rx="2" transform="rotate(45 5 5)"/>
         </g>
     </g>
-    
     <text x="300" y="180" font-family="'Arial Black', system-ui, sans-serif" font-weight="900" font-size="34" fill="#082F49" text-anchor="middle" letter-spacing="1">71wm AI</text>
     <text x="300" y="205" font-family="system-ui, sans-serif" font-weight="800" font-size="14" fill="#64748B" text-anchor="middle" letter-spacing="6">WEATHER MODEL • U.A.E</text>
 </svg>
@@ -126,13 +134,14 @@ stations_matrix = {
 def fetch_stable_live_data(stations_dict):
     try:
         lats = ",".join([str(s["lat"]) for s in stations_dict.values()]); lons = ",".join([str(s["lon"]) for s in stations_dict.values()])
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&current=precipitation,weather_code&hourly=temperature_2m,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_700hPa&models=gfs_seamless&timezone=auto"
+        # تم تحديث الاستدعاء البرمجي ليجلب 850hPa و 500hPa جنباً إلى جنب مع 700hPa للحرارة والرطوبة
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&current=precipitation,weather_code&hourly=temperature_2m,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa&models=gfs_seamless&timezone=auto"
         response = requests.get(url, timeout=15)
         response.raise_for_status()
         return True, response.json()
     except Exception as e: return False, str(e)
 
-with st.spinner("🤖 71wm AI Engine: Compiling live metrics & executing models..."):
+with st.spinner("🤖 71wm AI Engine: Compiling live metrics & executing Deep Moisture models..."):
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 @st.cache_data
@@ -149,7 +158,7 @@ def load_national_almanac():
 almanac_df, err_msg = load_national_almanac()
 
 # ==========================================
-# 6. AI DYNAMICS ENGINE (CORE PROCESSING)
+# 6. AI DYNAMICS ENGINE (CORE PROCESSING WITH ADVANCED RULES)
 # ==========================================
 weather_data = []
 
@@ -168,19 +177,47 @@ if fetch_success and type(live_data) is list:
                     time_diffs = [abs((api_t - dt).total_seconds()) for api_t in api_times]
                     closest_idx = time_diffs.index(min(time_diffs))
                     
+                    # استدعاء المعطيات الخام
                     temp_c = station_data["temperature_2m"][closest_idx] or 35.0
                     surface_rh = station_data.get("relative_humidity_2m", [50]*len(api_times))[closest_idx] or 50
-                    rh_700 = station_data["relative_humidity_700hPa"][closest_idx] or 0
                     wind_spd = station_data.get("windspeed_10m", [0]*len(api_times))[closest_idx] or 0
                     wind_gst = max(station_data.get("windgusts_10m", [0]*len(api_times))[closest_idx] or 0, wind_spd * 1.35)
                     cape_val = station_data["cape"][closest_idx] or 0
                     
-                    prob = (cape_val / 2000) * 100
-                    if rh_700 < 45: prob *= 0.05
-                    elif rh_700 < 55: prob *= 0.3
-                    if coords["type"] == "Mountains" and temp_c > 38: prob *= 1.3
+                    # سحب البيانات العلوية للطبقات الثلاث
+                    rh_850 = station_data.get("relative_humidity_850hPa", [50]*len(api_times))[closest_idx] or 50
+                    rh_700 = station_data.get("relative_humidity_700hPa", [50]*len(api_times))[closest_idx] or 50
+                    rh_500 = station_data.get("relative_humidity_500hPa", [50]*len(api_times))[closest_idx] or 50
+                    t_850 = station_data.get("temperature_850hPa", [20]*len(api_times))[closest_idx] or 20
+                    t_500 = station_data.get("temperature_500hPa", [-10]*len(api_times))[closest_idx] or -10
+                    
+                    # ============================================================
+                    # الذكاء الاصطناعي: محرك التنبؤ بالعواصف المبني على القواعد المتقدمة
+                    # ============================================================
+                    prob = (cape_val / 2000.0) * 100  # الخطوة 1: طاقة الحمل الحراري
+                    
+                    # الخطوة 2: حساب مؤشر الرطوبة البنائية المشترك (Deep Moisture Index)
+                    # إعطاء وزن أكبر للطبقات السفلى والمتوسطة (850 و 700) ووزن أقل للطبقات العليا (500)
+                    moisture_index = (rh_850 * 0.4) + (rh_700 * 0.4) + (rh_500 * 0.2)
+                    
+                    # الخطوة 3: حساب معدل التبريد الرأسي (Lapse Rate) لمعرفة الاستقرار
+                    lapse_rate = t_850 - t_500
+                    
+                    # تطبيق القواعد العلمية لتعديل النسبة
+                    if lapse_rate > 26: prob *= 1.3        # عدم استقرار قوي
+                    elif lapse_rate < 20: prob *= 0.5      # استقرار / انقلاب حراري علوي يمنع التطور
+                    
+                    if moisture_index < 40: prob *= 0.1    # جفاف في عمود الهواء (يقتل الفرصة)
+                    elif moisture_index > 70: prob *= 1.2  # رطوبة بنائية ممتازة للسحب الركامية
+                    
+                    if coords["type"] == "Mountains" and temp_c > 38: 
+                        prob *= 1.3 # تفاعل التضاريس مع الحرارة العالية لتشكيل سحب الروايح
+                    
                     storm_prob = np.clip(prob, 0, 100)
                     
+                    # ------------------------------------------------------------
+                    # الذكاء الاصطناعي: محرك التنبؤ بالضباب الإشعاعي (Fog Predictor)
+                    # ------------------------------------------------------------
                     fog_prob = 0
                     is_night_early_morning = dt.hour < 8 or dt.hour > 22
                     if is_night_early_morning and surface_rh > 80 and wind_spd < 15:

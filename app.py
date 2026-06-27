@@ -114,6 +114,7 @@ stations_matrix = {
     "Burj Khalifah": {"lat": 25.2017, "lon": 55.2766, "type": "Coast"}, "Sharjah University": {"lat": 25.2869, "lon": 55.4622, "type": "Coast"},
     "Ajman": {"lat": 25.4236, "lon": 55.4447, "type": "Coast"}, "Umm Al Quwain": {"lat": 25.5301, "lon": 55.6548, "type": "Coast"},
     "Ras Al khaimah": {"lat": 25.7716, "lon": 55.9392, "type": "Coast"}, "Fujairah Port": {"lat": 25.1699, "lon": 56.3595, "type": "Coast"},
+    "Kalba": {"lat": 25.0430, "lon": 56.3640, "type": "Coast"}, "Khor Fakkan Port": {"lat": 25.3578, "lon": 56.3618, "type": "Coast"},
     "AlRuwais": {"lat": 24.0915, "lon": 52.6242, "type": "Coast"}, "Sir Bani Yas": {"lat": 24.3188, "lon": 52.5990, "type": "Coast"},
     "Dalma": {"lat": 24.4906, "lon": 52.2914, "type": "Coast"}, "Sir Bu Nair": {"lat": 25.2201, "lon": 54.2341, "type": "Coast"},
     "Abu Al Abyad": {"lat": 24.1841, "lon": 53.8626, "type": "Coast"}, "Jabal Jais": {"lat": 25.9508, "lon": 56.1674, "type": "Mountains"},
@@ -129,6 +130,19 @@ stations_matrix = {
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"}, "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
 }
 
+SECTOR_MAP = {
+    "Eastern Region": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"],
+    "Central Region": ["Al Dhaid", "Al Malaiha"],
+    "Abu Dhabi & Al Dhafra": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
+    "Al Ain Region": ["Al Ain Int'l Airport", "Al Aamerah"],
+    "Dubai & Northern Emirates": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
+}
+
+def get_sector_for_station(station_name):
+    for sector, stations in SECTOR_MAP.items():
+        if station_name in stations: return sector
+    return "Unknown"
+
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
     try:
@@ -139,7 +153,7 @@ def fetch_stable_live_data(stations_dict):
         return True, response.json()
     except Exception as e: return False, str(e)
 
-with st.spinner("🤖 71wm AI Engine: Compiling live metrics..."):
+with st.spinner("🤖 71wm AI Engine: Compiling live metrics & executing Deep Moisture models..."):
     fetch_success, live_data = fetch_stable_live_data(stations_matrix)
 
 @st.cache_data
@@ -156,7 +170,7 @@ def load_national_almanac():
 almanac_df, err_msg = load_national_almanac()
 
 # ==========================================
-# 6. AI DYNAMICS ENGINE
+# 6. AI DYNAMICS ENGINE (CORE PROCESSING)
 # ==========================================
 weather_data = []
 
@@ -191,7 +205,7 @@ if fetch_success and type(live_data) is list:
                     t_850 = station_data.get("temperature_850hPa", [20]*len(api_times))[closest_idx] or 20
                     t_500 = station_data.get("temperature_500hPa", [-10]*len(api_times))[closest_idx] or -10
                     
-                    # Storm AI
+                    # 1. Storm AI (Advanced Rules)
                     prob = (cape_val / 2000.0) * 100 
                     moisture_index = (rh_850 * 0.4) + (rh_700 * 0.4) + (rh_500 * 0.2)
                     lapse_rate = t_850 - t_500
@@ -202,14 +216,14 @@ if fetch_success and type(live_data) is list:
                     if coords["type"] == "Mountains" and temp_c > 38: prob *= 1.3
                     storm_prob = np.clip(prob, 0, 100)
                     
-                    # General Fog AI
+                    # 2. General Fog AI
                     fog_prob = 0
                     is_night_early_morning = dt.hour < 8 or dt.hour > 22
                     if is_night_early_morning and surface_rh > 80 and wind_spd < 15:
                         fog_prob = ((surface_rh - 80) * 4) + ((15 - wind_spd) * 3)
                     fog_prob = np.clip(fog_prob, 0, 100)
                     
-                    # AL-KOUS CLOUD PREDICTOR
+                    # 3. AL-KOUS CLOUD PREDICTOR
                     alkous_prob = 0
                     if coords["lon"] >= 55.8:
                         if 45 <= wind_dir <= 160 and surface_rh >= 65:
@@ -217,6 +231,7 @@ if fetch_success and type(live_data) is list:
                             if temp_c >= 35: alkous_base *= 1.2
                             alkous_prob = np.clip(alkous_base, 0, 100)
                     
+                    # 4. Dust AI
                     dust_p = (wind_spd / 35) * 100 if coords["type"] == "Desert" else (wind_spd / 45) * 100
                     if wind_gst > 45: dust_p += 25
                     dust_p = np.clip(dust_p, 0, 100)
@@ -232,6 +247,9 @@ if fetch_success and type(live_data) is list:
                     "Wind Speed": round(wind_spd, 1), "dBZ": dbz, "Radar Verif": radar_verif
                 })
         except Exception: pass
+
+if not weather_data:
+    st.error("⚠️ Connection to Weather API failed. Offline Mode Active.")
 
 df_all = pd.DataFrame(weather_data)
 
@@ -315,16 +333,16 @@ with tab2:
         
         card_html = f"<div style='background-color:{bg}; border: 1px solid {border}; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center; border-bottom: 1px solid {border}; padding-bottom: 8px;'>📅 {date}</div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>🌊 Coast:</span><span style='font-weight:900;'>⬇ {coast_min}° - ⬆ {coast_max}°</span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B; margin-bottom:6px;'><span>⛰️ Mount:</span><span style='font-weight:900;'>⬇ {mount_min}° - ⬆ {mount_max}°</span></div><div style='display: flex; justify-content: space-between; font-size:14px; color:#1E293B;'><span>🏜️ Inland:</span><span style='font-weight:900;'>⬇ {inland_min}° - ⬆ {inland_max}°</span></div></div>"
         cols_t2[i].markdown(card_html, unsafe_allow_html=True)
-        
+
     selected_time_t2 = st.select_slider("Forecast Timeline", options=timeline_str, key="t2_slider", label_visibility="collapsed")
     df_time_t2 = df_all[df_all["Time"] == selected_time_t2].copy()
 
-    fig2 = px.density_mapbox(df_time_t2, lat="Latitude", lon="Longitude", z="Temperature", radius=50, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.7, color_continuous_scale=["rgba(0,0,0,0)", "#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60])
-    fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
+    fig2 = px.density_mapbox(df_time_t2, lat="Latitude", lon="Longitude", z="Temperature", radius=50, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.7, color_continuous_scale=["rgba(0,0,0,0)", "#FDE047", "#F97316", "#DC2626", "#450A0A"], range_color=[40, 60], title="Actual Air Temperature")
+    fig2.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":40,"l":0,"b":0})
     st.plotly_chart(fig2, use_container_width=True, key="heat_map_data")
 
 with tab3:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Al-Kous Cloud Forecast (Eastern Coast & Mountains)</h4>', unsafe_allow_html=True)
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Al-Kous Cloud Forecast (Eastern Coast)</h4>', unsafe_allow_html=True)
     
     cols_t3 = st.columns(len(unique_dates_display[:5]))
     for i, date in enumerate(unique_dates_display[:5]):
@@ -343,9 +361,6 @@ with tab3:
     
     east_stations = df_time_t3[df_time_t3["Longitude"] >= 55.8].copy()
     
-    # =========================================================================
-    # 🛑 تم الإصلاح الجذري هنا: تحويل الخريطة إلى الخارطة الحرارية الانسيابية بالكامل
-    # =========================================================================
     fig3 = px.density_mapbox(
         east_stations, 
         lat="Latitude", 
@@ -367,7 +382,7 @@ with tab4:
     selected_time_t4 = st.select_slider("Forecast Timeline", options=timeline_str, key="t4_slider", label_visibility="collapsed")
     df_time_t4 = df_all[df_all["Time"] == selected_time_t4].copy()
     
-    st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 34-Station Matrix at {selected_time_t4}</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 36-Station Matrix at {selected_time_t4}</h3>", unsafe_allow_html=True)
     display_df = df_time_t4.sort_values(by="Temperature", ascending=False)
     html_table = "<div class='table-responsive'><table class='custom-table'><tr><th>Station</th><th>Temp (°C)</th><th>Feels Like</th><th>RH (%)</th><th>Al-Kous (%)</th><th>Storm (%)</th></tr>"
     for _, row in display_df.iterrows():
@@ -406,7 +421,7 @@ with tab5:
             
         st.chat_message("assistant").write(response)
     else:
-        st.chat_message("assistant").write("Hello! I am ready to analyze the 34-station data array. What would you like to know?")
+        st.chat_message("assistant").write("Hello! I am ready to analyze the 36-station data array. What would you like to know?")
 
 with tab6:
     st.markdown("### 🚨 71wm Alert Control Room")

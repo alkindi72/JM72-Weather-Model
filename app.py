@@ -21,20 +21,20 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. CLEAN & STABLE CSS (No Background Hacks)
+# 2. CLEAN & STABLE CSS
 # ==========================================
 st.markdown("""
 <style>
-    /* Hide top header elements safely */
+    /* إخفاء الشريط العلوي الافتراضي */
     [data-testid="stHeader"] { display: none !important; }
     [data-testid="stToolbar"] { display: none !important; }
 
-    /* Clean Typography */
+    /* خطوط النصوص */
     .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { 
         color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; 
     }
 
-    /* Elegant Tabs */
+    /* تنسيق التبويبات (Tabs) */
     div[data-testid="stTabs"] [data-baseweb="tab-list"] { 
         background-color: transparent !important; 
         border-bottom: 2px solid #E2E8F0; 
@@ -50,7 +50,7 @@ st.markdown("""
     div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
     
-    /* Native Timeline Slider Formatting */
+    /* شريط الوقت الاحترافي */
     div[data-testid="stSlider"] {
         background-color: #1E293B !important;
         padding: 20px 25px 20px 25px !important;
@@ -62,9 +62,7 @@ st.markdown("""
     div[data-testid="stSlider"] div[role="slider"] { background-color: #D4AF37 !important; border: 2px solid #FFF !important; }
     div[data-testid="stSlider"] div[role="slider"] > div { background-color: #D4AF37 !important; color: #FFF !important; }
 
-    /* Tables & Alerts */
-    .alert-banner { background-color: #FEF2F2; color: #991B1B !important; padding: 18px; border-left: 6px solid #EF4444; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px;}
-    .sys-success { background-color: #F0FDF4; color: #065F46 !important; padding: 15px; border-left: 6px solid #10B981; border-radius: 8px; margin-bottom: 20px;}
+    /* الجداول */
     .custom-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #E2E8F0;}
     .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37;}
     .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center;}
@@ -99,7 +97,6 @@ with open("jm72_icon.svg", "w", encoding="utf-8") as f:
 # 4. SESSION STATE
 # ==========================================
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
-if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
 
 # ==========================================
 # 5. REST-API & GEOGRAPHICAL SECTORS
@@ -188,7 +185,7 @@ almanac_df, err_msg = load_national_almanac()
 weather_data = []
 
 if fetch_success and type(live_data) is list:
-    st.markdown('<div class="sys-success">🟢 LIVE OPERATIONS ACTIVE: Model dynamically executing orographic convergence & Radar Nowcasting verification.</div>', unsafe_allow_html=True)
+    st.success("🟢 LIVE OPERATIONS ACTIVE: Model dynamically executing orographic convergence & Radar Nowcasting verification.")
     for idx, (name, coords) in enumerate(stations_matrix.items()):
         try:
             current_precip = live_data[idx].get("current", {}).get("precipitation", 0.0)
@@ -239,7 +236,7 @@ if fetch_success and type(live_data) is list:
         except Exception: pass
 
 if not weather_data:
-    st.error("⚠️ Connection to Weather Satellite API failed. Showing offline fallback data. (EMAIL ALERTS PERMANENTLY DISABLED)")
+    st.error("⚠️ Connection to Weather Satellite API failed. Showing offline fallback data.")
     np.random.seed(42)
     for dt_str, dt in zip(timeline_str, timeline):
         is_afternoon = 12 <= dt.hour <= 18
@@ -285,8 +282,7 @@ with tab1:
         affected_stations = df_time_t1[df_time_t1["Storm Probability"] >= 75]["Station"].tolist()
         target_str = ", ".join(get_clustered_sectors(affected_stations))
         target_radar = df_time_t1.loc[df_time_t1["Storm Probability"].idxmax(), "Radar Verif"]
-        st.markdown(f'<div class="alert-banner"><strong>🚨 RED ALERT:</strong> Severe Convective Storm Risk ({max_storm}%) detected over:<br>📍 {target_str} <br><br> 📡 Radar Nowcast: {target_radar}</div>', unsafe_allow_html=True)
-        # Email system removed
+        st.error(f"**🚨 RED ALERT:** Severe Convective Storm Risk ({max_storm}%) detected over:\n📍 {target_str} \n\n 📡 Radar Nowcast: {target_radar}")
     
     df_plot_storm = df_time_t1[df_time_t1["Storm Probability"] > 0].copy()
     if df_plot_storm.empty:
@@ -299,7 +295,7 @@ with tab1:
         st.plotly_chart(fig1, use_container_width=True, key="storm_map_data")
         
     st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery & Streams</h3>', unsafe_allow_html=True)
-    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #1E293B;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;"><span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ JM72 SATELLITE LIVE</span></div></div>""", height=520)
+    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe></div>""", height=520)
 
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Forecast</h4>', unsafe_allow_html=True)
@@ -319,8 +315,7 @@ with tab2:
     if max_temp >= 50.0:
         affected_heat_stations = df_time_t2[df_time_t2["Temperature"] >= 50.0]["Station"].tolist()
         target_heat_str = ", ".join(get_clustered_sectors(affected_heat_stations))
-        st.markdown(f'<div class="alert-banner"><strong>🚨 HEAT ALERT:</strong> Extreme Thermal Heat Dome ({max_temp}°C) over:<br>📍 {target_heat_str}</div>', unsafe_allow_html=True)
-        # Email system removed
+        st.error(f"**🚨 HEAT ALERT:** Extreme Thermal Heat Dome ({max_temp}°C) over:\n📍 {target_heat_str}")
 
     df_plot_heat = df_time_t2[df_time_t2["Temperature"] >= 50].copy()
     if df_plot_heat.empty:
@@ -343,8 +338,7 @@ with tab3:
         affected_dust_stations = df_time_t3[df_time_t3["Dust Probability"] >= 60]["Station"].tolist()
         target_dust_str = ", ".join(get_clustered_sectors(affected_dust_stations))
         target_dust_row = df_time_t3.loc[df_time_t3["Dust Probability"].idxmax()]
-        st.markdown(f'''<div class="alert-banner" style="background-color: #FFFBEB; color: #92400E !important; border-left-color: #D97706;"><strong>⚠️ DUST ALERT:</strong> High probability of sandstorms ({max_dust}%) detected over:<br>📍 {target_dust_str}<br><br>• Max Wind Speed: {target_dust_row["Wind Speed"]} km/h (Gusts: {target_dust_row["Gusts"]} km/h)<br></div>''', unsafe_allow_html=True)
-        # Email system removed
+        st.warning(f"**⚠️ DUST ALERT:** High probability of sandstorms ({max_dust}%) detected over:\n📍 {target_dust_str}\n\n• Max Wind Speed: {target_dust_row['Wind Speed']} km/h (Gusts: {target_dust_row['Gusts']} km/h)")
 
     fig3 = px.density_mapbox(df_time_t3, lat="Latitude", lon="Longitude", z="Dust Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=6, mapbox_style="white-bg", opacity=0.75, hover_data={"Station": True, "Wind Speed": True, "Wind Direction": True, "Visibility": True}, color_continuous_scale=["rgba(0,0,0,0)", "#FEF3C7", "#FCD34D", "#D97706", "#78350F"], range_color=[0, 100])
     fig3.update_layout(mapbox_layers=esri_topo_layer, margin={"r":0,"t":0,"l":0,"b":0})
@@ -388,16 +382,5 @@ with tab5:
         else: st.info(f"No extreme records found in the database for {target_date.strftime('%B %d')}.")
 
 with tab6:
-    if not st.session_state["admin_logged_in"]:
-        col_lock1, col_lock2, col_lock3 = st.columns([1, 2, 1])
-        with col_lock2:
-            st.markdown("<h2 style='text-align: center; color:#082F49;'>🔒 Secure Access</h2>", unsafe_allow_html=True)
-            with st.form("login_form"):
-                admin_pin = st.text_input("Administrator PIN", type="password")
-                if st.form_submit_button("Authenticate"):
-                    if admin_pin == "JM72": st.session_state["admin_logged_in"] = True; st.rerun()
-                    else: st.error("❌ Invalid PIN.")
-    else:
-        st.markdown("### 🚨 JM72 Alert Control Room")
-        st.info("تم تعطيل نظام إرسال الإيميلات بالكامل لأسباب الصيانة ومنع الإزعاج.")
-        if st.button("🚪 Logout"): st.session_state["admin_logged_in"] = False; st.rerun()
+    st.markdown("### 🚨 JM72 Alert Control Room")
+    st.info("ℹ️ تم تعطيل وإزالة نظام إرسال الإيميلات بالكامل لضمان عدم تلقي أي تحذيرات مزعجة مستقبلاً.")

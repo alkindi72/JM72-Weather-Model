@@ -1,3 +1,4 @@
+```python:71wm AI Weather Model:jm72_app.py
 import os
 import re
 import streamlit as st
@@ -92,15 +93,16 @@ if "email_password" not in st.session_state: st.session_state["email_password"] 
 if "email_sent_track" not in st.session_state: st.session_state["email_sent_track"] = {}
 if "alert_logs" not in st.session_state: st.session_state["alert_logs"] = []
 
-def send_secure_alert_email(subject, body_text):
-    if not st.session_state["email_enabled"]: return False, "النظام معطل يدوياً"
+def send_secure_alert_email(subject, html_body):
+    if not st.session_state["email_enabled"]: 
+        return False, "النظام معطل يدوياً"
     if not st.session_state["email_sender"] or not st.session_state["email_password"] or not st.session_state["email_receiver"]: 
         return False, "بيانات المرسل أو المستلم ناقصة"
     try:
         receivers_list = [email.strip() for email in st.session_state["email_receiver"].split(",") if email.strip()]
         if not receivers_list: return False, "تنسيق الإيميلات غير صحيح"
 
-        msg = MIMEText(body_text, 'plain', 'utf-8')
+        msg = MIMEText(html_body, 'html', 'utf-8')
         msg['Subject'] = Header(subject, 'utf-8')
         msg['From'] = st.session_state["email_sender"]
         msg['To'] = ", ".join(receivers_list)
@@ -149,17 +151,17 @@ stations_matrix = {
 }
 
 SECTOR_MAP = {
-    "Eastern Region": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"],
-    "Central Region": ["Al Dhaid", "Al Malaiha"],
-    "Abu Dhabi & Al Dhafra": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
-    "Al Ain Region": ["Al Ain Int'l Airport", "Al Aamerah"],
-    "Dubai & Northern Emirates": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
+    "المنطقة الشرقية": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"],
+    "المنطقة الوسطى": ["Al Dhaid", "Al Malaiha"],
+    "أبوظبي ومنطقة الظفرة": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
+    "منطقة العين": ["Al Ain Int'l Airport", "Al Aamerah"],
+    "دبي والإمارات الشمالية": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
 }
 
 def get_sector_for_station(station_name):
     for sector, stations in SECTOR_MAP.items():
         if station_name in stations: return sector
-    return "Unknown"
+    return "مناطق متفرقة"
 
 @st.cache_data(ttl=3600)
 def fetch_stable_live_data(stations_dict):
@@ -249,82 +251,100 @@ if fetch_success and type(live_data) is list:
 df_all = pd.DataFrame(weather_data)
 
 # ==========================================
-# 7. CRITICAL ANTI-SPAM ALERTS LOGIC (UPDATED WITH ARABIC REGIONS)
+# 7. CRITICAL ANTI-SPAM ALERTS LOGIC (SCIENTIFIC THRESHOLDS)
 # ==========================================
-def get_arabic_regions(regions_list):
-    trans = {
-        "Eastern Region": "المنطقة الشرقية",
-        "Central Region": "المنطقة الوسطى",
-        "Abu Dhabi & Al Dhafra": "أبوظبي ومنطقة الظفرة",
-        "Al Ain Region": "منطقة العين",
-        "Dubai & Northern Emirates": "دبي والإمارات الشمالية",
-        "Unknown": "مناطق متفرقة"
-    }
-    return "، ".join([trans.get(r, r) for r in regions_list])
-
 current_time_df = df_all[df_all["Time"] == timeline_str[0]]
 max_storm_now = current_time_df["Storm Probability"].max()
 max_drizzle_now = current_time_df["Drizzle Prob"].max()
 max_fog_now = current_time_df["Fog Probability"].max()
 current_time_stamp = datetime.now().strftime("%H:%M:%S")
+now_dt = datetime.now()
+
+def get_html_email_template(title, text, regions, start_dt, end_dt, header_color, text_color):
+    start_str = start_dt.strftime("%d/%m/%Y - %H:%M")
+    end_str = end_dt.strftime("%d/%m/%Y - %H:%M")
+    return f"""
+    <div dir="rtl" style="font-family: Arial, sans-serif; border: 1px solid #E2E8F0; max-width: 600px; margin: 0 auto; border-radius: 8px; overflow: hidden; background-color: #FFFFFF;">
+        <div style="background-color: {header_color}; padding: 15px; text-align: center; border-bottom: 2px solid rgba(0,0,0,0.1);">
+            <h2 style="margin: 0; color: #000; font-size: 22px;">{title}</h2>
+        </div>
+        <div style="padding: 20px;">
+            <p style="font-size: 18px; font-weight: bold; color: #1E293B; line-height: 1.6; text-align: center;">{text}</p>
+            <div style="background-color: #F8FAFC; border-radius: 6px; padding: 15px; margin-top: 20px; border: 1px solid #E2E8F0;">
+                <p style="margin: 0 0 10px 0; font-size: 16px; color: #082F49;"><b>المناطق المتأثرة:</b> {regions}</p>
+                <hr style="border: 0; border-top: 1px solid #CBD5E1; margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between;">
+                    <p style="margin: 0 0 10px 0; font-size: 16px; color: #334155;"><b>بداية التحذير:</b><br>{start_str}</p>
+                    <p style="margin: 0; font-size: 16px; color: #334155;"><b>نهاية التحذير:</b><br>{end_str}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
 
 if st.session_state["email_enabled"]:
     today_key = unique_dates_display[0]
     if today_key not in st.session_state["email_sent_track"]:
         st.session_state["email_sent_track"][today_key] = {"storm": False, "drizzle": False, "fog": False}
         
-    # 1. Storm Warning (> 80%)
-    if max_storm_now > 80 and not st.session_state["email_sent_track"][today_key]["storm"]:
-        affected_stations = current_time_df[current_time_df["Storm Probability"] > 80]["Station"].tolist()
-        affected_regions = list(set([get_sector_for_station(st_name) for st_name in affected_stations]))
-        regions_ar = get_arabic_regions(affected_regions)
+    # 1. Storm Warning (65%)
+    if max_storm_now >= 65 and not st.session_state["email_sent_track"][today_key]["storm"]:
+        affected_stations = current_time_df[current_time_df["Storm Probability"] >= 65]["Station"].tolist()
+        affected_regions = list(set([get_sector_for_station(st) for st in affected_stations]))
+        regions_str = "، ".join(affected_regions)
         
         sub = "71 weather model: Storm Warning"
-        body = f"تنبيه جوي بتاريخ {today_key} ({current_time_stamp})\n\nتجاوزت احتمالية العواصف الرعدية حاجز 80% (أعلى نسبة حالية: {max_storm_now}%).\nالمنطقة المتأثرة: {regions_ar}."
-        success, msg_info = send_secure_alert_email(sub, body)
+        html_body = get_html_email_template(
+            "⛈️ أمطار رعدية ، ☁️ سحب ركامية",
+            "فرصة تكون سحب ركامية يصاحبها أمطار ورياح نشطة إلى قوية السرعة مع السحب مثيرة للغبار.",
+            regions_str, now_dt, now_dt + timedelta(hours=5), "#FDE047", "#1E293B"
+        )
+        success, msg_info = send_secure_alert_email(sub, html_body)
         if success:
             st.session_state["email_sent_track"][today_key]["storm"] = True
             st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (عاصفة): {msg_info}")
-        else:
-            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ❌ فشل (عاصفة): {msg_info}")
             
-    # 2. Al Kouse Warning (>= 60%)
+    # 2. Drizzle Warning (60%)
     if max_drizzle_now >= 60 and not st.session_state["email_sent_track"][today_key]["drizzle"]:
         affected_stations = current_time_df[current_time_df["Drizzle Prob"] >= 60]["Station"].tolist()
-        affected_regions = list(set([get_sector_for_station(st_name) for st_name in affected_stations]))
-        regions_ar = get_arabic_regions(affected_regions)
+        affected_regions = list(set([get_sector_for_station(st) for st in affected_stations]))
+        regions_str = "، ".join(affected_regions)
         
         sub = "71 weather model: Al Kouse warning"
-        body = f"تنبيه جوي بتاريخ {today_key} ({current_time_stamp})\n\nوصلت احتمالية تشكل سحب الكوس وتساقط الرذاذ إلى {max_drizzle_now}%.\nالمنطقة المتأثرة: {regions_ar}."
-        success, msg_info = send_secure_alert_email(sub, body)
+        html_body = get_html_email_template(
+            "🌧️ رذاذ وسحب الكوس ، ☁️ سحب منخفضة",
+            "فرصة تكون سحب الكوس المنخفضة وتدفقها نحو السواحل والجبال الشرقية، قد يصاحبها تساقط الرذاذ المستمر وانخفاض في مدى الرؤية الأفقية.",
+            regions_str, now_dt, now_dt.replace(hour=10, minute=0), "#E0F2FE", "#0369A1"
+        )
+        success, msg_info = send_secure_alert_email(sub, html_body)
         if success:
             st.session_state["email_sent_track"][today_key]["drizzle"] = True
             st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (رذاذ): {msg_info}")
-        else:
-            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ❌ فشل (رذاذ): {msg_info}")
 
-    # 3. Fog Warning (>= 60%)
-    if max_fog_now >= 60 and not st.session_state["email_sent_track"][today_key]["fog"]:
-        affected_stations = current_time_df[current_time_df["Fog Probability"] >= 60]["Station"].tolist()
-        affected_regions = list(set([get_sector_for_station(st_name) for st_name in affected_stations]))
-        regions_ar = get_arabic_regions(affected_regions)
+    # 3. Fog Warning (50%)
+    if max_fog_now >= 50 and not st.session_state["email_sent_track"][today_key]["fog"]:
+        affected_stations = current_time_df[current_time_df["Fog Probability"] >= 50]["Station"].tolist()
+        affected_regions = list(set([get_sector_for_station(st) for st in affected_stations]))
+        regions_str = "، ".join(affected_regions)
         
         sub = "71 weather model: Fog & low Visibility"
-        body = f"تنبيه جوي بتاريخ {today_key} ({current_time_stamp})\n\nارتفعت احتمالية تشكل الضباب وتدني الرؤية الأفقية إلى {max_fog_now}%.\nالمنطقة المتأثرة: {regions_ar}."
-        success, msg_info = send_secure_alert_email(sub, body)
+        html_body = get_html_email_template(
+            "🌫️ ضباب ، 📉 تدني الرؤية الأفقية",
+            "فرصة تشكل ضباب أو ضباب خفيف وانخفاض مدى الرؤية الأفقية على بعض المناطق الداخلية والساحلية.",
+            regions_str, now_dt, now_dt.replace(hour=9, minute=30) if now_dt.hour < 9 else now_dt + timedelta(hours=4), "#E2E8F0", "#334155"
+        )
+        success, msg_info = send_secure_alert_email(sub, html_body)
         if success:
             st.session_state["email_sent_track"][today_key]["fog"] = True
             st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (ضباب): {msg_info}")
-        else:
-            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ❌ فشل (ضباب): {msg_info}")
 
 # ==========================================
 # 8. AI GENERATIVE BRIEFING
 # ==========================================
 ai_briefing = f"🤖 **71wm AI Broadcaster:** "
-if current_time_df["Fog Probability"].max() >= 60: ai_briefing += f"🌫️ **🚨 Dense Fog Warning:** High risk of radiation fog affecting visibility. "
+if current_time_df["Fog Probability"].max() >= 50: ai_briefing += f"🌫️ **🚨 Dense Fog Warning:** High risk of radiation fog affecting visibility. "
 elif max_drizzle_now >= 60: ai_briefing += f"🌧️ **🚨 Al-Kous Drizzle Warning:** High risk ({max_drizzle_now}%) of morning drizzle forming over the eastern ridges. "
-elif max_storm_now > 40: ai_briefing += f"🌩️ Convective activity shows a {max_storm_now}% risk of isolated storms. "
+elif max_storm_now >= 65: ai_briefing += f"🌩️ Convective activity shows a {max_storm_now}% risk of isolated storms. "
 elif current_time_df["AlKous Prob"].max() > 50: ai_briefing += f"⚠️ High probability ({current_time_df['AlKous Prob'].max()}%) of dense Al-Kous low clouds. "
 else: ai_briefing += "Atmospheric columns remain thermodynamically stable with no localized anomalies detected."
 
@@ -398,10 +418,7 @@ with tab5:
         if "drizzle" in p_l or "رذاذ" in p_l:
             dr_stations = curr[curr["Drizzle Prob"] > 30]
             res = f"🌧️ Drizzle mapped at: {', '.join(dr_stations['Station'].tolist())}." if not dr_stations.empty else "No microclimatic drizzle mapped."
-        elif "kous" in p_l or "كوس" in p_l:
-            k_st = curr[curr["AlKous Prob"] > 40]
-            res = f"☁️ Deep stratus (Al-Kous) layers active over: {', '.join(k_st['Station'].tolist())}." if not k_st.empty else "No low-level stratus build-up mapped right now."
-        else: res = "I am trained on your dynamic filters. Ask me to cross-reference parameters."
+        else: res = "I am ready. Ask me to extract parameters from the 36 channels."
         st.chat_message("assistant").write(res)
 
 with tab6:
@@ -439,7 +456,6 @@ with tab6:
         
         st.info("💡 **تلميح:** أضف الإيميل واضغط (Enter)، الكود سيقوم بحفظ قائمة المستلمين ولن يمسحها.")
         
-        # إدارة القائمة البريدية
         new_email = st.text_input("إضافة بريد مستلم جديد:")
         if st.button("➕ إضافة للقائمة"):
             if new_email and "@" in new_email:

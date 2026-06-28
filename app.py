@@ -315,4 +315,176 @@ if st.session_state["email_enabled"]:
             "فرصة تكون سحب الكوس المنخفضة وتدفقها نحو السواحل والجبال الشرقية، قد يصاحبها تساقط الرذاذ المستمر وانخفاض في مدى الرؤية الأفقية.",
             regions_str, now_dt, now_dt.replace(hour=10, minute=0), "#E0F2FE", "#0369A1"
         )
-        success, msg_info = send_secure_alert_email(sub
+        success, msg_info = send_secure_alert_email(sub, html_body)
+        if success:
+            st.session_state["email_sent_track"][today_key]["drizzle"] = True
+            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (رذاذ): {msg_info}")
+
+    # 3. Fog Warning (50%)
+    if max_fog_now >= 50 and not st.session_state["email_sent_track"][today_key]["fog"]:
+        affected_stations = current_time_df[current_time_df["Fog Probability"] >= 50]["Station"].tolist()
+        affected_regions = list(set([get_sector_for_station(st) for st in affected_stations]))
+        regions_str = "، ".join(affected_regions)
+        
+        sub = "71 weather model: Fog & low Visibility"
+        html_body = get_html_email_template(
+            "🌫️ ضباب ، 📉 تدني الرؤية الأفقية",
+            "فرصة تشكل ضباب أو ضباب خفيف وانخفاض مدى الرؤية الأفقية على بعض المناطق الداخلية والساحلية.",
+            regions_str, now_dt, now_dt.replace(hour=9, minute=30) if now_dt.hour < 9 else now_dt + timedelta(hours=4), "#E2E8F0", "#334155"
+        )
+        success, msg_info = send_secure_alert_email(sub, html_body)
+        if success:
+            st.session_state["email_sent_track"][today_key]["fog"] = True
+            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (ضباب): {msg_info}")
+
+# ==========================================
+# 8. AI GENERATIVE BRIEFING
+# ==========================================
+ai_briefing = f"🤖 **71wm AI Broadcaster:** "
+if current_time_df["Fog Probability"].max() >= 50: ai_briefing += f"🌫️ **🚨 Dense Fog Warning:** High risk of radiation fog affecting visibility. "
+elif max_drizzle_now >= 60: ai_briefing += f"🌧️ **🚨 Al-Kous Drizzle Warning:** High risk ({max_drizzle_now}%) of morning drizzle forming over the eastern ridges. "
+elif max_storm_now >= 65: ai_briefing += f"🌩️ Convective activity shows a {max_storm_now}% risk of isolated storms. "
+elif current_time_df["AlKous Prob"].max() > 50: ai_briefing += f"⚠️ High probability ({current_time_df['AlKous Prob'].max()}%) of dense Al-Kous low clouds. "
+else: ai_briefing += "Atmospheric columns remain thermodynamically stable with no localized anomalies detected."
+
+st.markdown(f'<div class="ai-broadcaster">{ai_briefing}</div>', unsafe_allow_html=True)
+
+# ==========================================
+# 9. TABS INTERFACE
+# ==========================================
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "🌩️ Storms & Fog", "🔥 Heat & Anomalies", "☁️ Al-Kous & Drizzle", "📋 Model Matrix", "🤖 71wm AI Assistant", "⚙️ Control Room"
+])
+
+with tab1:
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (National)</h4>', unsafe_allow_html=True)
+    cols_t1 = st.columns(5)
+    for i, date in enumerate(unique_dates_display[:5]):
+        day_df = df_all[df_all["DateOnly"] == date]
+        m_s, m_f = int(day_df["Storm Probability"].max()), int(day_df["Fog Probability"].max())
+        bg = "#FEF2F2" if max(m_s, m_f) >= 60 else ("#FFFBEB" if max(m_s, m_f) >= 30 else "#F0FDF4")
+        cols_t1[i].markdown(f"<div style='background-color:{bg}; border: 1px solid #CBD5E1; border-radius: 8px; padding: 15px; text-align:center;'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px;'>📅 {date}</div><div style='font-size:16px; font-weight:900; color:#EF4444; margin-bottom:8px;'>⛈️ Storm: {m_s}%</div><div style='font-size:16px; font-weight:900; color:#64748B;'>🌫️ Fog: {m_f}%</div></div>", unsafe_allow_html=True)
+    
+    selected_time_t1 = st.select_slider("Forecast Timeline", options=timeline_str, key="t1_slider", label_visibility="collapsed")
+    df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()
+    c1, c2 = st.columns(2)
+    c1.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Storm Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.75, color_continuous_scale=["rgba(0,0,0,0)", "#A3E635", "#FDE047", "#EF4444", "#7E22CE"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":0,"l":0,"b":0}), use_container_width=True)
+    c2.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Fog Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.8, color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#475569"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":0,"l":0,"b":0}), use_container_width=True)
+
+    # شاشة الأقمار الاصطناعية المدمجة في التبويب الأول
+    st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery</h3>', unsafe_allow_html=True)
+    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;"><span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ 71wm SATELLITE LIVE</span></div></div>""", height=520)
+
+with tab2:
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)
+    cols_t2 = st.columns(5)
+    for i, date in enumerate(unique_dates_display[:5]):
+        day_df = df_all[df_all["DateOnly"] == date]
+        c_mx, c_mn = round(day_df[day_df["Zone"] == "Coast"]["Temperature"].max(), 1), round(day_df[day_df["Zone"] == "Coast"]["Temperature"].min(), 1)
+        m_mx, m_mn = round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].max(), 1), round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].min(), 1)
+        i_mx, i_mn = round(day_df[day_df["Zone"] == "Inland"]["Temperature"].max(), 1), round(day_df[day_df["Zone"] == "Inland"]["Temperature"].min(), 1)
+        cols_t2[i].markdown(f"<div style='background-color:#F0FDF4; border: 1px solid #CBD5E1; border-radius: 8px; padding: 15px;'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center;'>📅 {date}</div><div style='display: flex; justify-content: space-between; font-size:14px;'><span>🌊 Coast:</span><b>⬇ {c_mn}° - ⬆ {c_mx}°</b></div><div style='display: flex; justify-content: space-between; font-size:14px;'><span>⛰️ Mount:</span><b>⬇ {m_mn}° - ⬆ {m_mx}°</b></div><div style='display: flex; justify-content: space-between; font-size:14px;'><span>🏜️ Inland:</span><b>⬇ {i_mn}° - ⬆ {i_mx}°</b></div></div>", unsafe_allow_html=True)
+
+with tab3:
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">☁️ Al-Kous Stratus & Orographic Drizzle Radar Tracker</h4>', unsafe_allow_html=True)
+    cols_t3 = st.columns(5)
+    for i, date in enumerate(unique_dates_display[:5]):
+        day_df = df_all[df_all["DateOnly"] == date]
+        mx_k, mx_dr = int(day_df["AlKous Prob"].max()), int(day_df["Drizzle Prob"].max())
+        bg = "#FEF2F2" if mx_dr > 40 else "#F8FAFC"
+        cols_t3[i].markdown(f"<div style='background-color:{bg}; border: 1px solid #CBD5E1; border-radius: 8px; padding: 15px; text-align:center;'><div style='color:#082F49; font-size:14px; font-weight:900;'>📅 {date}</div><div style='color:#1E293B; font-weight:bold; margin-top:5px;'>☁️ الكوس: {mx_k}%</div><div style='color:#0284C7; font-weight:900;'>🌧️ الرذاذ: {mx_dr}%</div></div>", unsafe_allow_html=True)
+    selected_time_t3 = st.select_slider("Forecast Timeline", options=timeline_str, key="t3_slider", label_visibility="collapsed")
+    df_time_t3 = df_all[df_all["Time"] == selected_time_t3].copy()
+    east_stations = df_time_t3[df_time_t3["Longitude"] >= 55.8].copy()
+    fig3 = px.density_mapbox(east_stations, lat="Latitude", lon="Longitude", z="Drizzle Prob", radius=45, center=dict(lat=25.2, lon=56.2), zoom=7.5, mapbox_style="white-bg", opacity=0.85, color_continuous_scale=["rgba(0,0,0,0)", "#BAE6FD", "#38BDF8", "#0284C7", "#0369A1"], range_color=[0, 100], title="AI Orographic Drizzle Condensation Index (%)")
+    fig3.update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":40,"l":0,"b":0})
+    st.plotly_chart(fig3, use_container_width=True, key="kous_drizzle_map")
+
+with tab4:
+    selected_time_t4 = st.select_slider("Forecast Timeline", options=timeline_str, key="t4_slider", label_visibility="collapsed")
+    df_time_t4 = df_all[df_all["Time"] == selected_time_t4].copy()
+    st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 36-Station Atmospheric Matrix</h3>", unsafe_allow_html=True)
+    display_df = df_time_t4.sort_values(by="Temperature", ascending=False)
+    html_table = "<div class='table-responsive'><table class='custom-table'><tr><th>Station</th><th>Actual Temp</th><th>Feels Like</th><th>RH (%)</th><th>Al-Kous (%)</th><th>Morning Drizzle (%)</th><th>Convective Storm (%)</th></tr>"
+    for _, row in display_df.iterrows():
+        s_color = "#EF4444" if row['Storm Probability'] >= 75 else "#082F49"
+        dr_color = "#0284C7" if row['Drizzle Prob'] >= 40 else "#082F49"
+        html_table += f"<tr><td>{row['Station']}</td><td>{row['Temperature']}°C</td><td>{row['Apparent Temp']}°C</td><td>{row['Humidity']}%</td><td>{row['AlKous Prob']}%</td><td style='color:{dr_color}; font-weight:bold;'>{row['Drizzle Prob']}%</td><td style='color:{s_color};'>{row['Storm Probability']}%</td></tr>"
+    st.markdown(html_table + "</table></div>", unsafe_allow_html=True)
+
+with tab5:
+    st.markdown('<h4 style="color:#082F49; font-weight:900;">🤖 71wm AI Data Assistant</h4>', unsafe_allow_html=True)
+    prompt = st.chat_input("Ask about parameters...")
+    if prompt:
+        st.chat_message("user").write(prompt)
+        p_l = prompt.lower()
+        curr = df_all[df_all["Time"] == timeline_str[0]]
+        if "drizzle" in p_l or "رذاذ" in p_l:
+            dr_stations = curr[curr["Drizzle Prob"] > 30]
+            res = f"🌧️ Drizzle mapped at: {', '.join(dr_stations['Station'].tolist())}." if not dr_stations.empty else "No microclimatic drizzle mapped."
+        else: res = "I am ready. Ask me to extract parameters from the 36 channels."
+        st.chat_message("assistant").write(res)
+
+with tab6:
+    st.markdown("### ⚙️ 71wm Secure Control Room")
+    if not st.session_state["admin_logged_in"]:
+        st.warning("🔒 هذه الغرفة مقفلة أمنياً ومخصصة لمدير النظام فقط.")
+        admin_pwd = st.text_input("الرمز السري الحالي (PIN):", type="password", key="login_pin_input")
+        if st.button("🔓 فتح الغرفة"):
+            if admin_pwd == st.session_state["admin_password"]:
+                st.session_state["admin_logged_in"] = True
+                st.rerun()
+            else:
+                st.error("❌ الرمز السري غير صحيح، تم رفض الوصول.")
+    else:
+        st.success("✅ تم فتح القفل. أهلاً بك في غرفة التحكم الآمنة.")
+        col_logout, col_empty = st.columns([2, 8])
+        with col_logout:
+            if st.button("🔒 قفل الغرفة (تسجيل الخروج)"):
+                st.session_state["admin_logged_in"] = False
+                st.rerun()
+        st.markdown("---")
+        st.markdown("#### 🔑 تغيير الرمز السري للمشرف")
+        new_pwd_input = st.text_input("أدخل الرمز السري الجديد:", type="password", key="change_pin_field")
+        if st.button("💾 حفظ الرمز السري الجديد"):
+            if new_pwd_input.strip() != "":
+                st.session_state["admin_password"] = new_pwd_input.strip()
+                st.success("✅ تأكيد: تم تغيير الرمز السري بنجاح!")
+            else:
+                st.error("❌ خطأ: لا يمكن إدخال رمز سري فارغ.")
+        st.markdown("---")
+        st.markdown("#### 📧 إعدادات خادم التنبيهات والبريد الإلكتروني")
+        st.session_state["email_enabled"] = st.checkbox("تفعيل نظام الإرسال التلقائي (Email Alerts Active)", value=st.session_state["email_enabled"])
+        st.session_state["email_sender"] = st.text_input("بريد المرسل (Gmail)", value=st.session_state["email_sender"])
+        st.session_state["email_password"] = st.text_input("كلمة مرور التطبيقات السرية (16 حرفاً من جوجل)", type="password", value=st.session_state["email_password"])
+        
+        st.info("💡 **تلميح:** أضف الإيميل واضغط (Enter)، الكود سيقوم بحفظ قائمة المستلمين ولن يمسحها.")
+        
+        new_email = st.text_input("إضافة بريد مستلم جديد:")
+        if st.button("➕ إضافة للقائمة"):
+            if new_email and "@" in new_email:
+                current_list = [e.strip() for e in st.session_state["email_receiver"].split(",") if e.strip()]
+                if new_email.strip() not in current_list:
+                    current_list.append(new_email.strip())
+                    st.session_state["email_receiver"] = ", ".join(current_list)
+                    st.success(f"تم إضافة {new_email} للقائمة.")
+                else:
+                    st.warning("هذا البريد موجود مسبقاً في القائمة.")
+            else:
+                st.error("يرجى إدخال بريد إلكتروني صحيح.")
+                
+        st.text_area("قائمة المستلمين الحالية (يمكنك التعديل اليدوي أو الحذف من هنا):", value=st.session_state["email_receiver"], key="email_receiver")
+        
+        if st.button("🔄 تصفير الذاكرة وإجبار الإرسال الآن"):
+            st.session_state["email_sent_track"] = {}
+            st.success("تم التصفير! سيقوم النظام الآن بإعادة تقييم الطقس ومحاولة الإرسال فوراً...")
+            st.rerun()
+
+        st.markdown("---")
+        st.markdown("#### 📡 سجل عمليات الإرسال الحي (Live Delivery Log)")
+        logs_html = "<div class='log-box'>"
+        if not st.session_state["alert_logs"]: logs_html += ">> النظام في وضع الاستعداد. لم يتم رصد أي عمليات إرسال..."
+        else:
+            for log in st.session_state["alert_logs"]: logs_html += f">> {log}<br>"
+        logs_html += "</div>"
+        st.markdown(logs_html, unsafe_allow_html=True)

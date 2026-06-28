@@ -1,4 +1,3 @@
-```python:71wm AI Weather Model:jm72_app.py
 import os
 import re
 import streamlit as st
@@ -102,6 +101,7 @@ def send_secure_alert_email(subject, html_body):
         receivers_list = [email.strip() for email in st.session_state["email_receiver"].split(",") if email.strip()]
         if not receivers_list: return False, "تنسيق الإيميلات غير صحيح"
 
+        # تنسيق HTML لدعم القالب الاحترافي
         msg = MIMEText(html_body, 'html', 'utf-8')
         msg['Subject'] = Header(subject, 'utf-8')
         msg['From'] = st.session_state["email_sender"]
@@ -251,7 +251,7 @@ if fetch_success and type(live_data) is list:
 df_all = pd.DataFrame(weather_data)
 
 # ==========================================
-# 7. CRITICAL ANTI-SPAM ALERTS LOGIC (SCIENTIFIC THRESHOLDS)
+# 7. CRITICAL ANTI-SPAM ALERTS LOGIC (HTML EMAILS)
 # ==========================================
 current_time_df = df_all[df_all["Time"] == timeline_str[0]]
 max_storm_now = current_time_df["Storm Probability"].max()
@@ -260,6 +260,7 @@ max_fog_now = current_time_df["Fog Probability"].max()
 current_time_stamp = datetime.now().strftime("%H:%M:%S")
 now_dt = datetime.now()
 
+# القالب الاحترافي للإيميل (HTML) المطابق لنموذج المركز الوطني
 def get_html_email_template(title, text, regions, start_dt, end_dt, header_color, text_color):
     start_str = start_dt.strftime("%d/%m/%Y - %H:%M")
     end_str = end_dt.strftime("%d/%m/%Y - %H:%M")
@@ -287,7 +288,7 @@ if st.session_state["email_enabled"]:
     if today_key not in st.session_state["email_sent_track"]:
         st.session_state["email_sent_track"][today_key] = {"storm": False, "drizzle": False, "fog": False}
         
-    # 1. Storm Warning (65%)
+    # 1. Storm Warning (65% Threshold)
     if max_storm_now >= 65 and not st.session_state["email_sent_track"][today_key]["storm"]:
         affected_stations = current_time_df[current_time_df["Storm Probability"] >= 65]["Station"].tolist()
         affected_regions = list(set([get_sector_for_station(st) for st in affected_stations]))
@@ -304,7 +305,7 @@ if st.session_state["email_enabled"]:
             st.session_state["email_sent_track"][today_key]["storm"] = True
             st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (عاصفة): {msg_info}")
             
-    # 2. Drizzle Warning (60%)
+    # 2. Drizzle Warning (60% Threshold)
     if max_drizzle_now >= 60 and not st.session_state["email_sent_track"][today_key]["drizzle"]:
         affected_stations = current_time_df[current_time_df["Drizzle Prob"] >= 60]["Station"].tolist()
         affected_regions = list(set([get_sector_for_station(st) for st in affected_stations]))
@@ -321,7 +322,7 @@ if st.session_state["email_enabled"]:
             st.session_state["email_sent_track"][today_key]["drizzle"] = True
             st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (رذاذ): {msg_info}")
 
-    # 3. Fog Warning (50%)
+    # 3. Fog Warning (50% Threshold)
     if max_fog_now >= 50 and not st.session_state["email_sent_track"][today_key]["fog"]:
         affected_stations = current_time_df[current_time_df["Fog Probability"] >= 50]["Station"].tolist()
         affected_regions = list(set([get_sector_for_station(st) for st in affected_stations]))

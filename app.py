@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from pages import render_home
+import plotly.express as px
 
 st.set_page_config(
     page_title="71wm AI Weather Model",
@@ -29,21 +29,34 @@ with st.sidebar:
     )
 
 if page == "Home":
-    render_home()
-
-elif page == "Forecasts":
-    st.markdown("## Weather Forecasts")
-    st.info("Forecast data coming soon")
-
-elif page == "Analytics":
-    st.markdown("## Analytics Dashboard")
-    st.info("Analytics coming soon")
-
-elif page == "Settings":
-    st.markdown("## System Settings")
-    with st.expander("Email Configuration"):
-        st.text_input("Email")
-        st.text_input("Password", type="password")
-
-html_footer = '<div style="text-align: center; font-size: 12px; color: #64748B; margin-top: 50px;"><hr><p>71wm AI Weather Model v1.0</p></div>'
-st.markdown(html_footer, unsafe_allow_html=True)
+    st.markdown(
+        '<div style="background: linear-gradient(135deg, #0284C7 0%, #082F49 100%); '
+        'padding: 40px; border-radius: 16px; color: white; text-align: center; '
+        'margin-bottom: 30px; box-shadow: 0 8px 32px rgba(2, 132, 199, 0.3);">'
+        '<h2 style="margin: 0; font-size: 36px; font-weight: 900;">71wm AI Weather Model</h2>'
+        '<p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">Real-time Weather Intelligence for UAE</p>'
+        '</div>',
+        unsafe_allow_html=True
+    )
+    
+    st.markdown("<h3 style='color: #082F49; margin-top: 30px;'>System Status</h3>", unsafe_allow_html=True)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown(
+            '<div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); '
+            'padding: 20px; border-radius: 12px; color: white; text-align: center; '
+            'box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">'
+            '<div style="font-size: 28px; font-weight: 900;">OK</div>'
+            '<div style="font-size: 24px; font-weight: 900; margin: 10px 0;">Active</div>'
+            '<div style="font-size: 14px; opacity: 0.9;">System Status</div>'
+            '</div>',
+            unsafe_allow_html=True
+        )
+    
+    with col2:
+        st.markdown(
+            '<div style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); '
+            'padding: 20px; border-radius: 12px; color: white; text-align: center; '
+            'box-shadow: 0 4px 

@@ -31,6 +31,85 @@ if page == "Home":
         st.metric("Stations", "36")
     with col3:
         st.metric("Forecast", "5 Days")
+    with col4:
+        st.metric("Coverage", "UAE")
+    
+    st.markdown("---")
+    
+    # ==========================================
+    # CHART 1: Temperature Trend
+    # ==========================================
+    st.markdown("<h3 style='color: #082F49;'>Temperature Forecast (Next 5 Days)</h3>", unsafe_allow_html=True)
+    
+    dates = pd.date_range(start=datetime.now(), periods=120, freq='H')
+    temps = 35 + np.sin(np.arange(120)/24) * 5 + np.random.normal(0, 1, 120)
+    
+    df_temp = pd.DataFrame({
+        'Time': dates,
+        'Temperature': temps
+    })
+    
+    fig_temp = px.line(
+        df_temp,
+        x='Time',
+        y='Temperature',
+        title='Temperature Trend',
+        labels={'Temperature': 'Temp (C)', 'Time': 'Date/Time'},
+        color_discrete_sequence=['#0284C7']
+    )
+    fig_temp.update_layout(
+        hovermode='x unified',
+        template='plotly_white',
+        height=400
+    )
+    st.plotly_chart(fig_temp, use_container_width=True)
+    
+    # ==========================================
+    # CHART 2: Storm Probability
+    # ==========================================
+    st.markdown("<h3 style='color: #082F49;'>Storm Probability (Next 5 Days)</h3>", unsafe_allow_html=True)
+    
+    storm_prob = 15 + np.sin(np.arange(120)/20) * 20 + np.random.normal(0, 3, 120)
+    storm_prob = np.clip(storm_prob, 0, 100)
+    
+    df_storm = pd.DataFrame({
+        'Time': dates,
+        'Probability': storm_prob
+    })
+    
+    fig_storm = px.area(
+        df_storm,
+        x='Time',
+        y='Probability',
+        title='Storm Risk Level',
+        labels={'Probability': 'Risk (%)', 'Time': 'Date/Time'},
+        color_discrete_sequence=['#EF4444']
+    )
+    fig_storm.update_layout(
+        hovermode='x unified',
+        template='plotly_white',
+        height=400
+    )
+    st.plotly_chart(fig_storm, use_container_width=True)
+    
+    # ==========================================
+    # CHART 3: Humidity Distribution
+    # ==========================================
+    st.markdown("<h3 style='color: #082F49;'>Humidity Levels Across Stations</h3>", unsafe_allow_html=True)
+    
+    stations = ['Abu Dhabi', 'Dubai', 'Sharjah', 'Al Ain', 'Fujairah', 'Ras Al Khaimah']
+    humidity = [65, 72, 68, 55, 78, 75]
+    
+    df_humidity = pd.DataFrame({
+        'Station': stations,
+        'Humidity': humidity
+    })
+    
+    fig_humidity = px.bar(
+        df_humidity,
+        x='Station',
+        y='Humidity',
+
     
 
     

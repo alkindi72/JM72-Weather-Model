@@ -6,3 +6,5 @@ requests
 streamlit-autorefresh
 joblib
 scikit-learn
+folium
+streamlit-folium

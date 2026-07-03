@@ -58,6 +58,7 @@ if page == "Home":
     - Smart Alerts
     """)
 
+
 elif page == "Forecasts":
     st.markdown("## Weather Forecasts")
     st.info("Forecast data coming soon")

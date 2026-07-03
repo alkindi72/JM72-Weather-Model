@@ -50,7 +50,10 @@ st.markdown("""
 # ==========================================
 # 3. CENTERED LOGO (71wm)
 # ==========================================
-svg_code = """
+# ==========================================
+# 3. CENTERED LOGO (71wm) - FIXED VERSION
+# ==========================================
+svg_code = '''
 <svg width="600" height="220" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
     <g transform="translate(240, 10)">
         <polygon points="60,0 112,30 112,90 60,120 8,90 8,30" fill="none" stroke="#E2E8F0" stroke-width="3"/>
@@ -65,10 +68,13 @@ svg_code = """
             <rect x="48" y="0" width="10" height="10" fill="#1E293B" rx="2" transform="rotate(45 5 5)"/>
         </g>
     </g>
-    <text x="300" y="180" font-family="'Arial Black', system-ui, sans-serif" font-weight="900" font-size="34" fill="#082F49" text-anchor="middle" letter-spacing="1">71wm AI</text>
-    <text x="300" y="205" font-family="system-ui, sans-serif" font-weight="800" font-size="14" fill="#64748B" text-anchor="middle" letter-spacing="6">WEATHER MODEL • U.A.E</text>
+    <text x="300" y="180" font-family="Arial Black, system-ui, sans-serif" font-weight="900" font-size="34" fill="#082F49" text-anchor="middle" letter-spacing="1">71wm AI</text>
+    <text x="300" y="205" font-family="system-ui, sans-serif" font-weight="800" font-size="14" fill="#64748B" text-anchor="middle" letter-spacing="6">WEATHER MODEL - U.A.E</text>
 </svg>
-"""
+'''
+b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
+st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 15px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="71wm Logo" /></div>', unsafe_allow_html=True)
+
 b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
 st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 15px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="71wm Logo" /></div>', unsafe_allow_html=True)
 

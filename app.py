@@ -38,12 +38,9 @@ if page == "Home":
     dates = pd.date_range(start=datetime.now(), periods=120, freq='H')
     temps = 35 + np.sin(np.arange(120)/24) * 5 + np.random.normal(0, 1, 120)
     
-    df_temp = pd.DataFrame({
-        'Time': dates,
-        'Temperature': temps
-    })
+    df_temp = pd.DataFrame({'Time': dates, 'Temperature': temps})
     
-    st.markdown("<h3 style='color: #082F49;'>Temperature Forecast</h3>", unsafe_allow_html=True)
+    st.subheader("Temperature Forecast")
     fig_temp = px.line(df_temp, x='Time', y='Temperature', color_discrete_sequence=['#0284C7'])
     fig_temp.update_layout(hovermode='x unified', template='plotly_white', height=400)
     st.plotly_chart(fig_temp, use_container_width=True)
@@ -51,22 +48,22 @@ if page == "Home":
     storm_prob = 15 + np.sin(np.arange(120)/20) * 20 + np.random.normal(0, 3, 120)
     storm_prob = np.clip(storm_prob, 0, 100)
     
-    df_storm = pd.DataFrame({
-        'Time': dates,
-        'Probability': storm_prob
-    })
+    df_storm = pd.DataFrame({'Time': dates, 'Probability': storm_prob})
     
-    st.markdown("<h3 style='color: #082F49;'>Storm Probability</h3>", unsafe_allow_html=True)
+    st.subheader("Storm Probability")
     fig_storm = px.area(df_storm, x='Time', y='Probability', color_discrete_sequence=['#EF4444'])
     fig_storm.update_layout(hovermode='x unified', template='plotly_white', height=400)
     st.plotly_chart(fig_storm, use_container_width=True)
     
     stations = ['Abu Dhabi', 'Dubai', 'Sharjah', 'Al Ain', 'Fujairah', 'Ras Al Khaimah']
     humidity = [65, 72, 68, 55, 78, 75]
+    df_humidity = pd.DataFrame({'Station': stations, 'Humidity': humidity})
     
-    df_humidity = pd.DataFrame({
-        'Station': stations,
-        'Humidity': humidity
-    })
+    st.subheader("Humidity Levels")
+    fig_humidity = px.bar(df_humidity, x='Station', y='Humidity', color_discrete_sequence=['#10B981'])
+    fig_humidity.update_layout(template='plotly_white', height=400)
+    st.plotly_chart(fig_humidity, use_container_width=True)
     
-    st.markdown("<h3 style='color: #
+    st.markdown("---")
+    st.markdown("Features:")
+    st

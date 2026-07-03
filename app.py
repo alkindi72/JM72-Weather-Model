@@ -35,7 +35,7 @@ if page == "Home":
     
     st.markdown("---")
     
-    dates = pd.date_range(start=datetime.now(), periods=120, freq='H')
+    dates = pd.date_range(start=datetime.now(), periods=120, freq='h')
     temps = 35 + np.sin(np.arange(120)/24) * 5 + np.random.normal(0, 1, 120)
     
     df_temp = pd.DataFrame({'Time': dates, 'Temperature': temps})
@@ -61,9 +61,4 @@ if page == "Home":
     
     st.subheader("Humidity Levels")
     fig_humidity = px.bar(df_humidity, x='Station', y='Humidity', color_discrete_sequence=['#10B981'])
-    fig_humidity.update_layout(template='plotly_white', height=400)
-    st.plotly_chart(fig_humidity, use_container_width=True)
-    
-    st.markdown("---")
-    st.markdown("Features:")
-    st
+    fig_humidity.update_layout(template='plotly

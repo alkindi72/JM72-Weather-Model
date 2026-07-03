@@ -357,35 +357,33 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 ])
 
 with tab1:
-    # ==================== AI Header ====================
+    # ==================== Header احترافي ====================
     st.markdown("""
     <div style="
-        background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%);
-        padding: 25px 30px;
+        background: linear-gradient(90deg, #0F172A 0%, #1E40AF 100%);
+        padding: 22px 28px;
         border-radius: 16px;
         margin-bottom: 25px;
-        border: 1px solid #334155;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.4);
+        box-shadow: 0 8px 25px rgba(15, 23, 42, 0.15);
     ">
         <div style="display: flex; align-items: center; justify-content: space-between;">
             <div>
-                <h2 style="color: #F8FAFC; margin: 0; font-size: 26px; font-weight: 900;">
-                    🌩️ AI Storm & Fog Intelligence
+                <h2 style="color: white; margin: 0; font-size: 26px; font-weight: 800;">
+                    🌩️ Storm & Fog Intelligence
                 </h2>
-                <p style="color: #94A3B8; margin: 8px 0 0 0; font-size: 15px;">
-                    Powered by 71wm AI Engine • Real-time Atmospheric Analysis
+                <p style="color: #CBD5E1; margin: 6px 0 0 0; font-size: 15px;">
+                    71wm AI • Real-time Atmospheric Analysis
                 </p>
             </div>
             <div style="
-                background: #1E293B; 
-                padding: 8px 18px; 
-                border-radius: 30px; 
-                border: 1px solid #475569;
+                background: rgba(255,255,255,0.15);
+                padding: 6px 16px;
+                border-radius: 20px;
                 font-size: 13px;
-                color: #10B981;
-                font-weight: 700;
+                color: white;
+                font-weight: 600;
             ">
-                🧠 AI ACTIVE
+                LIVE • Updated every 15 min
             </div>
         </div>
     </div>
@@ -397,14 +395,14 @@ with tab1:
     
     col_a, col_b = st.columns(2)
     with col_a:
-        st.metric(label="أعلى احتمال عواصف الآن", value=f"{int(current_storm)}%", delta="مرتفع" if current_storm >= 50 else "منخفض")
+        st.metric("أعلى احتمال عواصف حالياً", f"{int(current_storm)}%")
     with col_b:
-        st.metric(label="أعلى احتمال ضباب الآن", value=f"{int(current_fog)}%", delta="مرتفع" if current_fog >= 40 else "منخفض")
+        st.metric("أعلى احتمال ضباب حالياً", f"{int(current_fog)}%")
     
     st.markdown("---")
-    
-        # ==================== التوقعات اليومية (محسّنة) ====================
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:20px;">📅 5-Day Storm & Fog Outlook</h4>', unsafe_allow_html=True)
+
+    # ==================== التوقعات اليومية ====================
+    st.markdown('<h4 style="color:#0F172A; font-weight:800; margin-bottom:18px;">📅 5-Day Outlook</h4>', unsafe_allow_html=True)
     
     cols_t1 = st.columns(5)
     for i, date in enumerate(unique_dates_display[:5]):
@@ -412,32 +410,25 @@ with tab1:
         max_storm = int(day_df["Storm Probability"].max())
         max_fog = int(day_df["Fog Probability"].max())
         
-        # تحديد لون الخلفية حسب الخطورة
         if max_storm >= 60 or max_fog >= 60:
-            bg_color = "#FEE2E2"   # أحمر فاتح
-            border_color = "#EF4444"
-            risk_level = "🔴 High"
+            bg = "#FEF2F2"
+            border = "#EF4444"
+            risk = "High Risk"
         elif max_storm >= 30 or max_fog >= 30:
-            bg_color = "#FEF3C7"   # أصفر فاتح
-            border_color = "#F59E0B"
-            risk_level = "🟡 Medium"
+            bg = "#FFFBEB"
+            border = "#F59E0B"
+            risk = "Medium Risk"
         else:
-            bg_color = "#D1FAE5"   # أخضر فاتح
-            border_color = "#10B981"
-            risk_level = "🟢 Low"
+            bg = "#F0FDF4"
+            border = "#10B981"
+            risk = "Low Risk"
         
         cols_t1[i].markdown(f"""
-        <div style="background-color:{bg_color}; 
-                    border: 2px solid {border_color}; 
-                    border-radius: 12px; 
-                    padding: 15px; 
-                    text-align:center;
-                    height: 160px;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-            <div style="font-size:15px; font-weight:900; color:#082F49; margin-bottom:8px;">{date}</div>
-            <div style="font-size:13px; color:#475569; margin-bottom:4px;">{risk_level} Risk</div>
-            <div style="font-size:22px; font-weight:900; color:#EF4444; margin:8px 0;">⛈️ {max_storm}%</div>
-            <div style="font-size:16px; font-weight:700; color:#64748B;">🌫️ {max_fog}%</div>
+        <div style="background:{bg}; border:2px solid {border}; border-radius:14px; padding:16px; text-align:center; height:165px;">
+            <div style="font-size:15px; font-weight:700; color:#0F172A; margin-bottom:6px;">{date}</div>
+            <div style="font-size:13px; color:#475569; margin-bottom:10px;">{risk}</div>
+            <div style="font-size:24px; font-weight:800; color:#DC2626;">⛈️ {max_storm}%</div>
+            <div style="font-size:17px; font-weight:700; color:#475569; margin-top:4px;">🌫️ {max_fog}%</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -448,19 +439,18 @@ with tab1:
     c1, c2 = st.columns(2)
     c1.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Storm Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.75, color_continuous_scale=["rgba(0,0,0,0)", "#A3E635", "#FDE047", "#EF4444", "#7E22CE"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":0,"l":0,"b":0}), use_container_width=True)
     c2.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Fog Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.8, color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#475569"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":0,"l":0,"b":0}), use_container_width=True)
-    
-    # ==================== صورة القمر الصناعي ====================
-    st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery</h3>', unsafe_allow_html=True)
-    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;"><span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">SATELLITE LIVE</span></div></div>""", height=520)
 
-        # ==================== أعلى المحطات عرضة للعواصف ====================
+    # ==================== صورة القمر الصناعي ====================
+    st.markdown('<hr><h3 style="color:#0F172A; font-weight:800;">🛰️ Satellite Cloud Imagery</h3>', unsafe_allow_html=True)
+    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(15, 23, 42, 0.9); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px;"><span style="color: #F8FAFC; font-family: sans-serif; font-size: 13px; font-weight: 700;">71wm SATELLITE</span></div></div>""", height=520)
+
+    # ==================== أعلى المحطات ====================
     st.markdown("---")
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">🔥 Top Stations at Risk (Current Hour)</h4>', unsafe_allow_html=True)
+    st.markdown('<h4 style="color:#0F172A; font-weight:800; margin-bottom:15px;">🔥 Top 8 Stations at Highest Risk</h4>', unsafe_allow_html=True)
     
     current_df = df_all[df_all["Time"] == timeline_str[0]].copy()
     top_storm = current_df.nlargest(8, "Storm Probability")[["Station", "Storm Probability", "Zone", "Temperature"]]
     
-    # إعادة تسمية الأعمدة
     top_storm = top_storm.rename(columns={
         "Station": "المحطة",
         "Storm Probability": "احتمال العاصفة %",
@@ -468,13 +458,7 @@ with tab1:
         "Temperature": "درجة الحرارة °C"
     })
     
-    # عرض الجدول بدون تدرج لوني (لأن matplotlib غير متوفر)
-    st.dataframe(
-        top_storm,
-        use_container_width=True,
-        hide_index=True
-    )
-
+    st.dataframe(top_storm, use_container_width=True, hide_index=True)
 
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)

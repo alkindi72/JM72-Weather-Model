@@ -1,602 +1,945 @@
-import os
-import re
 import streamlit as st
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
-import plotly.express as px
+import joblib
+import folium
+from streamlit_folium import st_folium
 import plotly.graph_objects as go
-import streamlit.components.v1 as components
-from streamlit_autorefresh import st_autorefresh
-import requests
-import base64
-import smtplib
-from email.mime.text import MIMEText
-from email.header import Header
+import plotly.express as px
+import math
+from datetime import datetime
 
-# ==========================================
-# 1. PLATFORM SETTINGS
-# ==========================================
+# ====================================
+# إعداد الصفحة
+# ====================================
 st.set_page_config(
-    page_title="71wm AI Weather Model", 
-    page_icon="🌩️", 
-    layout="wide"
+    page_title="JM72 | UAE Mountain Storm Warning",
+    page_icon="⛈️",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# ==========================================
-# 2. CLEAN & BRIGHT CSS
-# ==========================================
 st.markdown("""
 <style>
-    html, body, [data-testid="stAppViewContainer"], .stApp, #root { background-color: #F8FAFC !important; }
-    .block-container { background-color: #FFFFFF !important; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important; padding: 2rem !important; margin: 1rem auto !important; border: 1px solid #E2E8F0 !important; max-width: 95% !important;}
-    [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; visibility: hidden !important;}
-    .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; }
-    
-    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; }
-    div[data-testid="stTabs"] button { background-color: #FFFFFF !important; border: 1px solid #CBD5E1 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; }
-    div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
-    div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
-    
-    .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); }
-    
-    div[data-testid="stSlider"] { background-color: #F1F5F9 !important; padding: 20px !important; border-radius: 12px !important; margin-bottom: 25px !important; border: 1px solid #E2E8F0 !important; }
-    div[data-testid="stTickBar"] { color: #475569 !important; font-weight: bold !important; }
-    div[data-testid="stSlider"] div[role="slider"] { background-color: #0284C7 !important; border: 2px solid #FFF !important; }
-    
-    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 20px; }
-    .custom-table { width: 100%; border-collapse: collapse; background-color: #ffffff; min-width: 850px; }
-    .custom-table th { background-color: #082F49; color: #ffffff !important; padding: 14px; text-align: center; border-bottom: 3px solid #D4AF37; white-space: nowrap;}
-    .custom-table td { padding: 14px; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; color: #082F49 !important; font-weight: 800; text-align: center; white-space: nowrap;}
-    
-    .log-box { background-color: #1E293B; color: #10B981; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; height: 150px; overflow-y: auto; margin-bottom: 15px;}
+    .main { background-color: #0e1117; }
+    .stApp { background-color: #0e1117; }
+
+    .hero-banner {
+        background: linear-gradient(135deg, #0d1b2a, #1b2838, #0d1b2a);
+        border: 1px solid #e74c3c;
+        border-radius: 15px;
+        padding: 30px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .kpi-card {
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        border-left: 4px solid #e74c3c;
+        margin-bottom: 10px;
+    }
+
+    .risk-extreme {
+        background: linear-gradient(135deg, #2d0a0a, #4a0e0e);
+        border: 2px solid #e74c3c;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        animation: pulse 1.5s infinite;
+    }
+    .risk-high {
+        background: linear-gradient(135deg, #2d1a0a, #4a2e0e);
+        border: 2px solid #e67e22;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+    }
+    .risk-moderate {
+        background: linear-gradient(135deg, #2d2a0a, #4a440e);
+        border: 2px solid #f1c40f;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+    }
+    .risk-low {
+        background: linear-gradient(135deg, #0a1a2d, #0e2a4a);
+        border: 2px solid #3498db;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+    }
+    .risk-minimal {
+        background: linear-gradient(135deg, #0a2d1a, #0e4a2e);
+        border: 2px solid #2ecc71;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+    }
+
+    .section-header {
+        background: linear-gradient(90deg, #e74c3c, #c0392b);
+        border-radius: 8px;
+        padding: 10px 20px;
+        color: white;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    .station-card {
+        background: #1a1a2e;
+        border: 1px solid #e74c3c;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 5px 0;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(231,76,60,0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(231,76,60,0); }
+        100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); }
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: #e74c3c !important;
+        font-size: 1.8rem !important;
+    }
+    div[data-testid="stMetricLabel"] {
+        color: #bdc3c7 !important;
+    }
+
+    .stDataFrame { background-color: #1a1a2e; }
+    .stSelectbox label { color: white !important; }
+    .stSlider label { color: white !important; }
+    .stNumberInput label { color: white !important; }
+
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0d1b2a, #1a1a2e);
+        border-right: 1px solid #e74c3c;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ==========================================
-# 3. CENTERED LOGO (71wm)
-# ==========================================
-svg_code = """
-<svg width="600" height="220" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
-    <g transform="translate(240, 10)">
-        <polygon points="60,0 112,30 112,90 60,120 8,90 8,30" fill="none" stroke="#E2E8F0" stroke-width="3"/>
-        <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#F8FAFC" stroke="#082F49" stroke-width="1.5"/>
-        <circle cx="60" cy="60" r="25" fill="#FDE047" opacity="0.4" />
-        <path d="M 30,35 L 70,35 L 55,65 L 65,65 L 40,95 L 45,70 L 35,70 Z" fill="#D4AF37" />
-        <path d="M 75,35 L 90,35 L 90,95 L 75,95 Z" fill="#0284C7" />
-        <g transform="translate(31, 108)">
-            <rect x="0" y="0" width="10" height="10" fill="#EF4444" rx="2" transform="rotate(45 5 5)"/>
-            <rect x="16" y="0" width="10" height="10" fill="#10B981" rx="2" transform="rotate(45 5 5)"/>
-            <rect x="32" y="0" width="10" height="10" fill="#CBD5E1" rx="2" transform="rotate(45 5 5)"/>
-            <rect x="48" y="0" width="10" height="10" fill="#1E293B" rx="2" transform="rotate(45 5 5)"/>
-        </g>
-    </g>
-    <text x="300" y="180" font-family="'Arial Black', system-ui, sans-serif" font-weight="900" font-size="34" fill="#082F49" text-anchor="middle" letter-spacing="1">71wm AI</text>
-    <text x="300" y="205" font-family="system-ui, sans-serif" font-weight="800" font-size="14" fill="#64748B" text-anchor="middle" letter-spacing="6">WEATHER MODEL • U.A.E</text>
-</svg>
-"""
-b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
-st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 15px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="71wm Logo" /></div>', unsafe_allow_html=True)
+# ====================================
+# تحميل البيانات والنموذج
+# ====================================
+@st.cache_resource
+def load_model():
+    return joblib.load("models/thunderstorm_xgb.pkl")
 
-# ==========================================
-# 4. INITIALIZE LIVE STATES
-# ==========================================
-st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
+@st.cache_data
+def load_data():
+    df   = pd.read_csv("data/features_engineered_v2.csv")
+    meta = pd.read_csv("data/Meta_data34.csv")
+    meta.columns = meta.columns.str.strip()
+    return df, meta
 
-if "admin_password" not in st.session_state: st.session_state["admin_password"] = "Jumah71"
-if "admin_logged_in" not in st.session_state: st.session_state["admin_logged_in"] = False
-if "email_enabled" not in st.session_state: st.session_state["email_enabled"] = False
-if "email_sender" not in st.session_state: st.session_state["email_sender"] = ""
-if "email_receiver" not in st.session_state: st.session_state["email_receiver"] = ""
-if "email_password" not in st.session_state: st.session_state["email_password"] = ""
-if "email_sent_track" not in st.session_state: st.session_state["email_sent_track"] = {}
-if "alert_logs" not in st.session_state: st.session_state["alert_logs"] = []
+try:
+    model = load_model()
+    df_climate, df_meta = load_data()
+    model_loaded = True
+except Exception as e:
+    model_loaded = False
+    st.sidebar.error(f"⚠️ خطأ: {e}")
 
-def send_secure_alert_email(subject, html_body):
-    if not st.session_state["email_enabled"]: 
-        return False, "النظام معطل يدوياً"
-    if not st.session_state["email_sender"] or not st.session_state["email_password"] or not st.session_state["email_receiver"]: 
-        return False, "بيانات المرسل أو المستلم ناقصة"
-    try:
-        receivers_list = [email.strip() for email in st.session_state["email_receiver"].split(",") if email.strip()]
-        if not receivers_list: return False, "تنسيق الإيميلات غير صحيح"
-
-        msg = MIMEText(html_body, 'html', 'utf-8')
-        msg['Subject'] = Header(subject, 'utf-8')
-        msg['From'] = st.session_state["email_sender"]
-        msg['To'] = ", ".join(receivers_list)
-        
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(st.session_state["email_sender"], st.session_state["email_password"])
-        server.sendmail(st.session_state["email_sender"], receivers_list, msg.as_string())
-        server.quit()
-        return True, f"تم بنجاح لـ {len(receivers_list)} مستلم(ين)"
-    except Exception as e:
-        return False, f"خطأ الخادم: {str(e)}"
-
-# ==========================================
-# 5. TIMELINE & STATIONS MATRIX
-# ==========================================
-days_en = {"Monday": "Mon", "Tuesday": "Tue", "Wednesday": "Wed", "Thursday": "Thu", "Friday": "Fri", "Saturday": "Sat", "Sunday": "Sun"}
-uae_time = datetime.utcnow() + timedelta(hours=4)
-base_date = uae_time.replace(minute=0, second=0, microsecond=0)
-timeline = [base_date + timedelta(hours=i*3) for i in range(8 * 5)]
-timeline_str = [f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')} - {dt.strftime('%H:%M')}" for dt in timeline]
-unique_dates_display = []
-for dt in timeline:
-    d_str = f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')}"
-    if d_str not in unique_dates_display: unique_dates_display.append(d_str)
-
-stations_matrix = {
-    "Abu Dhabi": {"lat": 24.4760, "lon": 54.3290, "type": "Coast"}, "ADNOC HQ": {"lat": 24.4621, "lon": 54.3241, "type": "Coast"},
-    "Burj Khalifah": {"lat": 25.2017, "lon": 55.2766, "type": "Coast"}, "Sharjah University": {"lat": 25.2869, "lon": 55.4622, "type": "Coast"},
-    "Ajman": {"lat": 25.4236, "lon": 55.4447, "type": "Coast"}, "Umm Al Quwain": {"lat": 25.5301, "lon": 55.6548, "type": "Coast"},
-    "Ras Al khaimah": {"lat": 25.7716, "lon": 55.9392, "type": "Coast"}, "Fujairah Port": {"lat": 25.1699, "lon": 56.3595, "type": "Coast"},
-    "Kalba": {"lat": 25.0430, "lon": 56.3640, "type": "Coast"}, "Khor Fakkan Port": {"lat": 25.3578, "lon": 56.3618, "type": "Coast"},
-    "AlRuwais": {"lat": 24.0915, "lon": 52.6242, "type": "Coast"}, "Sir Bani Yas": {"lat": 24.3188, "lon": 52.5990, "type": "Coast"},
-    "Dalma": {"lat": 24.4906, "lon": 52.2914, "type": "Coast"}, "Sir Bu Nair": {"lat": 25.2201, "lon": 54.2341, "type": "Coast"},
-    "Abu Al Abyad": {"lat": 24.1841, "lon": 53.8626, "type": "Coast"}, "Jabal Jais": {"lat": 25.9508, "lon": 56.1674, "type": "Mountains"},
-    "Jabal Al Rahba": {"lat": 25.9264, "lon": 56.1192, "type": "Mountains"}, "Hatta": {"lat": 24.8121, "lon": 56.1396, "type": "Mountains"},
-    "Al Tawiyen": {"lat": 25.5527, "lon": 56.0715, "type": "Mountains"}, "Al Heben": {"lat": 25.1251, "lon": 56.1578, "type": "Mountains"},
-    "AlQor": {"lat": 24.9065, "lon": 56.1529, "type": "Mountains"}, "Al Aamerah": {"lat": 24.2356, "lon": 55.5396, "type": "Inland"},
-    "Al Wathbah": {"lat": 24.1789, "lon": 54.7033, "type": "Inland"}, "Al Dhaid": {"lat": 25.2371, "lon": 55.8179, "type": "Inland"},
-    "Al Malaiha": {"lat": 25.1322, "lon": 55.8891, "type": "Inland"}, "Madinat Zayed": {"lat": 23.6836, "lon": 53.6995, "type": "Desert"},
-    "Mukhariz": {"lat": 22.9095, "lon": 52.8882, "type": "Desert"}, "Owtaid": {"lat": 23.3955, "lon": 53.1119, "type": "Desert"},
-    "Zayed Int'l Airport": {"lat": 24.4330, "lon": 54.6511, "type": "Inland"}, "Dubai Int'l Airport": {"lat": 25.2528, "lon": 55.3644, "type": "Inland"},
-    "Sharjah Int'l Airport": {"lat": 25.3286, "lon": 55.5172, "type": "Inland"}, "Ras Al Khaimah Int'l Airport": {"lat": 25.6135, "lon": 55.9388, "type": "Inland"},
-    "Fujairah Int'l Airport": {"lat": 25.1122, "lon": 56.3240, "type": "Inland"}, "Al Ain Int'l Airport": {"lat": 24.2617, "lon": 55.6092, "type": "Inland"},
-    "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"}, "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"}
-}
-
-SECTOR_MAP = {
-    "المنطقة الشرقية": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"],
-    "المنطقة الوسطى": ["Al Dhaid", "Al Malaiha"],
-    "أبوظبي ومنطقة الظفرة": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
-    "منطقة العين": ["Al Ain Int'l Airport", "Al Aamerah"],
-    "دبي والإمارات الشمالية": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"]
-}
-
-def get_sector_for_station(station_name):
-    for sector, stations in SECTOR_MAP.items():
-        if station_name in stations: return sector
-    return "مناطق متفرقة"
-
-@st.cache_data(ttl=3600)
-def fetch_stable_live_data(stations_dict):
-    try:
-        lats = ",".join([str(s["lat"]) for s in stations_dict.values()]); lons = ",".join([str(s["lon"]) for s in stations_dict.values()])
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&current=precipitation,weather_code&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low&models=gfs_seamless&timezone=auto"
-        response = requests.get(url, timeout=15)
-        response.raise_for_status()
-        return True, response.json()
-    except Exception as e: return False, str(e)
-
-with st.spinner("🤖 71wm AI Engine: Compiling live metrics..."):
-    fetch_success, live_data = fetch_stable_live_data(stations_matrix)
-
-# ==========================================
-# 6. AI DYNAMICS ENGINE
-# ==========================================
-weather_data = []
-
-if fetch_success and type(live_data) is list:
-    for idx, (name, coords) in enumerate(stations_matrix.items()):
-        zone_mapped = "Inland" if coords["type"] in ["Inland", "Desert"] else coords["type"]
-        try:
-            current_precip = live_data[idx].get("current", {}).get("precipitation", 0.0)
-            dbz = round(10 * np.log10(200 * (current_precip ** 1.6)), 1) if current_precip > 0.1 else 0.0
-            radar_verif = "🚨 Extreme" if dbz >= 45 else ("✅ Active Storm" if dbz >= 25 else ("⚠️ Light Rain" if dbz > 0 else "⏳ Clear"))
-
-            station_data = live_data[idx]["hourly"]
-            api_times = [datetime.fromisoformat(t).replace(tzinfo=None) for t in station_data["time"]]
-            for dt_str, dt in zip(timeline_str, timeline):
-                try:
-                    closest_idx = [abs((api_t - dt).total_seconds()) for api_t in api_times].index(min([abs((api_t - dt).total_seconds()) for api_t in api_times]))
-                    
-                    temp_c = station_data["temperature_2m"][closest_idx] or 35.0
-                    app_temp = station_data.get("apparent_temperature", [temp_c]*len(api_times))[closest_idx] or temp_c
-                    surface_rh = station_data.get("relative_humidity_2m", [50]*len(api_times))[closest_idx] or 50
-                    cloud_low = station_data.get("cloudcover_low", [0]*len(api_times))[closest_idx] or 0
-                    wind_dir = station_data.get("winddirection_10m", [0]*len(api_times))[closest_idx] or 0
-                    wind_spd = station_data.get("windspeed_10m", [0]*len(api_times))[closest_idx] or 0
-                    cape_val = station_data["cape"][closest_idx] or 0
-                    rh_850 = station_data.get("relative_humidity_850hPa", [50]*len(api_times))[closest_idx] or 50
-                    rh_700 = station_data.get("relative_humidity_700hPa", [50]*len(api_times))[closest_idx] or 50
-                    rh_500 = station_data.get("relative_humidity_500hPa", [50]*len(api_times))[closest_idx] or 50
-                    t_850 = station_data.get("temperature_850hPa", [20]*len(api_times))[closest_idx] or 20
-                    t_500 = station_data.get("temperature_500hPa", [-10]*len(api_times))[closest_idx] or -10
-                    
-                    # Storm AI
-                    prob = (cape_val / 2000.0) * 100 
-                    moisture_index = (rh_850 * 0.4) + (rh_700 * 0.4) + (rh_500 * 0.2)
-                    lapse_rate = t_850 - t_500
-                    if lapse_rate > 26: prob *= 1.3
-                    elif lapse_rate < 20: prob *= 0.5
-                    if moisture_index < 40: prob *= 0.1
-                    elif moisture_index > 70: prob *= 1.2
-                    if coords["type"] == "Mountains" and temp_c > 38: prob *= 1.3
-                    if dt.hour < 12 or dt.hour > 19: prob *= 0.1 # فلتر الإخماد الليلي للعواصف
-                    storm_prob = np.clip(prob, 0, 100)
-                    
-                    # Fog AI
-                    fog_prob = 0
-                    if (dt.hour < 8 or dt.hour > 22) and surface_rh > 80 and wind_spd < 15:
-                        fog_prob = np.clip(((surface_rh - 80) * 4) + ((15 - wind_spd) * 3), 0, 100)
-                    
-                    # Al-Kous AI
-                    alkous_prob = 0
-                    if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and surface_rh >= 65:
-                        alkous_base = ((surface_rh - 65) * 2) + (cloud_low * 0.5)
-                        if temp_c >= 35: alkous_base *= 1.2
-                        alkous_prob = np.clip(alkous_base, 0, 100)
-                    
-                    # Drizzle AI
-                    drizzle_prob = 0
-                    if coords["lon"] >= 55.8 and (3 <= dt.hour <= 9) and 45 <= wind_dir <= 160 and surface_rh >= 85 and cloud_low >= 75:
-                        drizzle_prob = np.clip(((surface_rh - 85) * 4) + ((cloud_low - 75) * 2) + (wind_spd * 0.8), 0, 100)
-
-                except Exception: temp_c, app_temp, storm_prob, fog_prob, alkous_prob, drizzle_prob = 36.0, 36.0, 0.0, 0.0, 0.0, 0.0
-
-                weather_data.append({
-                    "Time": dt_str, "DateOnly": f"{days_en[dt.strftime('%A')]} {dt.strftime('%d')}", 
-                    "Station": name, "Zone": zone_mapped, "Latitude": coords["lat"], "Longitude": coords["lon"],
-                    "Storm Probability": round(storm_prob), "Fog Probability": round(fog_prob), 
-                    "AlKous Prob": round(alkous_prob), "Drizzle Prob": round(drizzle_prob),
-                    "Temperature": round(temp_c, 1), "Apparent Temp": round(app_temp, 1), "Humidity": round(surface_rh),
-                })
-        except Exception: pass
-
-df_all = pd.DataFrame(weather_data)
-
-# ==========================================
-# 7. CRITICAL ANTI-SPAM ALERTS LOGIC (HTML EMAILS)
-# ==========================================
-current_time_df = df_all[df_all["Time"] == timeline_str[0]]
-max_storm_now = current_time_df["Storm Probability"].max()
-max_drizzle_now = current_time_df["Drizzle Prob"].max()
-max_fog_now = current_time_df["Fog Probability"].max()
-current_time_stamp = datetime.now().strftime("%H:%M:%S")
-now_dt = datetime.now()
-
-def get_html_email_template(title, text, regions, start_dt, end_dt, header_color, text_color):
-    start_str = start_dt.strftime("%d/%m/%Y - %H:%M")
-    end_str = end_dt.strftime("%d/%m/%Y - %H:%M")
-    return f"""
-    <div dir="rtl" style="font-family: Arial, sans-serif; border: 1px solid #E2E8F0; max-width: 600px; margin: 0 auto; border-radius: 8px; overflow: hidden; background-color: #FFFFFF;">
-        <div style="background-color: {header_color}; padding: 15px; text-align: center; border-bottom: 2px solid rgba(0,0,0,0.1);">
-            <h2 style="margin: 0; color: #000; font-size: 22px;">{title}</h2>
-        </div>
-        <div style="padding: 20px;">
-            <p style="font-size: 18px; font-weight: bold; color: #1E293B; line-height: 1.6; text-align: center;">{text}</p>
-            <div style="background-color: #F8FAFC; border-radius: 6px; padding: 15px; margin-top: 20px; border: 1px solid #E2E8F0;">
-                <p style="margin: 0 0 10px 0; font-size: 16px; color: #082F49;"><b>المناطق المتأثرة:</b> {regions}</p>
-                <hr style="border: 0; border-top: 1px solid #CBD5E1; margin: 10px 0;">
-                <div style="display: flex; justify-content: space-between;">
-                    <p style="margin: 0 0 10px 0; font-size: 16px; color: #334155;"><b>بداية التحذير:</b><br>{start_str}</p>
-                    <p style="margin: 0; font-size: 16px; color: #334155;"><b>نهاية التحذير:</b><br>{end_str}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    """
-
-if st.session_state["email_enabled"]:
-    today_key = unique_dates_display[0]
-    if today_key not in st.session_state["email_sent_track"]:
-        st.session_state["email_sent_track"][today_key] = {"storm": False, "drizzle": False, "fog": False}
-        
-    # 1. Storm Warning (65%)
-    if max_storm_now >= 65 and not st.session_state["email_sent_track"][today_key]["storm"]:
-        affected_stations = current_time_df[current_time_df["Storm Probability"] >= 65]["Station"].tolist()
-        affected_regions = list(set([get_sector_for_station(st) for st in affected_stations]))
-        regions_str = "، ".join(affected_regions)
-        
-        sub = "71 weather model: Storm Warning"
-        html_body = get_html_email_template(
-            "⛈️ أمطار رعدية ، ☁️ سحب ركامية",
-            "فرصة تكون سحب ركامية يصاحبها أمطار ورياح نشطة إلى قوية السرعة مع السحب مثيرة للغبار.",
-            regions_str, now_dt, now_dt + timedelta(hours=5), "#FDE047", "#1E293B"
-        )
-        success, msg_info = send_secure_alert_email(sub, html_body)
-        if success:
-            st.session_state["email_sent_track"][today_key]["storm"] = True
-            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (عاصفة): {msg_info}")
-            
-    # 2. Drizzle Warning (60%)
-    if max_drizzle_now >= 60 and not st.session_state["email_sent_track"][today_key]["drizzle"]:
-        affected_stations = current_time_df[current_time_df["Drizzle Prob"] >= 60]["Station"].tolist()
-        affected_regions = list(set([get_sector_for_station(st) for st in affected_stations]))
-        regions_str = "، ".join(affected_regions)
-        
-        sub = "71 weather model: Al Kouse warning"
-        html_body = get_html_email_template(
-            "🌧️ رذاذ وسحب الكوس ، ☁️ سحب منخفضة",
-            "فرصة تكون سحب الكوس المنخفضة وتدفقها نحو السواحل والجبال الشرقية، قد يصاحبها تساقط الرذاذ المستمر وانخفاض في مدى الرؤية الأفقية.",
-            regions_str, now_dt, now_dt.replace(hour=10, minute=0), "#E0F2FE", "#0369A1"
-        )
-        success, msg_info = send_secure_alert_email(sub, html_body)
-        if success:
-            st.session_state["email_sent_track"][today_key]["drizzle"] = True
-            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (رذاذ): {msg_info}")
-
-    # 3. Fog Warning (50%)
-    if max_fog_now >= 50 and not st.session_state["email_sent_track"][today_key]["fog"]:
-        affected_stations = current_time_df[current_time_df["Fog Probability"] >= 50]["Station"].tolist()
-        affected_regions = list(set([get_sector_for_station(st) for st in affected_stations]))
-        regions_str = "، ".join(affected_regions)
-        
-        sub = "71 weather model: Fog & low Visibility"
-        html_body = get_html_email_template(
-            "🌫️ ضباب ، 📉 تدني الرؤية الأفقية",
-            "فرصة تشكل ضباب أو ضباب خفيف وانخفاض مدى الرؤية الأفقية على بعض المناطق الداخلية والساحلية.",
-            regions_str, now_dt, now_dt.replace(hour=9, minute=30) if now_dt.hour < 9 else now_dt + timedelta(hours=4), "#E2E8F0", "#334155"
-        )
-        success, msg_info = send_secure_alert_email(sub, html_body)
-        if success:
-            st.session_state["email_sent_track"][today_key]["fog"] = True
-            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (ضباب): {msg_info}")
-
-# ==========================================
-# 8. AI GENERATIVE BRIEFING
-# ==========================================
-ai_briefing = f"🤖 **71wm AI Broadcaster:** "
-if current_time_df["Fog Probability"].max() >= 50: ai_briefing += f"🌫️ **🚨 Dense Fog Warning:** High risk of radiation fog affecting visibility. "
-elif max_drizzle_now >= 60: ai_briefing += f"🌧️ **🚨 Al-Kous Drizzle Warning:** High risk ({max_drizzle_now}%) of morning drizzle forming over the eastern ridges. "
-elif max_storm_now >= 65: ai_briefing += f"🌩️ Convective activity shows a {max_storm_now}% risk of isolated storms. "
-elif current_time_df["AlKous Prob"].max() > 50: ai_briefing += f"⚠️ High probability ({current_time_df['AlKous Prob'].max()}%) of dense Al-Kous low clouds. "
-else: ai_briefing += "Atmospheric columns remain thermodynamically stable with no localized anomalies detected."
-
-st.markdown(f'<div class="ai-broadcaster">{ai_briefing}</div>', unsafe_allow_html=True)
-
-# ==========================================
-# 9. TABS INTERFACE
-# ==========================================
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "🌩️ Storms & Fog", "🔥 Heat & Anomalies", "☁️ Al-Kous & Drizzle", "📋 Model Matrix", "🤖 71wm AI Assistant", "⚙️ Control Room"
-])
-
-with tab1:
+# ====================================
+# Sidebar
+# ====================================
+with st.sidebar:
     st.markdown("""
-    <div style="
-        background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
-        padding: 25px 30px;
-        border-radius: 16px;
-        margin-bottom: 30px;
-        box-shadow: 0 8px 30px rgba(59, 130, 246, 0.25);
-        position: relative;
-        overflow: hidden;
-    ">
-        <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; 
-                    background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
-        <div style="position: absolute; bottom: -60px; left: -60px; width: 180px; height: 180px; 
-                    background: rgba(255,255,255,0.05); border-radius: 50%;"></div>
-        <div style="position: relative; z-index: 2;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <h2 style="color: white; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">
-                        🌩️ Storms & Fog Intelligence
-                    </h2>
-                    <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0 0; font-size: 15px;">
-                        Advanced AI-powered weather analysis for UAE
-                    </p>
-                </div>
-                <div style="
-                    background: rgba(255,255,255,0.2);
-                    backdrop-filter: blur(10px);
-                    padding: 8px 20px;
-                    border-radius: 24px;
-                    font-size: 13px;
-                    color: white;
-                    font-weight: 600;
-                    border: 1px solid rgba(255,255,255,0.3);
-                ">
-                    🚀 AI Model Active
-                </div>
-            </div>
-        </div>
+    <div style='text-align:center; padding:15px;'>
+        <div style='font-size:50px'>⛈️</div>
+        <h2 style='color:#e74c3c; margin:5px 0'>JM72</h2>
+        <p style='color:#bdc3c7; font-size:12px'>نظام الإنذار المبكر للعواصف الجبلية</p>
+        <hr style='border-color:#e74c3c'>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<h3 style="color:#1E293B; font-weight:700; margin-bottom:20px;">📊 Live Weather Metrics</h3>', unsafe_allow_html=True)
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    current_storm = df_all[df_all["Time"] == timeline_str[0]]["Storm Probability"].max()
-    current_fog = df_all[df_all["Time"] == timeline_str[0]]["Fog Probability"].max()
-    avg_temp = df_all[df_all["Time"] == timeline_str[0]]["Temperature"].mean()
-    active_stations = df_all[df_all["Time"] == timeline_str[0]]["Station"].nunique()
-
-    with col1:
-        st.markdown(f"""
-        <div style="background: white; border-radius: 12px; padding: 20px; 
-                    border-left: 5px solid #EF4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);">
-            <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">Storm Risk</div>
-            <div style="font-size: 32px; font-weight: 800; color: #EF4444;">{int(current_storm)}%</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col2:
-        st.markdown(f"""
-        <div style="background: white; border-radius: 12px; padding: 20px; 
-                    border-left: 5px solid #3B82F6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);">
-            <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">Fog Risk</div>
-            <div style="font-size: 32px; font-weight: 800; color: #3B82F6;">{int(current_fog)}%</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col3:
-        st.markdown(f"""
-        <div style="background: white; border-radius: 12px; padding: 20px; 
-                    border-left: 5px solid #F59E0B; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);">
-            <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">Avg Temperature</div>
-            <div style="font-size: 32px; font-weight: 800; color: #F59E0B;">{round(avg_temp, 1)}°C</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col4:
-        st.markdown(f"""
-        <div style="background: white; border-radius: 12px; padding: 20px; 
-                    border-left: 5px solid #10B981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);">
-            <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">Active Stations</div>
-            <div style="font-size: 32px; font-weight: 800; color: #10B981;">{active_stations}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    selected_time_t1 = st.select_slider(
-        "Forecast Timeline",
-        options=timeline_str,
-        key="t1_slider",
-        label_visibility="collapsed"
+    page = st.radio(
+        "📋 التنقل:",
+        ["🏠 الرئيسية",
+         "🔮 التنبؤ الفوري",
+         "📊 التحليل الشهري",
+         "🌊 تحليل ENSO",
+         "🗺️ خريطة المحطات",
+         "📈 إحصائيات المشروع"]
     )
 
-    df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()
+    st.markdown("""
+    <hr style='border-color:#333'>
+    <div style='color:#bdc3c7; font-size:13px'>
+        <b style='color:#e74c3c'>🏔️ المحطات الجبلية (Zone 8):</b><br><br>
+        ⛰️ جبل جيس - 1,934م<br>
+        ⛰️ جبل مبرح<br>
+        ⛰️ جبل ينس<br>
+        ⛰️ جبل الرحبة<br>
+        ⛰️ جبل الحبن<br>
+        ⛰️ جبل حفيت - 1,249م<br>
+    </div>
+    <hr style='border-color:#333'>
+    <div style='color:#666; font-size:11px; text-align:center'>
+        📡 البيانات: 2003-2025<br>
+        🤖 XGBoost | دقة 83.8%
+    </div>
+    """, unsafe_allow_html=True)
 
-    col_map1, col_map2 = st.columns(2)
+# ====================================
+# 🏠 الرئيسية
+# ====================================
+if page == "🏠 الرئيسية":
 
-    with col_map1:
-        st.markdown('<h4 style="color:#082F49; font-weight:900;">🌩️ Storm Probability</h4>', unsafe_allow_html=True)
-        fig1 = px.density_mapbox(
-            df_time_t1, lat="Latitude", lon="Longitude", z="Storm Probability",
-            radius=45, center=dict(lat=24.5, lon=54.5), zoom=6.5,
-            mapbox_style="white-bg", opacity=0.85,
-            color_continuous_scale=["rgba(0,0,0,0)", "#FEF9C3", "#FDE047", "#F97316", "#EF4444", "#7F1D1D"],
-            range_color=[0, 100], title="AI Storm Convective Index (%)"
-        )
-        fig1.update_layout(
-            mapbox_layers=[{"below": "traces", "sourcetype": "raster",
-                "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}],
-            margin={"r": 0, "t": 40, "l": 0, "b": 0}
-        )
-        st.plotly_chart(fig1, use_container_width=True, key="storm_map")
+    st.markdown("""
+    <div class='hero-banner'>
+        <h1 style='color:#e74c3c; font-size:2.5rem; margin:0'>⛈️ JM72</h1>
+        <h3 style='color:white; margin:10px 0'>نظام الإنذار المبكر للعواصف الجبلية</h3>
+        <p style='color:#bdc3c7'>تحليل وتنبؤ العواصف الرعدية في جبال الحجر - الإمارات العربية المتحدة</p>
+        <p style='color:#e74c3c; font-size:13px'>📡 يغطي 146 محطة رصد جوي | الفترة 2003-2025</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    with col_map2:
-        st.markdown('<h4 style="color:#082F49; font-weight:900;">🌫️ Fog Probability</h4>', unsafe_allow_html=True)
-        fig2 = px.density_mapbox(
-            df_time_t1, lat="Latitude", lon="Longitude", z="Fog Probability",
-            radius=45, center=dict(lat=24.5, lon=54.5), zoom=6.5,
-            mapbox_style="white-bg", opacity=0.85,
-            color_continuous_scale=["rgba(0,0,0,0)", "#F1F5F9", "#CBD5E1", "#94A3B8", "#475569", "#1E293B"],
-            range_color=[0, 100], title="AI Fog Radiation Index (%)"
-        )
-        fig2.update_layout(
-            mapbox_layers=[{"below": "traces", "sourcetype": "raster",
-                "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}],
-            margin={"r": 0, "t": 40, "l": 0, "b": 0}
-        )
-        st.plotly_chart(fig2, use_container_width=True, key="fog_map")
-with tab2:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)
-    cols_t2 = st.columns(5)
-    for i, date in enumerate(unique_dates_display[:5]):
-        day_df = df_all[df_all["DateOnly"] == date]
-        c_mx, c_mn = round(day_df[day_df["Zone"] == "Coast"]["Temperature"].max(), 1), round(day_df[day_df["Zone"] == "Coast"]["Temperature"].min(), 1)
-        m_mx, m_mn = round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].max(), 1), round(day_df[day_df["Zone"] == "Mountains"]["Temperature"].min(), 1)
-        i_mx, i_mn = round(day_df[day_df["Zone"] == "Inland"]["Temperature"].max(), 1), round(day_df[day_df["Zone"] == "Inland"]["Temperature"].min(), 1)
-        cols_t2[i].markdown(f"<div style='background-color:#F0FDF4; border: 1px solid #CBD5E1; border-radius: 8px; padding: 15px;'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px; text-align:center;'>📅 {date}</div><div style='display: flex; justify-content: space-between; font-size:14px;'><span>🌊 Coast:</span><b>⬇ {c_mn}° - ⬆ {c_mx}°</b></div><div style='display: flex; justify-content: space-between; font-size:14px;'><span>⛰️ Mount:</span><b>⬇ {m_mn}° - ⬆ {m_mx}°</b></div><div style='display: flex; justify-content: space-between; font-size:14px;'><span>🏜️ Inland:</span><b>⬇ {i_mn}° - ⬆ {i_mx}°</b></div></div>", unsafe_allow_html=True)
+    # KPIs
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1: st.metric("📡 المحطات", "146", "إجمالي")
+    with c2: st.metric("🏔️ جبلية", "6", "Zone 8")
+    with c3: st.metric("🤖 الدقة", "83.8%", "XGBoost")
+    with c4: st.metric("⛈️ عواصف", "51 يوم", "≥30mm")
+    with c5: st.metric("🌧️ أعلى هطول", "287.6mm", "مارس 2016")
 
-with tab3:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">☁️ Al-Kous Stratus & Orographic Drizzle Radar Tracker</h4>', unsafe_allow_html=True)
-    cols_t3 = st.columns(5)
-    for i, date in enumerate(unique_dates_display[:5]):
-        day_df = df_all[df_all["DateOnly"] == date]
-        mx_k, mx_dr = int(day_df["AlKous Prob"].max()), int(day_df["Drizzle Prob"].max())
-        bg = "#FEF2F2" if mx_dr > 40 else "#F8FAFC"
-        cols_t3[i].markdown(f"<div style='background-color:{bg}; border: 1px solid #CBD5E1; border-radius: 8px; padding: 15px; text-align:center;'><div style='color:#082F49; font-size:14px; font-weight:900;'>📅 {date}</div><div style='color:#1E293B; font-weight:bold; margin-top:5px;'>☁️ الكوس: {mx_k}%</div><div style='color:#0284C7; font-weight:900;'>🌧️ الرذاذ: {mx_dr}%</div></div>", unsafe_allow_html=True)
-    selected_time_t3 = st.select_slider("Forecast Timeline", options=timeline_str, key="t3_slider", label_visibility="collapsed")
-    df_time_t3 = df_all[df_all["Time"] == selected_time_t3].copy()
-    east_stations = df_time_t3[df_time_t3["Longitude"] >= 55.8].copy()
-    fig3 = px.density_mapbox(east_stations, lat="Latitude", lon="Longitude", z="Drizzle Prob", radius=45, center=dict(lat=25.2, lon=56.2), zoom=7.5, mapbox_style="white-bg", opacity=0.85, color_continuous_scale=["rgba(0,0,0,0)", "#BAE6FD", "#38BDF8", "#0284C7", "#0369A1"], range_color=[0, 100], title="AI Orographic Drizzle Condensation Index (%)")
-    fig3.update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":40,"l":0,"b":0})
-    st.plotly_chart(fig3, use_container_width=True, key="kous_drizzle_map")
+    st.markdown("---")
 
-with tab4:
-    selected_time_t4 = st.select_slider("Forecast Timeline", options=timeline_str, key="t4_slider", label_visibility="collapsed")
-    df_time_t4 = df_all[df_all["Time"] == selected_time_t4].copy()
-    st.markdown(f"<h3 style='color:#082F49; font-weight:900;'>📊 Full 36-Station Atmospheric Matrix</h3>", unsafe_allow_html=True)
-    display_df = df_time_t4.sort_values(by="Temperature", ascending=False)
-    html_table = "<div class='table-responsive'><table class='custom-table'><tr><th>Station</th><th>Actual Temp</th><th>Feels Like</th><th>RH (%)</th><th>Al-Kous (%)</th><th>Morning Drizzle (%)</th><th>Convective Storm (%)</th></tr>"
-    for _, row in display_df.iterrows():
-        s_color = "#EF4444" if row['Storm Probability'] >= 75 else "#082F49"
-        dr_color = "#0284C7" if row['Drizzle Prob'] >= 40 else "#082F49"
-        html_table += f"<tr><td>{row['Station']}</td><td>{row['Temperature']}°C</td><td>{row['Apparent Temp']}°C</td><td>{row['Humidity']}%</td><td>{row['AlKous Prob']}%</td><td style='color:{dr_color}; font-weight:bold;'>{row['Drizzle Prob']}%</td><td style='color:{s_color};'>{row['Storm Probability']}%</td></tr>"
-    st.markdown(html_table + "</table></div>", unsafe_allow_html=True)
+    if model_loaded:
+        col1, col2 = st.columns(2)
 
-with tab5:
-    st.markdown('<h4 style="color:#082F49; font-weight:900;">🤖 71wm AI Data Assistant</h4>', unsafe_allow_html=True)
-    prompt = st.chat_input("Ask about parameters...")
-    if prompt:
-        st.chat_message("user").write(prompt)
-        p_l = prompt.lower()
-        curr = df_all[df_all["Time"] == timeline_str[0]]
-        if "drizzle" in p_l or "رذاذ" in p_l:
-            dr_stations = curr[curr["Drizzle Prob"] > 30]
-            res = f"🌧️ Drizzle mapped at: {', '.join(dr_stations['Station'].tolist())}." if not dr_stations.empty else "No microclimatic drizzle mapped."
-        else: res = "I am ready. Ask me to extract parameters from the 36 channels."
-        st.chat_message("assistant").write(res)
+        with col1:
+            st.markdown("### 📊 توزيع مستوى الخطر")
+            risk_counts = df_climate["mtn_thunderstorm_risk"].value_counts()
+            risk_order  = ["EXTREME","HIGH","MODERATE","LOW","MINIMAL"]
+            colors      = ["#e74c3c","#e67e22","#f1c40f","#3498db","#2ecc71"]
 
-with tab6:
-    st.markdown("### ⚙️ 71wm Secure Control Room")
-    if not st.session_state["admin_logged_in"]:
-        st.warning("🔒 هذه الغرفة مقفلة أمنياً ومخصصة لمدير النظام فقط.")
-        admin_pwd = st.text_input("الرمز السري الحالي (PIN):", type="password", key="login_pin_input")
-        if st.button("🔓 فتح الغرفة"):
-            if admin_pwd == st.session_state["admin_password"]:
-                st.session_state["admin_logged_in"] = True
-                st.rerun()
+            fig = go.Figure(go.Pie(
+                labels=[r for r in risk_order if r in risk_counts.index],
+                values=[risk_counts.get(r,0) for r in risk_order if r in risk_counts.index],
+                marker_colors=colors,
+                hole=0.45,
+                textinfo="label+percent",
+                textfont_size=12
+            ))
+            fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                font_color="white",
+                height=380,
+                legend=dict(font=dict(color="white"))
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        with col2:
+            st.markdown("### 🌧️ الأمطار الشهرية في جبال الحجر")
+            monthly = df_climate.groupby("month_num")["highest_rainfall"].mean()
+            months  = ["يناير","فبراير","مارس","أبريل","مايو","يونيو",
+                       "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"]
+            vals    = [monthly.get(m, 0) for m in range(1, 13)]
+
+            fig = go.Figure(go.Bar(
+                x=months, y=vals,
+                marker_color=["#e74c3c" if v > 40 else "#3498db" for v in vals],
+                text=[f"{v:.1f}" for v in vals],
+                textposition="outside",
+                textfont=dict(color="white", size=10)
+            ))
+            fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color="white", height=380,
+                yaxis=dict(title="متوسط الأمطار (mm)", gridcolor="#333"),
+                xaxis=dict(gridcolor="#333")
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        # الصف الثاني
+        col3, col4 = st.columns(2)
+
+        with col3:
+            st.markdown("### 🌡️ نطاق الحرارة الشهري")
+            monthly_h = df_climate.groupby("month_num")["highest_temp"].mean()
+            monthly_l = df_climate.groupby("month_num")["lowest_temp"].mean()
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=months,
+                y=[monthly_h.get(m,0) for m in range(1,13)],
+                name="أعلى حرارة",
+                line=dict(color="#e74c3c", width=3),
+                fill="tonexty", fillcolor="rgba(231,76,60,0.1)"
+            ))
+            fig.add_trace(go.Scatter(
+                x=months,
+                y=[monthly_l.get(m,0) for m in range(1,13)],
+                name="أدنى حرارة",
+                line=dict(color="#3498db", width=3)
+            ))
+            fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color="white", height=320,
+                legend=dict(font=dict(color="white")),
+                yaxis=dict(gridcolor="#333"),
+                xaxis=dict(gridcolor="#333")
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        with col4:
+            st.markdown("### 💨 سرعة الرياح الشهرية")
+            monthly_w = df_climate.groupby("month_num")["max_wind"].mean()
+            wvals     = [monthly_w.get(m,0) for m in range(1,13)]
+
+            fig = go.Figure(go.Bar(
+                x=months, y=wvals,
+                marker_color=["#e74c3c" if w>80 else "#95a5a6" for w in wvals],
+                text=[f"{w:.0f}" for w in wvals],
+                textposition="outside",
+                textfont=dict(color="white", size=10)
+            ))
+            fig.add_hline(y=80, line_dash="dash",
+                          line_color="yellow",
+                          annotation_text="⚠️ حد الخطر 80",
+                          annotation_font_color="yellow")
+            fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color="white", height=320,
+                yaxis=dict(title="km/h", gridcolor="#333"),
+                xaxis=dict(gridcolor="#333")
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+# ====================================
+# 🔮 التنبؤ الفوري
+# ====================================
+elif page == "🔮 التنبؤ الفوري":
+
+    st.markdown("""
+    <div class='hero-banner'>
+        <h2 style='color:#e74c3c'>🔮 التنبؤ الفوري بمستوى الخطر</h2>
+        <p style='color:#bdc3c7'>أدخل البيانات الجوية للحصول على تقييم فوري لمستوى خطر العاصفة</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns([1, 2])
+
+    with col1:
+        st.markdown("### 📥 بيانات الإدخال")
+
+        months_ar = {
+            "يناير":1,"فبراير":2,"مارس":3,"أبريل":4,
+            "مايو":5,"يونيو":6,"يوليو":7,"أغسطس":8,
+            "سبتمبر":9,"أكتوبر":10,"نوفمبر":11,"ديسمبر":12
+        }
+
+        sel_month  = st.selectbox("📅 الشهر:", list(months_ar.keys()))
+        month_num  = months_ar[sel_month]
+        day        = st.slider("📆 اليوم:", 1, 31, 15)
+        temp_high  = st.number_input("🌡️ أعلى حرارة (°C):",
+                                      min_value=10.0, max_value=55.0,
+                                      value=35.0, step=0.5)
+        temp_low   = st.number_input("🌡️ أدنى حرارة (°C):",
+                                      min_value=-5.0, max_value=40.0,
+                                      value=15.0, step=0.5)
+        rainfall   = st.number_input("🌧️ الأمطار (mm):",
+                                      min_value=0.0, max_value=300.0,
+                                      value=25.0, step=1.0)
+        wind       = st.number_input("💨 سرعة الرياح (km/h):",
+                                      min_value=0, max_value=200,
+                                      value=60, step=5)
+        enso       = st.selectbox("🌊 حالة ENSO:", [
+                                      "Neutral","El_Nino","Strong_ElNino",
+                                      "La_Nina","Strong_LaNina","Weak_ElNino"])
+
+        predict_btn = st.button("🔮 احسب مستوى الخطر", use_container_width=True,
+                                 type="primary")
+
+    with col2:
+        if predict_btn:
+            temp_range  = temp_high - temp_low
+            risk_score  = 0
+            warnings_list = []
+
+            # الموسم
+            if month_num in [3,4]:      risk_score += 3
+            elif month_num in [11,12,1,2]: risk_score += 2
+            elif month_num in [7,8]:    risk_score += 2
+            else:                        risk_score += 1
+
+            # الحرارة
+            if temp_range > 30:
+                risk_score += 3
+                warnings_list.append(("🌡️", f"فرق حرارة كبير جداً: {temp_range:.1f}°C", "#e74c3c"))
+            elif temp_range > 25:
+                risk_score += 2
+                warnings_list.append(("🌡️", f"فرق حرارة ملحوظ: {temp_range:.1f}°C", "#e67e22"))
+
+            # الأمطار
+            if rainfall >= 100:
+                risk_score += 5
+                warnings_list.append(("🌊", f"أمطار استثنائية: {rainfall}mm ⚠️ خطر فيضانات!", "#e74c3c"))
+            elif rainfall >= 50:
+                risk_score += 4
+                warnings_list.append(("🌧️", f"أمطار غزيرة جداً: {rainfall}mm", "#e67e22"))
+            elif rainfall >= 30:
+                risk_score += 3
+                warnings_list.append(("🌧️", f"أمطار غزيرة: {rainfall}mm", "#f1c40f"))
+            elif rainfall >= 15:
+                risk_score += 2
+                warnings_list.append(("🌦️", f"أمطار متوسطة: {rainfall}mm", "#3498db"))
+
+            # الرياح
+            if wind >= 120:
+                risk_score += 5
+                warnings_list.append(("🌪️", f"رياح عاصفة شديدة: {wind} km/h", "#e74c3c"))
+            elif wind >= 100:
+                risk_score += 4
+                warnings_list.append(("💨", f"رياح عاصفة: {wind} km/h", "#e67e22"))
+            elif wind >= 80:
+                risk_score += 3
+                warnings_list.append(("💨", f"رياح قوية: {wind} km/h", "#f1c40f"))
+            elif wind >= 60:
+                risk_score += 2
+                warnings_list.append(("💨", f"رياح نشطة: {wind} km/h", "#3498db"))
+
+            # ENSO
+            enso_mult = {
+                "Strong_ElNino":1.4,"El_Nino":1.3,"Weak_ElNino":1.1,
+                "Neutral":1.0,"La_Nina":1.1,"Strong_LaNina":1.2
+            }.get(enso, 1.0)
+            final_score = risk_score * enso_mult
+
+            # تحديد المستوى
+            if final_score >= 15:
+                level  = "🔴 EXTREME"
+                color  = "#e74c3c"
+                css    = "risk-extreme"
+                action = "⛔ إغلاق فوري لجبال الحجر!"
+                desc   = "خطر شديد جداً - لا تقترب من المناطق الجبلية"
+            elif final_score >= 10:
+                level  = "🟠 HIGH"
+                color  = "#e67e22"
+                css    = "risk-high"
+                action = "⚠️ تحذير عاجل - تجنب المناطق الجبلية"
+                desc   = "خطر عالٍ - يُنصح بعدم الذهاب للجبال"
+            elif final_score >= 7:
+                level  = "🟡 MODERATE"
+                color  = "#f1c40f"
+                css    = "risk-moderate"
+                action = "📢 توخي الحذر في جبال الحجر"
+                desc   = "خطر متوسط - كن حذراً ومتابعاً للأحوال"
+            elif final_score >= 4:
+                level  = "🔵 LOW"
+                color  = "#3498db"
+                css    = "risk-low"
+                action = "ℹ️ متابعة الأحوال الجوية"
+                desc   = "خطر منخفض - الأوضاع شبه طبيعية"
             else:
-                st.error("❌ الرمز السري غير صحيح، تم رفض الوصول.")
-    else:
-        st.success("✅ تم فتح القفل. أهلاً بك في غرفة التحكم الآمنة.")
-        col_logout, col_empty = st.columns([2, 8])
-        with col_logout:
-            if st.button("🔒 قفل الغرفة (تسجيل الخروج)"):
-                st.session_state["admin_logged_in"] = False
-                st.rerun()
-        st.markdown("---")
-        st.markdown("#### 🔑 تغيير الرمز السري للمشرف")
-        new_pwd_input = st.text_input("أدخل الرمز السري الجديد:", type="password", key="change_pin_field")
-        if st.button("💾 حفظ الرمز السري الجديد"):
-            if new_pwd_input.strip() != "":
-                st.session_state["admin_password"] = new_pwd_input.strip()
-                st.success("✅ تأكيد: تم تغيير الرمز السري بنجاح!")
-            else:
-                st.error("❌ خطأ: لا يمكن إدخال رمز سري فارغ.")
-        st.markdown("---")
-        st.markdown("#### 📧 إعدادات خادم التنبيهات والبريد الإلكتروني")
-        st.session_state["email_enabled"] = st.checkbox("تفعيل نظام الإرسال التلقائي (Email Alerts Active)", value=st.session_state["email_enabled"])
-        st.session_state["email_sender"] = st.text_input("بريد المرسل (Gmail)", value=st.session_state["email_sender"])
-        st.session_state["email_password"] = st.text_input("كلمة مرور التطبيقات السرية (16 حرفاً من جوجل)", type="password", value=st.session_state["email_password"])
-        
-        st.info("💡 **تلميح:** أضف الإيميل واضغط (Enter)، الكود سيقوم بحفظ قائمة المستلمين ولن يمسحها.")
-        
-        new_email = st.text_input("إضافة بريد مستلم جديد:")
-        if st.button("➕ إضافة للقائمة"):
-            if new_email and "@" in new_email:
-                current_list = [e.strip() for e in st.session_state["email_receiver"].split(",") if e.strip()]
-                if new_email.strip() not in current_list:
-                    current_list.append(new_email.strip())
-                    st.session_state["email_receiver"] = ", ".join(current_list)
-                    st.success(f"تم إضافة {new_email} للقائمة.")
-                else:
-                    st.warning("هذا البريد موجود مسبقاً في القائمة.")
-            else:
-                st.error("يرجى إدخال بريد إلكتروني صحيح.")
-                
-        st.text_area("قائمة المستلمين الحالية (يمكنك التعديل اليدوي أو الحذف من هنا):", value=st.session_state["email_receiver"], key="email_receiver")
-        
-        if st.button("🔄 تصفير الذاكرة وإجبار الإرسال الآن"):
-            st.session_state["email_sent_track"] = {}
-            st.success("تم التصفير! سيقوم النظام الآن بإعادة تقييم الطقس ومحاولة الإرسال فوراً...")
-            st.rerun()
+                level  = "🟢 MINIMAL"
+                color  = "#2ecc71"
+                css    = "risk-minimal"
+                action = "✅ الأحوال مستقرة"
+                desc   = "خطر ضئيل جداً - أوضاع مستقرة"
 
-        st.markdown("---")
-        st.markdown("#### 📡 سجل عمليات الإرسال الحي (Live Delivery Log)")
-        logs_html = "<div class='log-box'>"
-        if not st.session_state["alert_logs"]: logs_html += ">> النظام في وضع الاستعداد. لم يتم رصد أي عمليات إرسال..."
+            # بطاقة النتيجة
+            st.markdown(f"""
+            <div class='{css}'>
+                <h1 style='color:{color}; margin:0; font-size:2rem'>{level}</h1>
+                <h2 style='color:white; margin:10px 0'>درجة الخطر: {final_score:.1f} / 25</h2>
+                <h3 style='color:{color}; margin:5px 0'>{action}</h3>
+                <p style='color:#bdc3c7; margin:0'>{desc}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # Gauge
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number+delta",
+                value=final_score,
+                title={"text": "مؤشر الخطر الكلي", "font": {"color":"white","size":16}},
+                delta={"reference": 7, "valueformat": ".1f"},
+                gauge={
+                    "axis": {"range":[0,25], "tickcolor":"white",
+                             "tickfont":{"color":"white"}},
+                    "bar":  {"color": color, "thickness": 0.3},
+                    "bgcolor": "rgba(0,0,0,0)",
+                    "bordercolor": "#333",
+                    "steps": [
+                        {"range":[0,4],   "color":"rgba(46,204,113,0.3)"},
+                        {"range":[4,7],   "color":"rgba(52,152,219,0.3)"},
+                        {"range":[7,10],  "color":"rgba(241,196,15,0.3)"},
+                        {"range":[10,15], "color":"rgba(230,126,34,0.3)"},
+                        {"range":[15,25], "color":"rgba(231,76,60,0.3)"},
+                    ],
+                    "threshold": {
+                        "line":{"color":"white","width":4},
+                        "thickness":0.8,
+                        "value": final_score
+                    }
+                },
+                number={"font":{"color":"white","size":36}}
+            ))
+            fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                font_color="white", height=280
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+            # التحذيرات
+            if warnings_list:
+                st.markdown("### ⚠️ التحذيرات التفصيلية:")
+                for icon, msg, clr in warnings_list:
+                    st.markdown(f"""
+                    <div style='background:rgba(0,0,0,0.3); border-left:3px solid {clr};
+                                padding:10px 15px; margin:5px 0; border-radius:5px; color:white'>
+                        {icon} {msg}
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            # المناطق المتأثرة
+            if model_loaded:
+                st.markdown("### 🏔️ المحطات الجبلية المتأثرة:")
+                zone8 = df_meta[df_meta["Zone"] == 8][
+                    ["Full_Name_eng","Full_Name_ar","Emirate","Lat.","Long."]
+                ].reset_index(drop=True)
+                st.dataframe(zone8, use_container_width=True)
         else:
-            for log in st.session_state["alert_logs"]: logs_html += f">> {log}<br>"
-        logs_html += "</div>"
-        st.markdown(logs_html, unsafe_allow_html=True)
+            st.markdown("""
+            <div style='text-align:center; padding:60px; color:#555;
+                        border:2px dashed #333; border-radius:15px; margin-top:20px'>
+                <div style='font-size:60px'>🔮</div>
+                <h3 style='color:#888'>أدخل البيانات واضغط "احسب مستوى الخطر"</h3>
+                <p style='color:#555'>سيظهر هنا تقييم تفصيلي لمستوى خطر العاصفة</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+# ====================================
+# 📊 التحليل الشهري
+# ====================================
+elif page == "📊 التحليل الشهري":
+
+    st.markdown("""
+    <div class='hero-banner'>
+        <h2 style='color:#e74c3c'>📊 التحليل المناخي الشهري</h2>
+        <p style='color:#bdc3c7'>تحليل شامل للبيانات المناخية على مدار العام</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    months = ["يناير","فبراير","مارس","أبريل","مايو","يونيو",
+              "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"]
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        monthly_h = df_climate.groupby("month_num")["highest_temp"].mean()
+        monthly_l = df_climate.groupby("month_num")["lowest_temp"].mean()
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=months, y=[monthly_h.get(m,0) for m in range(1,13)],
+            name="أعلى حرارة",
+            line=dict(color="#e74c3c", width=3),
+            fill="tonexty", fillcolor="rgba(231,76,60,0.15)"
+        ))
+        fig.add_trace(go.Scatter(
+            x=months, y=[monthly_l.get(m,0) for m in range(1,13)],
+            name="أدنى حرارة",
+            line=dict(color="#3498db", width=3)
+        ))
+        fig.update_layout(
+            title=dict(text="🌡️ درجات الحرارة الشهرية", font=dict(color="white")),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color="white", height=350,
+            legend=dict(font=dict(color="white")),
+            yaxis=dict(title="°C", gridcolor="#333"),
+            xaxis=dict(gridcolor="#333")
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        monthly_r = df_climate.groupby("month_num")["highest_rainfall"].mean()
+        rvals     = [monthly_r.get(m,0) for m in range(1,13)]
+
+        fig = go.Figure(go.Bar(
+            x=months, y=rvals,
+            marker=dict(
+                color=rvals,
+                colorscale="RdYlBu_r",
+                showscale=True,
+                colorbar=dict(title="mm", tickfont=dict(color="white"),
+                              titlefont=dict(color="white"))
+            ),
+            text=[f"{v:.1f}" for v in rvals],
+            textposition="outside",
+            textfont=dict(color="white")
+        ))
+        fig.update_layout(
+            title=dict(text="🌧️ متوسط الأمطار الشهري", font=dict(color="white")),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color="white", height=350,
+            yaxis=dict(title="mm", gridcolor="#333"),
+            xaxis=dict(gridcolor="#333")
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    col3, col4 = st.columns(2)
+
+    with col3:
+        monthly_w = df_climate.groupby("month_num")["max_wind"].mean()
+        wvals     = [monthly_w.get(m,0) for m in range(1,13)]
+
+        fig = go.Figure(go.Bar(
+            x=months, y=wvals,
+            marker_color=["#e74c3c" if w>80 else "#95a5a6" for w in wvals],
+            text=[f"{w:.0f}" for w in wvals],
+            textposition="outside",
+            textfont=dict(color="white")
+        ))
+        fig.add_hline(y=80, line_dash="dash", line_color="yellow",
+                      annotation_text="⚠️ حد الخطر",
+                      annotation_font_color="yellow")
+        fig.update_layout(
+            title=dict(text="💨 الرياح الشهرية", font=dict(color="white")),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color="white", height=350,
+            yaxis=dict(title="km/h", gridcolor="#333"),
+            xaxis=dict(gridcolor="#333")
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col4:
+        if "hajar_rain" in df_climate.columns:
+            storm_monthly = df_climate.groupby("month_num")["hajar_rain"].sum()
+            svals = [storm_monthly.get(m,0) for m in range(1,13)]
+        else:
+            svals = [0]*12
+
+        fig = go.Figure(go.Bar(
+            x=months, y=svals,
+            marker_color=["#e74c3c" if v>3 else "#e67e22" if v>1 else "#f1c40f" for v in svals],
+            text=[str(int(v)) for v in svals],
+            textposition="outside",
+            textfont=dict(color="white")
+        ))
+        fig.update_layout(
+            title=dict(text="⛈️ أيام العواصف الجبلية", font=dict(color="white")),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color="white", height=350,
+            yaxis=dict(title="عدد الأيام", gridcolor="#333"),
+            xaxis=dict(gridcolor="#333")
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    # جدول شهري
+    st.markdown("### 📋 الجدول الشهري الكامل")
+    try:
+        monthly_table = df_climate.groupby("month").agg(
+            أعلى_حرارة=("highest_temp","max"),
+            أدنى_حرارة=("lowest_temp","min"),
+            متوسط_أمطار=("highest_rainfall","mean"),
+            أعلى_أمطار=("highest_rainfall","max"),
+            أيام_عواصف=("hajar_rain","sum")
+        ).round(1)
+        st.dataframe(monthly_table, use_container_width=True)
+    except:
+        st.info("لا تتوفر بيانات كافية للجدول")
+
+# ====================================
+# 🌊 تحليل ENSO
+# ====================================
+elif page == "🌊 تحليل ENSO":
+
+    st.markdown("""
+    <div class='hero-banner'>
+        <h2 style='color:#e74c3c'>🌊 تحليل ظاهرة النينيو (ENSO)</h2>
+        <p style='color:#bdc3c7'>تأثير ظاهرة النينيو ولانينا على المناخ في الإمارات</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    try:
+        enso_data = df_climate.groupby("enso_year_rainfall").agg(
+            متوسط_أمطار=("highest_rainfall","mean"),
+            أعلى_أمطار=("highest_rainfall","max"),
+            متوسط_حرارة=("highest_temp","mean"),
+            متوسط_رياح=("max_wind","mean"),
+            عدد_الأيام=("highest_rainfall","count")
+        ).round(1).reset_index()
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            fig = px.bar(enso_data,
+                         x="enso_year_rainfall", y="متوسط_أمطار",
+                         color="متوسط_أمطار",
+                         color_continuous_scale="RdYlBu_r",
+                         title="🌧️ تأثير ENSO على متوسط الأمطار",
+                         text="متوسط_أمطار")
+            fig.update_traces(texttemplate="%{text:.1f}", textposition="outside",
+                              textfont_color="white")
+            fig.update_layout(paper_bgcolor="rgba(0,0,0,0)",
+                              plot_bgcolor="rgba(0,0,0,0)",
+                              font_color="white", height=380,
+                              title_font_color="white",
+                              yaxis=dict(gridcolor="#333"),
+                              xaxis=dict(gridcolor="#333"))
+            st.plotly_chart(fig, use_container_width=True)
+
+        with col2:
+            fig = px.bar(enso_data,
+                         x="enso_year_rainfall", y="أعلى_أمطار",
+                         color="أعلى_أمطار",
+                         color_continuous_scale="Reds",
+                         title="🌊 تأثير ENSO على أعلى هطول مطري",
+                         text="أعلى_أمطار")
+            fig.update_traces(texttemplate="%{text:.1f}", textposition="outside",
+                              textfont_color="white")
+            fig.update_layout(paper_bgcolor="rgba(0,0,0,0)",
+                              plot_bgcolor="rgba(0,0,0,0)",
+                              font_color="white", height=380,
+                              title_font_color="white",
+                              yaxis=dict(gridcolor="#333"),
+                              xaxis=dict(gridcolor="#333"))
+            st.plotly_chart(fig, use_container_width=True)
+
+        col3, col4 = st.columns(2)
+
+        with col3:
+            fig = px.bar(enso_data,
+                         x="enso_year_rainfall", y="متوسط_حرارة",
+                         color="متوسط_حرارة",
+                         color_continuous_scale="Hot",
+                         title="🌡️ تأثير ENSO على متوسط الحرارة")
+            fig.update_layout(paper_bgcolor="rgba(0,0,0,0)",
+                              plot_bgcolor="rgba(0,0,0,0)",
+                              font_color="white", height=350,
+                              yaxis=dict(gridcolor="#333"),
+                              xaxis=dict(gridcolor="#333"))
+            st.plotly_chart(fig, use_container_width=True)
+
+        with col4:
+            fig = px.bar(enso_data,
+                         x="enso_year_rainfall", y="متوسط_رياح",
+                         color="متوسط_رياح",
+                         color_continuous_scale="Blues",
+                         title="💨 تأثير ENSO على متوسط الرياح")
+            fig.update_layout(paper_bgcolor="rgba(0,0,0,0)",
+                              plot_bgcolor="rgba(0,0,0,0)",
+                              font_color="white", height=350,
+                              yaxis=dict(gridcolor="#333"),
+                              xaxis=dict(gridcolor="#333"))
+            st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("### 📋 جدول تأثير ENSO الكامل")
+        st.dataframe(enso_data, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"خطأ في تحليل ENSO: {e}")
+
+# ====================================
+# 🗺️ خريطة المحطات
+# ====================================
+elif page == "🗺️ خريطة المحطات":
+
+    st.markdown("""
+    <div class='hero-banner'>
+        <h2 style='color:#e74c3c'>🗺️ خريطة محطات الرصد الجوي</h2>
+        <p style='color:#bdc3c7'>توزيع 146 محطة رصد جوي في الإمارات العربية المتحدة</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # إحصائيات المناطق
+    if model_loaded:
+        zone_counts = df_meta["Zone"].value_counts().sort_index()
+        c1,c2,c3,c4 = st.columns(4)
+        with c1: st.metric("🔴 Zone 8 (جبلية)", str(zone_counts.get(8,0)))
+        with c2: st.metric("🟠 Zone 9 (ساحل شرقي)", str(zone_counts.get(9,0)))
+        with c3: st.metric("🔵 Zone 1-5 (داخلية)", str(sum(zone_counts.get(i,0) for i in range(1,6))))
+        with c4: st.metric("🟢 Zone 6-7 (ساحلية)", str(sum(zone_counts.get(i,0) for i in [6,7])))
+
+    st.markdown("---")
+
+    m = folium.Map(location=[24.0, 54.5], zoom_start=7,
+                   tiles="CartoDB dark_matter")
+
+    zone_colors = {
+        8:"red", 9:"orange", 7:"blue", 6:"green",
+        1:"lightblue", 2:"purple", 3:"cadetblue",
+        4:"pink", 5:"lightgray"
+    }
+    zone_names = {
+        8:"🏔️ جبلية", 9:"🌊 ساحل شرقي",
+        7:"🌿 داخلية شمالية", 6:"🏙️ ساحلية",
+        1:"🏜️ العين", 2:"🏛️ أبوظبي",
+        3:"🛢️ الظفرة الساحلية", 4:"🌵 الظفرة الجنوبية",
+        5:"🏗️ الظفرة الداخلية"
+    }
+
+    for _, row in df_meta.iterrows():
+        if pd.notna(row["Lat."]) and pd.notna(row["Long."]):
+            try:
+                zone   = int(row["Zone"]) if pd.notna(row["Zone"]) else 0
+                color  = zone_colors.get(zone, "gray")
+                radius = 14 if zone == 8 else 8
+                name_e = str(row["Full_Name_eng"]).strip()
+                name_a = str(row["Full_Name_ar"]).strip()
+
+                folium.CircleMarker(
+                    location=[float(row["Lat."]), float(row["Long."])],
+                    radius=radius,
+                    color=color,
+                    fill=True,
+                    fill_color=color,
+                    fill_opacity=0.8,
+                    popup=folium.Popup(
+                        f"<b>{name_e}</b><br>{name_a}<br>Zone: {zone}<br>{zone_names.get(zone,'')}",
+                        max_width=200
+                    ),
+                    tooltip=f"{'⭐ ' if zone==8 else ''}{name_e}"
+                ).add_to(m)
+            except:
+                continue
+
+    st_folium(m, width=None, height=550, returned_objects=[])
+
+    # جدول المحطات الجبلية
+    st.markdown("### 🏔️ تفاصيل المحطات الجبلية (Zone 8)")
+    if model_loaded:
+        zone8 = df_meta[df_meta["Zone"] == 8][
+            ["Full_Name_eng","Full_Name_ar","Emirate","Lat.","Long.","Start_Date","End_Date"]
+        ].reset_index(drop=True)
+        st.dataframe(zone8, use_container_width=True)
+
+# ====================================
+# 📈 إحصائيات المشروع
+# ====================================
+elif page == "📈 إحصائيات المشروع":
+
+    st.markdown("""
+    <div class='hero-banner'>
+        <h2 style='color:#e74c3c'>📈 إحصائيات المشروع</h2>
+        <p style='color:#bdc3c7'>ملخص شامل لمشروع JM72 للإنذار المبكر بالعواصف الجبلية</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown("### 🤖 النموذج")
+        st.metric("الخوارزمية",  "XGBoost")
+        st.metric("الدقة الكلية","83.8%")
+        st.metric("عدد المميزات","20")
+        st.metric("عدد الفئات", "5")
+        st.metric("طريقة التقييم","Cross-Validation")
+
+    with col2:
+        st.markdown("### 📊 البيانات")
+        st.metric("إجمالي الأيام",   "366")
+        st.metric("الفترة الزمنية",  "2003-2025")
+        st.metric("إجمالي المحطات", "146")
+        st.metric("المحطات الجبلية","6")
+        st.metric("عدد الإمارات",    "7")
+
+    with col3:
+        st.markdown("### ⛈️ أرقام قياسية")
+        st.metric("أعلى هطول",        "287.6mm")
+        st.metric("أعلى رياح",         "141 km/h")
+        st.metric("أبرد يوم - جبل جيس","-2°C")
+        st.metric("أحر يوم",            "51.5°C")
+        st.metric("أشد موسم",           "Strong El Niño")
+
+    st.markdown("---")
+
+    # مستويات الخطر
+    st.markdown("### 🎯 تعريف مستويات الخطر")
+    risk_def = pd.DataFrame({
+        "المستوى":  ["🟢 MINIMAL","🔵 LOW","🟡 MODERATE","🟠 HIGH","🔴 EXTREME"],
+        "الدرجة":   ["0-4","4-7","7-10","10-15","15+"],
+        "الوصف":    [
+            "أحوال مستقرة - لا توجد مخاوف",
+            "بعض النشاط الجوي - متابعة مستمرة",
+            "نشاط جوي ملحوظ - حذر مطلوب",
+            "عواصف محتملة - تجنب الجبال",
+            "عواصف شديدة - إغلاق فوري"
+        ],
+        "الإجراء":  [
+            "✅ لا إجراء مطلوب",
+            "ℹ️ متابعة الأحوال",
+            "📢 تحذير للمواطنين",
+            "⚠️ تحذير عاجل",
+            "⛔ إغلاق فوري"
+        ]
+    })
+    st.dataframe(risk_def, use_container_width=True, hide_index=True)
+
+    # Feature Importance
+    if model_loaded:
+        st.markdown("### 🎯 أهمية المميزات في النموذج (Top 10)")
+        feature_names = [
+            "month_sin","month_cos","day_sin","day_cos",
+            "highest_temp","lowest_temp","temp_range",
+            "highest_rainfall","rainfall_occurrences",
+            "max_wind","hajar_rain","hajar_wind",
+            "mtn_thunderstorm_idx","rain_risk_index",
+            "wind_risk","heat_stress_index","jais_cold",
+            "enso_year_max_temp","enso_year_rainfall",
+            "rainfall_in_hajar"
+        ]
+        try:
+            imp = pd.DataFrame({
+                "المميزة": feature_names[:len(model.feature_importances_)],
+                "الأهمية": model.feature_importances_
+            }).sort_values("الأهمية", ascending=True).tail(10)
+
+            fig = px.bar(imp, x="الأهمية", y="المميزة",
+                         orientation="h",
+                         color="الأهمية",
+                         color_continuous_scale="Reds",
+                         title="أهم 10 مميزات في النموذج",
+                         text="الأهمية")
+            fig.update_traces(texttemplate="%{text:.3f}", textposition="outside",
+                              textfont_color="white")
+            fig.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color="white", height=420,
+                title_font_color="white",
+                yaxis=dict(gridcolor="#333"),
+                xaxis=dict(gridcolor="#333")
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        except Exception as e:
+            st.info(f"تعذر عرض Feature Importance: {e}")
+
+    # معلومات التقنية
+    st.markdown("### 🛠️ التقنيات المستخدمة")
+    tech_cols = st.columns(4)
+    techs = [
+        ("🐍","Python 3.11"),
+        ("🤖","XGBoost"),
+        ("🌐","Streamlit"),
+        ("📊","Plotly"),
+        ("🗺️","Folium"),
+        ("🐼","Pandas"),
+        ("🔢","NumPy"),
+        ("💾","Joblib")
+    ]
+    for i, (icon, name) in enumerate(techs):
+        with tech_cols[i % 4]:
+            st.markdown(f"""
+            <div style='background:#1a1a2e; border:1px solid #333;
+                        border-radius:8px; padding:10px; text-align:center;
+                        margin:5px 0; color:white'>
+                <div style='font-size:24px'>{icon}</div>
+                <div style='font-size:12px; color:#bdc3c7'>{name}</div>
+            </div>
+            """, unsafe_allow_html=True)

@@ -357,9 +357,6 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 ])
 
 with tab1:
-    # ==================== تصميم متكامل للتبويب الأول ====================
-    
-    # 1. Header احترافي
     st.markdown("""
     <div style="
         background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
@@ -374,7 +371,6 @@ with tab1:
                     background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
         <div style="position: absolute; bottom: -60px; left: -60px; width: 180px; height: 180px; 
                     background: rgba(255,255,255,0.05); border-radius: 50%;"></div>
-        
         <div style="position: relative; z-index: 2;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
@@ -402,16 +398,15 @@ with tab1:
     </div>
     """, unsafe_allow_html=True)
 
-    # 2. إحصائيات حية في صف واحد
     st.markdown('<h3 style="color:#1E293B; font-weight:700; margin-bottom:20px;">📊 Live Weather Metrics</h3>', unsafe_allow_html=True)
-    
+
     col1, col2, col3, col4 = st.columns(4)
-    
+
     current_storm = df_all[df_all["Time"] == timeline_str[0]]["Storm Probability"].max()
     current_fog = df_all[df_all["Time"] == timeline_str[0]]["Fog Probability"].max()
     avg_temp = df_all[df_all["Time"] == timeline_str[0]]["Temperature"].mean()
     active_stations = df_all[df_all["Time"] == timeline_str[0]]["Station"].nunique()
-    
+
     with col1:
         st.markdown(f"""
         <div style="background: white; border-radius: 12px; padding: 20px; 
@@ -420,13 +415,78 @@ with tab1:
             <div style="font-size: 32px; font-weight: 800; color: #EF4444;">{int(current_storm)}%</div>
         </div>
         """, unsafe_allow_html=True)
-    
+
     with col2:
         st.markdown(f"""
         <div style="background: white; border-radius: 12px; padding: 20px; 
                     border-left: 5px solid #3B82F6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);">
-            <div style="font-size: 14px; color: #64748B;
+            <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">Fog Risk</div>
+            <div style="font-size: 32px; font-weight: 800; color: #3B82F6;">{int(current_fog)}%</div>
+        </div>
+        """, unsafe_allow_html=True)
 
+    with col3:
+        st.markdown(f"""
+        <div style="background: white; border-radius: 12px; padding: 20px; 
+                    border-left: 5px solid #F59E0B; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);">
+            <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">Avg Temperature</div>
+            <div style="font-size: 32px; font-weight: 800; color: #F59E0B;">{round(avg_temp, 1)}°C</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col4:
+        st.markdown(f"""
+        <div style="background: white; border-radius: 12px; padding: 20px; 
+                    border-left: 5px solid #10B981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);">
+            <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">Active Stations</div>
+            <div style="font-size: 32px; font-weight: 800; color: #10B981;">{active_stations}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    selected_time_t1 = st.select_slider(
+        "Forecast Timeline",
+        options=timeline_str,
+        key="t1_slider",
+        label_visibility="collapsed"
+    )
+
+    df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()
+
+    col_map1, col_map2 = st.columns(2)
+
+    with col_map1:
+        st.markdown('<h4 style="color:#082F49; font-weight:900;">🌩️ Storm Probability</h4>', unsafe_allow_html=True)
+        fig1 = px.density_mapbox(
+            df_time_t1, lat="Latitude", lon="Longitude", z="Storm Probability",
+            radius=45, center=dict(lat=24.5, lon=54.5), zoom=6.5,
+            mapbox_style="white-bg", opacity=0.85,
+            color_continuous_scale=["rgba(0,0,0,0)", "#FEF9C3", "#FDE047", "#F97316", "#EF4444", "#7F1D1D"],
+            range_color=[0, 100], title="AI Storm Convective Index (%)"
+        )
+        fig1.update_layout(
+            mapbox_layers=[{"below": "traces", "sourcetype": "raster",
+                "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}],
+            margin={"r": 0, "t": 40, "l": 0, "b": 0}
+        )
+        st.plotly_chart(fig1, use_container_width=True, key="storm_map")
+
+    with col_map2:
+        st.markdown('<h4 style="color:#082F49; font-weight:900;">🌫️ Fog Probability</h4>', unsafe_allow_html=True)
+        fig2 = px.density_mapbox(
+            df_time_t1, lat="Latitude", lon="Longitude", z="Fog Probability",
+            radius=45, center=dict(lat=24.5, lon=54.5), zoom=6.5,
+            mapbox_style="white-bg", opacity=0.85,
+            color_continuous_scale=["rgba(0,0,0,0)", "#F1F5F9", "#CBD5E1", "#94A3B8", "#475569", "#1E293B"],
+            range_color=[0, 100], title="AI Fog Radiation Index (%)"
+        )
+        fig2.update_layout(
+            mapbox_layers=[{"below": "traces", "sourcetype": "raster",
+                "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}],
+            margin={"r": 0, "t": 40, "l": 0, "b": 0}
+        )
+        st.plotly_chart(fig2, use_container_width=True, key="fog_map")
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)
     cols_t2 = st.columns(5)

@@ -357,6 +357,40 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 ])
 
 with tab1:
+    # ==================== AI Header ====================
+    st.markdown("""
+    <div style="
+        background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%);
+        padding: 25px 30px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+        border: 1px solid #334155;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.4);
+    ">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h2 style="color: #F8FAFC; margin: 0; font-size: 26px; font-weight: 900;">
+                    🌩️ AI Storm & Fog Intelligence
+                </h2>
+                <p style="color: #94A3B8; margin: 8px 0 0 0; font-size: 15px;">
+                    Powered by 71wm AI Engine • Real-time Atmospheric Analysis
+                </p>
+            </div>
+            <div style="
+                background: #1E293B; 
+                padding: 8px 18px; 
+                border-radius: 30px; 
+                border: 1px solid #475569;
+                font-size: 13px;
+                color: #10B981;
+                font-weight: 700;
+            ">
+                🧠 AI ACTIVE
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     # ==================== ملخص سريع ====================
     current_storm = df_all[df_all["Time"] == timeline_str[0]]["Storm Probability"].max()
     current_fog = df_all[df_all["Time"] == timeline_str[0]]["Fog Probability"].max()

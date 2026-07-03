@@ -26,57 +26,25 @@ st.set_page_config(
 # ==========================================
 # 2. CLEAN & BRIGHT CSS
 # ==========================================
-st.markdown("""
+st.markdown('''
 <style>
-    /* ===== MODERN RTL DESIGN ===== */
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap');
+    html, body, [data-testid="stAppViewContainer"], .stApp, #root { background-color: #F8FAFC !important; }
+    .block-container { background-color: #FFFFFF !important; border-radius: 12px !important; box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important; padding: 2rem !important; margin: 1rem auto !important; border: 1px solid #E2E8F0 !important; max-width: 95% !important;}
+    [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; visibility: hidden !important;}
+    .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"], h1, h2, h3, h4, h5, h6 { color: #082F49 !important; font-weight: 900 !important; font-size: 15px !important; }
     
-    * {
-        font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Arial, sans-serif !important;
-    }
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] { border-bottom: 2px solid #CBD5E1 !important; }
+    div[data-testid="stTabs"] button { background-color: #FFFFFF !important; border: 1px solid #CBD5E1 !important; border-radius: 8px 8px 0 0 !important; margin-right: 5px !important; padding: 10px 20px !important; }
+    div[data-testid="stTabs"] button[aria-selected="true"] { background-color: #082F49 !important; border-color: #082F49 !important; }
+    div[data-testid="stTabs"] button[aria-selected="true"] p { color: #FFFFFF !important; }
     
-    /* Background Gradient */
-    [data-testid="stAppViewContainer"] {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%) !important;
-    }
+    .ai-broadcaster { background: linear-gradient(90deg, #F0F9FF, #E0F2FE); border-left: 5px solid #0284C7; padding: 15px 20px; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0369A1; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1); }
     
-    /* Main Container - Glass Effect */
-    .block-container {
-        background: rgba(255, 255, 255, 0.95) !important;
-        backdrop-filter: blur(10px) !important;
-        border-radius: 20px !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
-        border: 1px solid
-# ==========================================
-# 3. CENTERED LOGO (71wm)
-# ==========================================
-# ==========================================
-# 3. CENTERED LOGO (71wm) - FIXED VERSION
-# ==========================================
-# ==========================================
-# 3. CENTERED LOGO (71wm) - FIXED VERSION
-# ==========================================
-svg_code = '''
-<svg width="600" height="220" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
-    <g transform="translate(240, 10)">
-        <polygon points="60,0 112,30 112,90 60,120 8,90 8,30" fill="none" stroke="#E2E8F0" stroke-width="3"/>
-        <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#F8FAFC" stroke="#082F49" stroke-width="1.5"/>
-        <circle cx="60" cy="60" r="25" fill="#FDE047" opacity="0.4" />
-        <path d="M 30,35 L 70,35 L 55,65 L 65,65 L 40,95 L 45,70 L 35,70 Z" fill="#D4AF37" />
-        <path d="M 75,35 L 90,35 L 90,95 L 75,95 Z" fill="#0284C7" />
-        <g transform="translate(31, 108)">
-            <rect x="0" y="0" width="10" height="10" fill="#EF4444" rx="2" transform="rotate(45 5 5)"/>
-            <rect x="16" y="0" width="10" height="10" fill="#10B981" rx="2" transform="rotate(45 5 5)"/>
-            <rect x="32" y="0" width="10" height="10" fill="#CBD5E1" rx="2" transform="rotate(45 5 5)"/>
-            <rect x="48" y="0" width="10" height="10" fill="#1E293B" rx="2" transform="rotate(45 5 5)"/>
-        </g>
-    </g>
-    <text x="300" y="180" font-family="Arial Black, system-ui, sans-serif" font-weight="900" font-size="34" fill="#082F49" text-anchor="middle" letter-spacing="1">71wm AI</text>
-    <text x="300" y="205" font-family="system-ui, sans-serif" font-weight="800" font-size="14" fill="#64748B" text-anchor="middle" letter-spacing="6">WEATHER MODEL - U.A.E</text>
-</svg>
-'''
-b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
-st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 15px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="71wm Logo" /></div>', unsafe_allow_html=True)
+    div[data-testid="stSlider"] { background-color: #F1F5F9 !important; padding: 20px !important; border-radius: 12px !important; margin-bottom: 25px !important; border: 1px solid #E2E8F0 !important; }
+    div[data-testid="stTickBar"] { color: #475569 !important; font-weight: bold !important; }
+    div[data-testid="stSlider"] div[role="slider"] { background-color: #0284C7 !important; border: 2px solid #FFF !important; }
+    
+    .
 
 # ==========================================
 # 4. INITIALIZE LIVE STATES

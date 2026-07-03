@@ -369,19 +369,7 @@ with tab1:
     df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()
     c1, c2 = st.columns(2)
     c1.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Storm Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.75, color_continuous_scale=["rgba(0,0,0,0)", "#A3E635", "#FDE047", "#EF4444", "#7E22CE"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":0,"l":0,"b":0}), use_container_width=True)
-    c2.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Fog Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.8, color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#475569"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":0,"l":0,"b":0}), use_container_width=True)
-
-    # شاشة الأقمار الاصطناعية المدمجة في التبويب الأول
-    st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery</h3>', unsafe_allow_html=True)
-        satellite_html = """
-    <div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;">
-        <iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe>
-        <div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;">
-            <span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">SATELLITE LIVE</span>
-        </div>
-    </div>
-    """
-    components.html(satellite_html, height=520)
+    c2.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Fog Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.8, color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#475569"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arc
 
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)

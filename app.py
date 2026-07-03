@@ -369,15 +369,44 @@ with tab1:
     
     st.markdown("---")
     
-    # ==================== التوقعات اليومية ====================
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (National)</h4>', unsafe_allow_html=True)
+        # ==================== التوقعات اليومية (محسّنة) ====================
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:20px;">📅 5-Day Storm & Fog Outlook</h4>', unsafe_allow_html=True)
+    
     cols_t1 = st.columns(5)
     for i, date in enumerate(unique_dates_display[:5]):
         day_df = df_all[df_all["DateOnly"] == date]
-        m_s, m_f = int(day_df["Storm Probability"].max()), int(day_df["Fog Probability"].max())
-        bg = "#FEF2F2" if max(m_s, m_f) >= 60 else ("#FFFBEB" if max(m_s, m_f) >= 30 else "#F0FDF4")
-        cols_t1[i].markdown(f"<div style='background-color:{bg}; border: 1px solid #CBD5E1; border-radius: 8px; padding: 15px; text-align:center;'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px;'>📅 {date}</div><div style='font-size:16px; font-weight:900; color:#EF4444; margin-bottom:8px;'>⛈️ Storm: {m_s}%</div><div style='font-size:16px; font-weight:900; color:#64748B;'>🌫️ Fog: {m_f}%</div></div>", unsafe_allow_html=True)
-    
+        max_storm = int(day_df["Storm Probability"].max())
+        max_fog = int(day_df["Fog Probability"].max())
+        
+        # تحديد لون الخلفية حسب الخطورة
+        if max_storm >= 60 or max_fog >= 60:
+            bg_color = "#FEE2E2"   # أحمر فاتح
+            border_color = "#EF4444"
+            risk_level = "🔴 High"
+        elif max_storm >= 30 or max_fog >= 30:
+            bg_color = "#FEF3C7"   # أصفر فاتح
+            border_color = "#F59E0B"
+            risk_level = "🟡 Medium"
+        else:
+            bg_color = "#D1FAE5"   # أخضر فاتح
+            border_color = "#10B981"
+            risk_level = "🟢 Low"
+        
+        cols_t1[i].markdown(f"""
+        <div style="background-color:{bg_color}; 
+                    border: 2px solid {border_color}; 
+                    border-radius: 12px; 
+                    padding: 15px; 
+                    text-align:center;
+                    height: 160px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <div style="font-size:15px; font-weight:900; color:#082F49; margin-bottom:8px;">{date}</div>
+            <div style="font-size:13px; color:#475569; margin-bottom:4px;">{risk_level} Risk</div>
+            <div style="font-size:22px; font-weight:900; color:#EF4444; margin:8px 0;">⛈️ {max_storm}%</div>
+            <div style="font-size:16px; font-weight:700; color:#64748B;">🌫️ {max_fog}%</div>
+        </div>
+        """, unsafe_allow_html=True)
+
     # ==================== السلايدر والخرائط ====================
     selected_time_t1 = st.select_slider("Forecast Timeline", options=timeline_str, key="t1_slider", label_visibility="collapsed")
     df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()

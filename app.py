@@ -53,6 +53,9 @@ st.markdown("""
 # ==========================================
 # 3. CENTERED LOGO (71wm) - FIXED VERSION
 # ==========================================
+# ==========================================
+# 3. CENTERED LOGO (71wm) - FIXED VERSION
+# ==========================================
 svg_code = '''
 <svg width="600" height="220" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
     <g transform="translate(240, 10)">
@@ -72,9 +75,6 @@ svg_code = '''
     <text x="300" y="205" font-family="system-ui, sans-serif" font-weight="800" font-size="14" fill="#64748B" text-anchor="middle" letter-spacing="6">WEATHER MODEL - U.A.E</text>
 </svg>
 '''
-b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
-st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 15px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="71wm Logo" /></div>', unsafe_allow_html=True)
-
 b64_svg = base64.b64encode(svg_code.encode('utf-8')).decode('utf-8')
 st.markdown(f'<div style="width: 100%; display: flex; justify-content: center; margin-top: 0px; margin-bottom: 15px;"><img src="data:image/svg+xml;base64,{b64_svg}" style="max-width: 450px; width: 100%; height: auto;" alt="71wm Logo" /></div>', unsafe_allow_html=True)
 

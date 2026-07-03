@@ -357,23 +357,20 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 ])
 
 with tab1:
-    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (National)</h4>', unsafe_allow_html=True)
-    cols_t1 = st.columns(5)
-    for i, date in enumerate(unique_dates_display[:5]):
-        day_df = df_all[df_all["DateOnly"] == date]
-        m_s, m_f = int(day_df["Storm Probability"].max()), int(day_df["Fog Probability"].max())
-        bg = "#FEF2F2" if max(m_s, m_f) >= 60 else ("#FFFBEB" if max(m_s, m_f) >= 30 else "#F0FDF4")
-        cols_t1[i].markdown(f"<div style='background-color:{bg}; border: 1px solid #CBD5E1; border-radius: 8px; padding: 15px; text-align:center;'><div style='color:#082F49; font-size:15px; font-weight:900; margin-bottom:12px;'>📅 {date}</div><div style='font-size:16px; font-weight:900; color:#EF4444; margin-bottom:8px;'>⛈️ Storm: {m_s}%</div><div style='font-size:16px; font-weight:900; color:#64748B;'>🌫️ Fog: {m_f}%</div></div>", unsafe_allow_html=True)
+    # ==================== ملخص سريع ====================
+    current_storm = df_all[df_all["Time"] == timeline_str[0]]["Storm Probability"].max()
+    current_fog = df_all[df_all["Time"] == timeline_str[0]]["Fog Probability"].max()
     
-    selected_time_t1 = st.select_slider("Forecast Timeline", options=timeline_str, key="t1_slider", label_visibility="collapsed")
-    df_time_t1 = df_all[df_all["Time"] == selected_time_t1].copy()
-    c1, c2 = st.columns(2)
-    c1.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Storm Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.75, color_continuous_scale=["rgba(0,0,0,0)", "#A3E635", "#FDE047", "#EF4444", "#7E22CE"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":0,"l":0,"b":0}), use_container_width=True)
-    c2.plotly_chart(px.density_mapbox(df_time_t1, lat="Latitude", lon="Longitude", z="Fog Probability", radius=45, center=dict(lat=24.4, lon=54.6), zoom=5.5, mapbox_style="white-bg", opacity=0.8, color_continuous_scale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#475569"], range_color=[0, 100]).update_layout(mapbox_layers=[{"below": 'traces', "sourcetype": "raster", "source": ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"]}], margin={"r":0,"t":0,"l":0,"b":0}), use_container_width=True)
-
-    # شاشة الأقمار الاصطناعية المدمجة في التبويب الأول
-    st.markdown('<hr><h3 style="color:#082F49; font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery</h3>', unsafe_allow_html=True)
-    components.html("""<div style="position: relative; width: 100%; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: #F8FAFC;"><iframe width="100%" height="520" src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" frameborder="0" style="position: absolute; top: 0; left: 0;"></iframe><div style="position: absolute; bottom: 0px; right: 0px; width: 180px; height: 35px; background: rgba(8, 47, 73, 0.95); display: flex; align-items: center; justify-content: center; border-top-left-radius: 10px; border: 1px solid #D4AF37;"><span style="color: #D4AF37; font-family: sans-serif; font-size: 14px; font-weight: 900;">🛰️ 71wm SATELLITE LIVE</span></div></div>""", height=520)
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.metric(label="أعلى احتمال عواصف الآن", value=f"{int(current_storm)}%", delta="مرتفع" if current_storm >= 50 else "منخفض")
+    with col_b:
+        st.metric(label="أعلى احتمال ضباب الآن", value=f"{int(current_fog)}%", delta="مرتفع" if current_fog >= 40 else "منخفض")
+    
+    st.markdown("---")
+    
+    # ==================== التوقعات اليومية ====================
+    st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (National)</h4>', unsafe_allow_html=True)
 
 with tab2:
     st.markdown('<h4 style="color:#082F49; font-weight:900; margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>', unsafe_allow_html=True)

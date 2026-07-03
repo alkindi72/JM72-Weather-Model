@@ -1,6 +1,10 @@
+cat > requirements.txt << 'EOF'
 streamlit
 pandas
 numpy
 plotly
 requests
 streamlit-autorefresh
+joblib
+scikit-learn
+EOF

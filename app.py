@@ -31,8 +31,8 @@ if page == "Home":
         st.metric("Stations", "36")
     with col3:
         st.metric("Forecast", "5 Days")
-    with col4:
-        st.metric("Coverage", "UAE")
+    
+
     
     st.markdown("---")
     

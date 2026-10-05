@@ -340,8 +340,20 @@ st.markdown(
 st.markdown(
     f"""
 <div class="hero">
-  <div class="kicker">71WM · UAE WEATHER INTELLIGENCE</div>
-  <h1>{tr("لوحة القيادة الجوية", "Weather command deck")}</h1>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <svg width="78" height="92" viewBox="0 0 78 92" aria-label="71WM">
+      <polygon points="39,3 73,22 73,70 39,89 5,70 5,22" fill="#082F49" stroke="#D4AF37" stroke-width="2.4"/>
+      <circle cx="52" cy="28" r="5" fill="#D4AF37"/>
+      <path d="M18 36c6-5 10-5 16 0 5-4 9-4 14 0" fill="#fff"/>
+      <path d="M14 46c10-6 16-2 24 2 8 4 14 2 26-4v8c-12 6-18 8-26 4-8-4-14-8-24-2z" fill="#2BB3C7"/>
+      <path d="M14 58c10-8 22-8 50 2v10H14z" fill="#D4AF37"/>
+      <text x="39" y="80" text-anchor="middle" font-size="11" font-family="Arial" font-weight="700" fill="#D4AF37">71WM</text>
+    </svg>
+    <div>
+      <div class="kicker">71WM · UAE WEATHER INTELLIGENCE</div>
+      <h1>{tr("لوحة القيادة الجوية", "Weather command deck")}</h1>
+    </div>
+  </div>
   <div class="sub">{tr(f"قراءة موحّدة للعواصف، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Storms, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
   <span class="pill">{tr("توقيت الإمارات", "UAE time")} {uae_now.strftime('%H:%M')}</span>
   <span class="pill">{tr("المخاطر الوطنية", "National risk")} {risk}% · {status}</span>

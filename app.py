@@ -56,7 +56,15 @@ st.markdown(
   }
   .card b { display: block; font-size: 34px !important; margin-top: 4px; }
   .muted { color: #cbd5e1 !important; font-size: 16px !important; }
-  div[data-testid="stTabs"] button { border-radius: 12px !important; }
+  div[data-testid="stTabs"] [data-baseweb="tab-list"] {
+    gap: 6px; overflow-x: auto; flex-wrap: nowrap;
+  }
+  div[data-testid="stTabs"] button { min-width: max-content; }
+  @media (max-width: 800px) {
+    .block-container { padding: .6rem .4rem 1.4rem !important; }
+    .hero h1 { font-size: 28px !important; }
+    .card b { font-size: 26px !important; }
+  }
   div[data-testid="stMetric"] {
     background: rgba(15,23,42,.72); border: 1px solid rgba(148,163,184,.18); border-radius: 16px; padding: 8px 12px;
   }
@@ -180,8 +188,15 @@ def ops_note(row: pd.Series) -> str:
     return " · ".join(notes) if notes else tr("لا قيد تشغيلي بارز", "No major operational limit")
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
-def fetch_live(stations: Dict[str, Dict]) -> Tuple[bool, Any]:
+def gfs_cycle(now_utc: datetime) -> str:
+    """Latest GFS cycle whose fields are normally available (about 3.5 h after 00/06/12/18 UTC)."""
+    ready = now_utc - timedelta(hours=3, minutes=30)
+    hour = (ready.hour // 6) * 6
+    return ready.strftime("%Y-%m-%d") + f" {hour:02d}Z"
+
+
+@st.cache_data(ttl=6 * 3600, show_spinner=False)
+def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
     try:
         params = {
             "latitude": ",".join(str(s["lat"]) for s in stations.values()),
@@ -223,6 +238,8 @@ def fetch_oni() -> Tuple[bool, Any]:
 
 st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
 uae_now = datetime.utcnow() + timedelta(hours=4)
+cycle = gfs_cycle(datetime.utcnow())
+bulletin_day = (uae_now - timedelta(hours=5)).strftime("%Y-%m-%d")
 base = uae_now.replace(minute=0, second=0, microsecond=0)
 timeline = [base + timedelta(hours=i * 3) for i in range(40)]
 timeline_str = [f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')} - {dt.strftime('%H:%M')}" for dt in timeline]
@@ -232,8 +249,8 @@ for dt in timeline:
     if label not in dates:
         dates.append(label)
 
-with st.spinner("يجمع 71wm القراءات الحية..."):
-    ok, live = fetch_live(STATIONS)
+with st.spinner("يجمع 71wm القراءات حسب آخر دورة نموذج..."):
+    ok, live = fetch_live(STATIONS, cycle)
 
 rows: List[Dict[str, Any]] = []
 if ok and isinstance(live, list):
@@ -328,7 +345,8 @@ st.markdown(
   <div class="sub">{tr(f"قراءة موحّدة للعواصف، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Storms, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
   <span class="pill">{tr("توقيت الإمارات", "UAE time")} {uae_now.strftime('%H:%M')}</span>
   <span class="pill">{tr("المخاطر الوطنية", "National risk")} {risk}% · {status}</span>
-  <span class="pill">{tr("بيانات حية", "Live data") if ok else tr("تعذر الجلب", "Fetch failed")}</span>
+  <span class="pill">{tr("دورة النموذج", "Model cycle")} {cycle}</span>
+  <span class="pill">{tr("نشرة الخمسة أيام", "Five-day bulletin")} {bulletin_day} · 05:00</span>
 </div>
 """,
     unsafe_allow_html=True,
@@ -409,16 +427,17 @@ with tab1:
             fig.add_trace(go.Scatter(x=peak["Time"], y=peak[col], name=names[col], line=dict(color=colors[col], width=3)))
         fig.update_layout(
             title=tr("ذروة كل خطر خلال 5 أيام", "Peak hazard over 5 days"),
-            height=480,
+            height=520,
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(size=16, color="#e7eef8"),
-            legend=dict(orientation="h", y=1.12, x=0, font=dict(size=16)),
-            margin=dict(l=10, r=10, t=80, b=100),
-            xaxis=dict(tickangle=-35, title=tr("الوقت", "Time")),
+            font=dict(size=14, color="#e7eef8"),
+            legend=dict(orientation="h", y=-0.35, x=0, font=dict(size=13)),
+            margin=dict(l=8, r=8, t=50, b=120),
+            xaxis=dict(tickangle=-40, nticks=6, title=""),
             yaxis=dict(title=tr("الاحتمال %", "Probability %"), range=[0, 100]),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        fig.update_xaxes(automargin=True)
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
     st.markdown(tr(
         "**معنى الخطوط:** الأحمر عواصف، الأزرق ضباب، الذهبي شمال وغبار، السماوي رذاذ، البنفسجي سحب الكوس.",
         "**Lines:** red storms, blue fog, gold shamal dust, cyan drizzle, purple Al-Kous cloud.",
@@ -576,7 +595,14 @@ def wind_words(direction: float, speed: float) -> str:
 
 
 with tab5:
-    st.markdown(tr("#### التوقع التفصيلي لخمسة أيام", "#### Detailed five-day outlook"))
+    st.markdown(tr(
+        f"#### نشرة خمسة أيام — أُصدرت 05:00 بتوقيت الإمارات بعد مراجعة دورة {cycle}",
+        f"#### Five-day bulletin — issued 05:00 UAE after review of cycle {cycle}",
+    ))
+    st.caption(tr(
+        "تُقفل النشرة اليومية عند 05:00 بعد نافذة التحليل 04:00. الخرائط الحية تتحدث مع دورات GFS 00 و06 و12 و18 بالتوقيت العالمي بعد جاهزية الحقول.",
+        "The daily bulletin locks at 05:00 UAE after the 04:00 analysis window. Live charts refresh on the GFS 00, 06, 12 and 18 UTC cycles once fields are available.",
+    ))
     marine_ok, marine = fetch_marine()
     if not marine_ok:
         st.warning(tr(f"تعذر جلب حالة البحر: {marine}", f"Sea state unavailable: {marine}"))

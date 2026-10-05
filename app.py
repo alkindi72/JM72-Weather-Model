@@ -1,242 +1,76 @@
-"""
-71wm AI Weather Model — UAE specialized real-time weather intelligence.
-Cleaned & hardened version.
-"""
+"""71wm AI Weather Model — UAE command deck."""
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
-import plotly.express as px
-import streamlit.components.v1 as components
-from streamlit_autorefresh import st_autorefresh
-import requests
 import base64
-import smtplib
-from email.mime.text import MIMEText
-from email.header import Header
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-# ==========================================
-# 1. PLATFORM SETTINGS
-# ==========================================
-st.set_page_config(
-    page_title="71wm AI Weather Model",
-    page_icon="🌩️",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import requests
+import streamlit as st
+import streamlit.components.v1 as components
+from streamlit_autorefresh import st_autorefresh
 
-# ==========================================
-# 2. CSS
-# ==========================================
+st.set_page_config(page_title="71wm AI Weather Model", page_icon="🌩️", layout="wide", initial_sidebar_state="collapsed")
+
 st.markdown(
     """
 <style>
-    html, body, [data-testid="stAppViewContainer"], .stApp, #root {
-        background-color: #F8FAFC !important;
-    }
-    .block-container {
-        background-color: #FFFFFF !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
-        padding: 2rem !important;
-        margin: 1rem auto !important;
-        border: 1px solid #E2E8F0 !important;
-        max-width: 95% !important;
-    }
-    [data-testid="stHeader"], [data-testid="stToolbar"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    .stApp p, .stApp span, .stApp label, div[data-testid="stTickBar"],
-    h1, h2, h3, h4, h5, h6 {
-        color: #082F49 !important;
-        font-weight: 900 !important;
-        font-size: 15px !important;
-    }
-    div[data-testid="stTabs"] [data-baseweb="tab-list"] {
-        border-bottom: 2px solid #CBD5E1 !important;
-    }
-    div[data-testid="stTabs"] button {
-        background-color: #FFFFFF !important;
-        border: 1px solid #CBD5E1 !important;
-        border-radius: 8px 8px 0 0 !important;
-        margin-right: 5px !important;
-        padding: 10px 20px !important;
-    }
-    div[data-testid="stTabs"] button[aria-selected="true"] {
-        background-color: #082F49 !important;
-        border-color: #082F49 !important;
-    }
-    div[data-testid="stTabs"] button[aria-selected="true"] p {
-        color: #FFFFFF !important;
-    }
-    .ai-broadcaster {
-        background: linear-gradient(90deg, #F0F9FF, #E0F2FE);
-        border-left: 5px solid #0284C7;
-        padding: 15px 20px;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: bold;
-        color: #0369A1;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1);
-    }
-    div[data-testid="stSlider"] {
-        background-color: #F1F5F9 !important;
-        padding: 20px !important;
-        border-radius: 12px !important;
-        margin-bottom: 25px !important;
-        border: 1px solid #E2E8F0 !important;
-    }
-    div[data-testid="stTickBar"] {
-        color: #475569 !important;
-        font-weight: bold !important;
-    }
-    div[data-testid="stSlider"] div[role="slider"] {
-        background-color: #0284C7 !important;
-        border: 2px solid #FFF !important;
-    }
-    .table-responsive {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        border-radius: 8px;
-        border: 1px solid #E2E8F0;
-        margin-bottom: 20px;
-    }
-    .custom-table {
-        width: 100%;
-        border-collapse: collapse;
-        background-color: #ffffff;
-        min-width: 850px;
-    }
-    .custom-table th {
-        background-color: #082F49;
-        color: #ffffff !important;
-        padding: 14px;
-        text-align: center;
-        border-bottom: 3px solid #D4AF37;
-        white-space: nowrap;
-    }
-    .custom-table td {
-        padding: 14px;
-        border-bottom: 1px solid #F1F5F9;
-        border-right: 1px solid #F1F5F9;
-        color: #082F49 !important;
-        font-weight: 800;
-        text-align: center;
-        white-space: nowrap;
-    }
-    .log-box {
-        background-color: #1E293B;
-        color: #10B981;
-        padding: 15px;
-        border-radius: 8px;
-        font-family: monospace;
-        font-size: 13px;
-        height: 150px;
-        overflow-y: auto;
-        margin-bottom: 15px;
-    }
+  html, body, [data-testid="stAppViewContainer"], .stApp {
+    background:
+      radial-gradient(900px 420px at 10% -10%, rgba(56,189,248,.16), transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, rgba(212,175,55,.12), transparent 50%),
+      #07111f !important;
+    color: #e7eef8;
+  }
+  [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
+  .block-container { padding: 1.1rem 1.4rem 2rem; max-width: 1380px; }
+  h1, h2, h3, h4, p, span, label, li, div { color: #e7eef8; }
+  html, body, [data-testid="stAppViewContainer"], .stApp, .stMarkdown, p, span, label {
+    font-size: 18px !important;
+  }
+  h1 { font-size: 40px !important; }
+  h2, h3, h4 { font-size: 26px !important; }
+  .sub, .muted, .pill { font-size: 16px !important; }
+  div[data-testid="stMetric"] label, div[data-testid="stMetric"] div { font-size: 18px !important; }
+  .hero {
+    border: 1px solid rgba(148,163,184,.22);
+    background: linear-gradient(135deg, rgba(15,23,42,.92), rgba(8,47,73,.78));
+    border-radius: 22px; padding: 18px 22px; margin-bottom: 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.28);
+  }
+  .stApp, .stMarkdown p, label, [data-testid="stCaptionContainer"] { font-size: 18px !important; }
+  div[data-testid="stTabs"] button p { font-size: 18px !important; }
+  .kicker { letter-spacing: .22em; color: #d4af37 !important; font-size: 14px !important; font-weight: 800; }
+  .hero h1 { margin: 4px 0 2px; font-size: 40px !important; font-weight: 900; color: white !important; }
+  .sub { color: #cbd5e1 !important; font-size: 18px !important; }
+  .pill {
+    display: inline-block; margin: 8px 8px 0 0; padding: 8px 12px; border-radius: 999px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); font-size: 16px !important;
+  }
+  .card {
+    background: rgba(15,23,42,.72); border: 1px solid rgba(148,163,184,.18);
+    border-radius: 16px; padding: 14px 16px; min-height: 108px;
+  }
+  .card b { display: block; font-size: 34px !important; margin-top: 4px; }
+  .muted { color: #cbd5e1 !important; font-size: 16px !important; }
+  div[data-testid="stTabs"] button { border-radius: 12px !important; }
+  div[data-testid="stMetric"] {
+    background: rgba(15,23,42,.72); border: 1px solid rgba(148,163,184,.18); border-radius: 16px; padding: 8px 12px;
+  }
+  [data-baseweb="select"] > div, [data-baseweb="popover"] li {
+    background: #0f172a !important; color: #f8fafc !important; font-size: 18px !important;
+  }
+  [data-baseweb="select"] span, [data-baseweb="popover"] { color: #f8fafc !important; }
+  input, textarea { color: #f8fafc !important; background: #0f172a !important; }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
-# ==========================================
-# 3. LOGO
-# ==========================================
-SVG_LOGO = """
-<svg width="600" height="220" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
-    <g transform="translate(240, 10)">
-        <polygon points="60,0 112,30 112,90 60,120 8,90 8,30" fill="none" stroke="#E2E8F0" stroke-width="3"/>
-        <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#F8FAFC" stroke="#082F49" stroke-width="1.5"/>
-        <circle cx="60" cy="60" r="25" fill="#FDE047" opacity="0.4" />
-        <path d="M 30,35 L 70,35 L 55,65 L 65,65 L 40,95 L 45,70 L 35,70 Z" fill="#D4AF37" />
-        <path d="M 75,35 L 90,35 L 90,95 L 75,95 Z" fill="#0284C7" />
-        <g transform="translate(31, 108)">
-            <rect x="0" y="0" width="10" height="10" fill="#EF4444" rx="2" transform="rotate(45 5 5)"/>
-            <rect x="16" y="0" width="10" height="10" fill="#10B981" rx="2" transform="rotate(45 5 5)"/>
-            <rect x="32" y="0" width="10" height="10" fill="#CBD5E1" rx="2" transform="rotate(45 5 5)"/>
-            <rect x="48" y="0" width="10" height="10" fill="#1E293B" rx="2" transform="rotate(45 5 5)"/>
-        </g>
-    </g>
-    <text x="300" y="180" font-family="'Arial Black', system-ui, sans-serif" font-weight="900" font-size="34" fill="#082F49" text-anchor="middle" letter-spacing="1">71wm AI</text>
-    <text x="300" y="205" font-family="system-ui, sans-serif" font-weight="800" font-size="14" fill="#64748B" text-anchor="middle" letter-spacing="6">WEATHER MODEL • U.A.E</text>
-</svg>
-"""
-b64_svg = base64.b64encode(SVG_LOGO.encode("utf-8")).decode("utf-8")
-st.markdown(
-    f'<div style="width:100%;display:flex;justify-content:center;margin-bottom:15px;">'
-    f'<img src="data:image/svg+xml;base64,{b64_svg}" style="max-width:450px;width:100%;height:auto;" alt="71wm Logo" />'
-    f"</div>",
-    unsafe_allow_html=True,
-)
-
-# ==========================================
-# 4. SESSION STATE
-# ==========================================
-st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
-
-DEFAULTS = {
-    "admin_password": "Jumah71",
-    "admin_logged_in": False,
-    "email_enabled": False,
-    "email_sender": "",
-    "email_receiver": "",
-    "email_password": "",
-    "email_sent_track": {},
-    "alert_logs": [],
-}
-for key, val in DEFAULTS.items():
-    if key not in st.session_state:
-        st.session_state[key] = val
-
-
-def send_secure_alert_email(subject: str, html_body: str) -> Tuple[bool, str]:
-    """Send HTML alert email via Gmail SMTP."""
-    if not st.session_state["email_enabled"]:
-        return False, "النظام معطل يدوياً"
-    sender = st.session_state.get("email_sender", "").strip()
-    password = st.session_state.get("email_password", "").strip()
-    receiver_raw = st.session_state.get("email_receiver", "").strip()
-    if not sender or not password or not receiver_raw:
-        return False, "بيانات المرسل أو المستلم ناقصة"
-
-    receivers = [e.strip() for e in receiver_raw.split(",") if e.strip()]
-    if not receivers:
-        return False, "تنسيق الإيميلات غير صحيح"
-
-    try:
-        msg = MIMEText(html_body, "html", "utf-8")
-        msg["Subject"] = Header(subject, "utf-8")
-        msg["From"] = sender
-        msg["To"] = ", ".join(receivers)
-
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=20) as server:
-            server.starttls()
-            server.login(sender, password)
-            server.sendmail(sender, receivers, msg.as_string())
-        return True, f"تم بنجاح لـ {len(receivers)} مستلم(ين)"
-    except Exception as exc:
-        return False, f"خطأ الخادم: {exc}"
-
-
-# ==========================================
-# 5. STATIONS & TIMELINE
-# ==========================================
-DAYS_EN = {
-    "Monday": "Mon",
-    "Tuesday": "Tue",
-    "Wednesday": "Wed",
-    "Thursday": "Thu",
-    "Friday": "Fri",
-    "Saturday": "Sat",
-    "Sunday": "Sun",
-}
-
+DAYS_EN = {"Monday": "Mon", "Tuesday": "Tue", "Wednesday": "Wed", "Thursday": "Thu", "Friday": "Fri", "Saturday": "Sat", "Sunday": "Sun"}
 STATIONS: Dict[str, Dict[str, Any]] = {
     "Abu Dhabi": {"lat": 24.4760, "lon": 54.3290, "type": "Coast"},
     "ADNOC HQ": {"lat": 24.4621, "lon": 54.3241, "type": "Coast"},
@@ -275,822 +109,554 @@ STATIONS: Dict[str, Dict[str, Any]] = {
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"},
     "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"},
 }
-
 SECTOR_MAP = {
-    "المنطقة الشرقية": [
-        "Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen",
-        "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port",
-    ],
-    "المنطقة الوسطى": ["Al Dhaid", "Al Malaiha"],
-    "أبوظبي ومنطقة الظفرة": [
-        "Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas",
-        "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz",
-        "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport",
-    ],
-    "منطقة العين": ["Al Ain Int'l Airport", "Al Aamerah"],
-    "دبي والإمارات الشمالية": [
-        "Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain",
-        "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport",
-        "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport",
-    ],
+    "الشرقية": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"],
+    "الوسطى": ["Al Dhaid", "Al Malaiha"],
+    "أبوظبي والظفرة": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
+    "العين": ["Al Ain Int'l Airport", "Al Aamerah"],
+    "دبي والشمال": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"],
 }
+SEASON_ORDER = ["DJF", "JFM", "FMA", "MAM", "AMJ", "MJJ", "JJA", "JAS", "ASO", "SON", "OND", "NDJ"]
 
 
-def get_sector_for_station(station_name: str) -> str:
-    for sector, stations in SECTOR_MAP.items():
-        if station_name in stations:
+def tr(ar: str, en: str) -> str:
+    return ar if st.session_state.get("lang", "ar") == "ar" else en
+
+
+SECTOR_EN = {
+    "الشرقية": "East",
+    "الوسطى": "Central",
+    "أبوظبي والظفرة": "Abu Dhabi & Dhafra",
+    "العين": "Al Ain",
+    "دبي والشمال": "Dubai & North",
+    "متفرقة": "Other",
+}
+def sector_of(name: str) -> str:
+    for sector, names in SECTOR_MAP.items():
+        if name in names:
             return sector
-    return "مناطق متفرقة"
+    return "متفرقة"
 
 
-def _safe_num(value: Any, default: float = 0.0) -> float:
-    """Convert API value to float, treating None/NaN as default."""
-    if value is None:
-        return default
+def safe_num(value: Any, default: float = 0.0) -> float:
     try:
-        v = float(value)
-        if np.isnan(v):
+        if value is None or (isinstance(value, float) and np.isnan(value)):
             return default
-        return v
+        v = float(value)
+        return default if np.isnan(v) else v
     except (TypeError, ValueError):
         return default
 
 
-def _safe_max(series: pd.Series, default: float = 0.0) -> float:
-    if series is None or series.empty:
+def safe_max(series: pd.Series, default: float = 0.0) -> float:
+    if series is None or len(series) == 0:
         return default
     val = series.max()
-    if pd.isna(val):
-        return default
-    return float(val)
+    return default if pd.isna(val) else float(val)
 
 
-def _safe_min(series: pd.Series, default: float = 0.0) -> float:
-    if series is None or series.empty:
-        return default
-    val = series.min()
-    if pd.isna(val):
-        return default
-    return float(val)
+def heat_band(apparent: float) -> str:
+    if apparent >= 45:
+        return tr("إجهاد شديد", "Extreme stress")
+    if apparent >= 40:
+        return tr("إجهاد مرتفع", "High stress")
+    if apparent >= 35:
+        return tr("حار", "Hot")
+    return tr("معتدل", "Moderate")
 
 
-# Timeline (UAE = UTC+4)
-uae_time = datetime.utcnow() + timedelta(hours=4)
-base_date = uae_time.replace(minute=0, second=0, microsecond=0)
-timeline = [base_date + timedelta(hours=i * 3) for i in range(8 * 5)]  # 5 days × 8 slots
-timeline_str = [
-    f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')} - {dt.strftime('%H:%M')}"
-    for dt in timeline
-]
-unique_dates_display: List[str] = []
-for dt in timeline:
-    d_str = f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')}"
-    if d_str not in unique_dates_display:
-        unique_dates_display.append(d_str)
+def ops_note(row: pd.Series) -> str:
+    notes = []
+    if row["Storm Probability"] >= 65:
+        notes.append(tr("طيران: راقب خلايا رعدية", "Aviation: watch storms"))
+    if row["Fog Probability"] >= 50:
+        notes.append(tr("طرق: تدني رؤية", "Roads: low visibility"))
+    if row["Shamal Index"] >= 60:
+        notes.append(tr("غبار محتمل", "Dust possible"))
+    if row["Drizzle Prob"] >= 60:
+        notes.append(tr("شرق: رذاذ جبلي", "East: orographic drizzle"))
+    if row["Apparent Temp"] >= 42:
+        notes.append(tr("عمل خارجي: حدّ من التعرض", "Outdoor work: limit exposure"))
+    return " · ".join(notes) if notes else tr("لا قيد تشغيلي بارز", "No major operational limit")
 
 
-# ==========================================
-# 6. DATA FETCH
-# ==========================================
 @st.cache_data(ttl=3600, show_spinner=False)
-def fetch_stable_live_data(stations_dict: Dict[str, Dict]) -> Tuple[bool, Any]:
-    """Fetch multi-location forecast from Open-Meteo. Returns (success, data_or_error)."""
+def fetch_live(stations: Dict[str, Dict]) -> Tuple[bool, Any]:
     try:
-        lats = ",".join(str(s["lat"]) for s in stations_dict.values())
-        lons = ",".join(str(s["lon"]) for s in stations_dict.values())
         params = {
-            "latitude": lats,
-            "longitude": lons,
+            "latitude": ",".join(str(s["lat"]) for s in stations.values()),
+            "longitude": ",".join(str(s["lon"]) for s in stations.values()),
             "current": "precipitation,weather_code",
-            "hourly": (
-                "temperature_2m,apparent_temperature,relative_humidity_2m,cape,"
-                "winddirection_10m,windspeed_10m,windgusts_10m,"
-                "relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,"
-                "temperature_850hPa,temperature_500hPa,cloudcover_low"
-            ),
+            "hourly": "temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low",
             "models": "gfs_seamless",
             "timezone": "auto",
         }
-        response = requests.get(
-            "https://api.open-meteo.com/v1/forecast",
-            params=params,
-            timeout=30,
-        )
+        response = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
-
-        # Multi-location → list; single-location → dict
         if isinstance(data, dict) and data.get("error"):
-            return False, data.get("reason", "Unknown API error")
+            return False, data.get("reason", "API error")
         if isinstance(data, dict):
             data = [data]
-        if not isinstance(data, list) or len(data) == 0:
-            return False, "Unexpected API response format"
-        return True, data
-    except requests.exceptions.Timeout:
-        return False, "Timeout connecting to Open-Meteo"
-    except requests.exceptions.RequestException as exc:
-        return False, str(exc)
+        return (True, data) if data else (False, "Empty response")
     except Exception as exc:
         return False, str(exc)
 
 
-with st.spinner("🤖 71wm AI Engine: Compiling live metrics..."):
-    fetch_success, live_data = fetch_stable_live_data(STATIONS)
-
-if not fetch_success:
-    st.error(f"⚠️ فشل جلب البيانات الحية: {live_data}")
-    st.info("سيتم عرض بيانات افتراضية حتى يتوفر الاتصال.")
-
-
-# ==========================================
-# 7. AI DYNAMICS ENGINE
-# ==========================================
-weather_rows: List[Dict[str, Any]] = []
-
-if fetch_success and isinstance(live_data, list):
-    station_items = list(STATIONS.items())
-    n = min(len(live_data), len(station_items))
-
-    for idx in range(n):
-        name, coords = station_items[idx]
-        zone_mapped = "Inland" if coords["type"] in ("Inland", "Desert") else coords["type"]
-
-        try:
-            station_payload = live_data[idx]
-            hourly = station_payload.get("hourly") or {}
-            times_raw = hourly.get("time") or []
-            if not times_raw:
+@st.cache_data(ttl=6 * 3600, show_spinner=False)
+def fetch_oni() -> Tuple[bool, Any]:
+    try:
+        text = requests.get("https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt", timeout=25).text
+        rows = []
+        for line in text.splitlines():
+            parts = line.split()
+            if len(parts) < 4 or parts[0] not in SEASON_ORDER:
                 continue
+            rows.append({"season": parts[0], "year": int(parts[1]), "sst": float(parts[2]), "anom": float(parts[3])})
+        df = pd.DataFrame(rows)
+        df["label"] = df["season"] + " " + df["year"].astype(str)
+        df["order"] = df["year"] * 12 + df["season"].map({s: i for i, s in enumerate(SEASON_ORDER)})
+        return True, df.sort_values("order").reset_index(drop=True)
+    except Exception as exc:
+        return False, str(exc)
 
-            api_times = [
-                datetime.fromisoformat(t).replace(tzinfo=None) for t in times_raw
-            ]
 
-            for dt_str, dt in zip(timeline_str, timeline):
-                # defaults
-                temp_c = 35.0
-                app_temp = 35.0
-                surface_rh = 50.0
-                cloud_low = 0.0
-                wind_dir = 0.0
-                wind_spd = 0.0
-                storm_prob = 0.0
-                fog_prob = 0.0
-                alkous_prob = 0.0
-                drizzle_prob = 0.0
+st_autorefresh(interval=15 * 60 * 1000, key="data_refresh")
+uae_now = datetime.utcnow() + timedelta(hours=4)
+base = uae_now.replace(minute=0, second=0, microsecond=0)
+timeline = [base + timedelta(hours=i * 3) for i in range(40)]
+timeline_str = [f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')} - {dt.strftime('%H:%M')}" for dt in timeline]
+dates = []
+for dt in timeline:
+    label = f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')}"
+    if label not in dates:
+        dates.append(label)
 
-                try:
-                    deltas = [abs((api_t - dt).total_seconds()) for api_t in api_times]
-                    closest_idx = int(np.argmin(deltas))
+with st.spinner("يجمع 71wm القراءات الحية..."):
+    ok, live = fetch_live(STATIONS)
 
-                    temp_c = _safe_num(hourly.get("temperature_2m", [None])[closest_idx], 35.0)
-                    app_list = hourly.get("apparent_temperature") or [temp_c] * len(api_times)
-                    app_temp = _safe_num(app_list[closest_idx], temp_c)
-                    surface_rh = _safe_num(
-                        (hourly.get("relative_humidity_2m") or [50])[closest_idx], 50.0
-                    )
-                    cloud_low = _safe_num(
-                        (hourly.get("cloudcover_low") or [0])[closest_idx], 0.0
-                    )
-                    wind_dir = _safe_num(
-                        (hourly.get("winddirection_10m") or [0])[closest_idx], 0.0
-                    )
-                    wind_spd = _safe_num(
-                        (hourly.get("windspeed_10m") or [0])[closest_idx], 0.0
-                    )
-                    cape_val = _safe_num(
-                        (hourly.get("cape") or [0])[closest_idx], 0.0
-                    )
-                    rh_850 = _safe_num(
-                        (hourly.get("relative_humidity_850hPa") or [50])[closest_idx], 50.0
-                    )
-                    rh_700 = _safe_num(
-                        (hourly.get("relative_humidity_700hPa") or [50])[closest_idx], 50.0
-                    )
-                    rh_500 = _safe_num(
-                        (hourly.get("relative_humidity_500hPa") or [50])[closest_idx], 50.0
-                    )
-                    t_850 = _safe_num(
-                        (hourly.get("temperature_850hPa") or [20])[closest_idx], 20.0
-                    )
-                    t_500 = _safe_num(
-                        (hourly.get("temperature_500hPa") or [-10])[closest_idx], -10.0
-                    )
-
-                    # --- Storm AI ---
-                    prob = (cape_val / 2000.0) * 100.0
-                    moisture_index = (rh_850 * 0.4) + (rh_700 * 0.4) + (rh_500 * 0.2)
-                    lapse_rate = t_850 - t_500
-                    if lapse_rate > 26:
-                        prob *= 1.3
-                    elif lapse_rate < 20:
-                        prob *= 0.5
-                    if moisture_index < 40:
-                        prob *= 0.1
-                    elif moisture_index > 70:
-                        prob *= 1.2
-                    if coords["type"] == "Mountains" and temp_c > 38:
-                        prob *= 1.3
-                    if dt.hour < 12 or dt.hour > 19:
-                        prob *= 0.1  # night suppression
-                    storm_prob = float(np.clip(prob, 0, 100))
-
-                    # --- Fog AI ---
-                    if (dt.hour < 8 or dt.hour > 22) and surface_rh > 80 and wind_spd < 15:
-                        fog_prob = float(
-                            np.clip(
-                                ((surface_rh - 80) * 4) + ((15 - wind_spd) * 3), 0, 100
-                            )
-                        )
-
-                    # --- Al-Kous AI ---
-                    if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and surface_rh >= 65:
-                        alkous_base = ((surface_rh - 65) * 2) + (cloud_low * 0.5)
-                        if temp_c >= 35:
-                            alkous_base *= 1.2
-                        alkous_prob = float(np.clip(alkous_base, 0, 100))
-
-                    # --- Drizzle AI ---
-                    if (
-                        coords["lon"] >= 55.8
-                        and 3 <= dt.hour <= 9
-                        and 45 <= wind_dir <= 160
-                        and surface_rh >= 85
-                        and cloud_low >= 75
-                    ):
-                        drizzle_prob = float(
-                            np.clip(
-                                ((surface_rh - 85) * 4)
-                                + ((cloud_low - 75) * 2)
-                                + (wind_spd * 0.8),
-                                0,
-                                100,
-                            )
-                        )
-
-                except Exception:
-                    pass  # keep defaults
-
-                weather_rows.append(
-                    {
-                        "Time": dt_str,
-                        "DateOnly": f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')}",
-                        "Station": name,
-                        "Zone": zone_mapped,
-                        "Latitude": coords["lat"],
-                        "Longitude": coords["lon"],
-                        "Storm Probability": round(storm_prob),
-                        "Fog Probability": round(fog_prob),
-                        "AlKous Prob": round(alkous_prob),
-                        "Drizzle Prob": round(drizzle_prob),
-                        "Temperature": round(temp_c, 1),
-                        "Apparent Temp": round(app_temp, 1),
-                        "Humidity": round(surface_rh),
-                    }
-                )
-        except Exception:
+rows: List[Dict[str, Any]] = []
+if ok and isinstance(live, list):
+    for idx, (name, coords) in enumerate(list(STATIONS.items())[: len(live)]):
+        hourly = (live[idx] or {}).get("hourly") or {}
+        times = hourly.get("time") or []
+        if not times:
             continue
+        api_times = [datetime.fromisoformat(t).replace(tzinfo=None) for t in times]
+        zone = "Inland" if coords["type"] in ("Inland", "Desert") else coords["type"]
+        for dt_str, dt in zip(timeline_str, timeline):
+            temp = app = 35.0
+            rh = 50.0
+            cloud = wind_dir = wind = gust = storm = fog = alkous = drizzle = shamal = 0.0
+            try:
+                i = int(np.argmin([abs((t - dt).total_seconds()) for t in api_times]))
+                temp = safe_num((hourly.get("temperature_2m") or [None])[i], 35)
+                app = safe_num((hourly.get("apparent_temperature") or [temp])[i], temp)
+                rh = safe_num((hourly.get("relative_humidity_2m") or [50])[i], 50)
+                cloud = safe_num((hourly.get("cloudcover_low") or [0])[i], 0)
+                wind_dir = safe_num((hourly.get("winddirection_10m") or [0])[i], 0)
+                wind = safe_num((hourly.get("windspeed_10m") or [0])[i], 0)
+                gust = safe_num((hourly.get("windgusts_10m") or [wind])[i], wind)
+                cape = safe_num((hourly.get("cape") or [0])[i], 0)
+                rh850 = safe_num((hourly.get("relative_humidity_850hPa") or [50])[i], 50)
+                rh700 = safe_num((hourly.get("relative_humidity_700hPa") or [50])[i], 50)
+                rh500 = safe_num((hourly.get("relative_humidity_500hPa") or [50])[i], 50)
+                t850 = safe_num((hourly.get("temperature_850hPa") or [20])[i], 20)
+                t500 = safe_num((hourly.get("temperature_500hPa") or [-10])[i], -10)
+                prob = cape / 20.0
+                moisture = rh850 * 0.4 + rh700 * 0.4 + rh500 * 0.2
+                lapse = t850 - t500
+                prob *= 1.3 if lapse > 26 else (0.5 if lapse < 20 else 1)
+                prob *= 0.1 if moisture < 40 else (1.2 if moisture > 70 else 1)
+                if coords["type"] == "Mountains" and temp > 38:
+                    prob *= 1.3
+                if dt.hour < 12 or dt.hour > 19:
+                    prob *= 0.1
+                storm = float(np.clip(prob, 0, 100))
+                if (dt.hour < 8 or dt.hour > 22) and rh > 80 and wind < 15:
+                    fog = float(np.clip((rh - 80) * 4 + (15 - wind) * 3, 0, 100))
+                if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 65:
+                    base_k = (rh - 65) * 2 + cloud * 0.5
+                    alkous = float(np.clip(base_k * (1.2 if temp >= 35 else 1), 0, 100))
+                if coords["lon"] >= 55.8 and 3 <= dt.hour <= 9 and 45 <= wind_dir <= 160 and rh >= 85 and cloud >= 75:
+                    drizzle = float(np.clip((rh - 85) * 4 + (cloud - 75) * 2 + wind * 0.8, 0, 100))
+                nw = wind_dir >= 300 or wind_dir <= 30
+                shamal = float(np.clip((wind - 18) * 3.2 + (12 if nw else 0) + (8 if coords["type"] in ("Desert", "Coast") else 0), 0, 100)) if wind >= 20 and nw else 0.0
+            except Exception:
+                pass
+            rows.append({
+                "Time": dt_str, "DateOnly": f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')}",
+                "Station": name, "Sector": sector_of(name), "Zone": zone,
+                "Latitude": coords["lat"], "Longitude": coords["lon"],
+                "Storm Probability": round(storm), "Fog Probability": round(fog),
+                "AlKous Prob": round(alkous), "Drizzle Prob": round(drizzle),
+                "Shamal Index": round(shamal), "Temperature": round(temp, 1),
+                "Apparent Temp": round(app, 1), "Humidity": round(rh),
+                "Wind": round(wind, 1), "Gust": round(gust, 1), "Wind Dir": round(wind_dir),
+            })
 
-df_all = pd.DataFrame(weather_rows)
-
-# Ensure expected columns even if empty
-EXPECTED_COLS = [
-    "Time", "DateOnly", "Station", "Zone", "Latitude", "Longitude",
-    "Storm Probability", "Fog Probability", "AlKous Prob", "Drizzle Prob",
-    "Temperature", "Apparent Temp", "Humidity",
-]
-for col in EXPECTED_COLS:
-    if col not in df_all.columns:
-        df_all[col] = 0 if col not in ("Time", "DateOnly", "Station", "Zone") else ""
-
-
-# ==========================================
-# 8. ALERTS
-# ==========================================
-def get_html_email_template(
-    title: str,
-    text: str,
-    regions: str,
-    start_dt: datetime,
-    end_dt: datetime,
-    header_color: str,
-) -> str:
-    start_str = start_dt.strftime("%d/%m/%Y - %H:%M")
-    end_str = end_dt.strftime("%d/%m/%Y - %H:%M")
-    return f"""
-    <div dir="rtl" style="font-family:Arial,sans-serif;border:1px solid #E2E8F0;max-width:600px;margin:0 auto;border-radius:8px;overflow:hidden;background:#FFF;">
-        <div style="background-color:{header_color};padding:15px;text-align:center;border-bottom:2px solid rgba(0,0,0,0.1);">
-            <h2 style="margin:0;color:#000;font-size:22px;">{title}</h2>
-        </div>
-        <div style="padding:20px;">
-            <p style="font-size:18px;font-weight:bold;color:#1E293B;line-height:1.6;text-align:center;">{text}</p>
-            <div style="background:#F8FAFC;border-radius:6px;padding:15px;margin-top:20px;border:1px solid #E2E8F0;">
-                <p style="margin:0 0 10px 0;font-size:16px;color:#082F49;"><b>المناطق المتأثرة:</b> {regions}</p>
-                <hr style="border:0;border-top:1px solid #CBD5E1;margin:10px 0;">
-                <div style="display:flex;justify-content:space-between;">
-                    <p style="margin:0;font-size:16px;color:#334155;"><b>بداية التحذير:</b><br>{start_str}</p>
-                    <p style="margin:0;font-size:16px;color:#334155;"><b>نهاية التحذير:</b><br>{end_str}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    """
-
-
-current_time_df = (
-    df_all[df_all["Time"] == timeline_str[0]] if not df_all.empty else pd.DataFrame()
+df = pd.DataFrame(rows)
+now_df = df[df["Time"] == timeline_str[0]] if not df.empty else pd.DataFrame()
+risk = 0 if now_df.empty else int(np.clip(max(safe_max(now_df["Storm Probability"]), safe_max(now_df["Fog Probability"]), safe_max(now_df["Shamal Index"]) * 0.7, safe_max(now_df["Drizzle Prob"]) * 0.8), 0, 100))
+status_ar = "حرج" if risk >= 70 else ("مراقب" if risk >= 40 else "مستقر")
+status_en = "Critical" if risk >= 70 else ("Watch" if risk >= 40 else "Stable")
+choice = st.radio("Language", ["العربية", "English"], horizontal=True, key="lang_choice", label_visibility="collapsed")
+st.session_state.lang = "ar" if choice == "العربية" else "en"
+lang = st.session_state.lang
+status = status_ar if lang == "ar" else status_en
+side = "rtl" if lang == "ar" else "ltr"
+align = "right" if lang == "ar" else "left"
+st.markdown(
+    f"""
+<style>
+  html, body, [data-testid="stAppViewContainer"], .stApp, .block-container,
+  [data-testid="stVerticalBlock"], .stMarkdown, section, [data-testid="stTabs"],
+  [data-testid="stDataFrame"], label, p {{
+    direction: {side} !important;
+    text-align: {align} !important;
+  }}
+</style>
+""",
+    unsafe_allow_html=True,
 )
-max_storm_now = _safe_max(current_time_df["Storm Probability"] if not current_time_df.empty else pd.Series(dtype=float))
-max_drizzle_now = _safe_max(current_time_df["Drizzle Prob"] if not current_time_df.empty else pd.Series(dtype=float))
-max_fog_now = _safe_max(current_time_df["Fog Probability"] if not current_time_df.empty else pd.Series(dtype=float))
-current_time_stamp = datetime.now().strftime("%H:%M:%S")
-now_dt = datetime.now()
 
-if st.session_state["email_enabled"] and not current_time_df.empty:
-    today_key = unique_dates_display[0] if unique_dates_display else "today"
-    if today_key not in st.session_state["email_sent_track"]:
-        st.session_state["email_sent_track"][today_key] = {
-            "storm": False,
-            "drizzle": False,
-            "fog": False,
-        }
-    track = st.session_state["email_sent_track"][today_key]
+st.markdown(
+    f"""
+<div class="hero">
+  <div class="kicker">71WM · UAE WEATHER INTELLIGENCE</div>
+  <h1>{tr("لوحة القيادة الجوية", "Weather command deck")}</h1>
+  <div class="sub">{tr(f"قراءة موحّدة للعواصف، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Storms, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
+  <span class="pill">{tr("توقيت الإمارات", "UAE time")} {uae_now.strftime('%H:%M')}</span>
+  <span class="pill">{tr("المخاطر الوطنية", "National risk")} {risk}% · {status}</span>
+  <span class="pill">{tr("بيانات حية", "Live data") if ok else tr("تعذر الجلب", "Fetch failed")}</span>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+if not ok:
+    st.error(tr(f"تعذر جلب Open-Meteo: {live}", f"Open-Meteo fetch failed: {live}"))
 
-    # Storm ≥ 65%
-    if max_storm_now >= 65 and not track["storm"]:
-        affected = current_time_df[current_time_df["Storm Probability"] >= 65]["Station"].tolist()
-        regions_str = "، ".join(sorted(set(get_sector_for_station(s) for s in affected)))
-        html_body = get_html_email_template(
-            "⛈️ أمطار رعدية ، ☁️ سحب ركامية",
-            "فرصة تكون سحب ركامية يصاحبها أمطار ورياح نشطة إلى قوية السرعة مع السحب مثيرة للغبار.",
-            regions_str,
-            now_dt,
-            now_dt + timedelta(hours=5),
-            "#FDE047",
-        )
-        success, msg_info = send_secure_alert_email("71 weather model: Storm Warning", html_body)
-        if success:
-            track["storm"] = True
-            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (عاصفة): {msg_info}")
+c1, c2, c3, c4, c5 = st.columns(5)
+cards = [
+    (tr("عواصف", "Storms"), safe_max(now_df["Storm Probability"]) if not now_df.empty else 0, "%"),
+    (tr("ضباب", "Fog"), safe_max(now_df["Fog Probability"]) if not now_df.empty else 0, "%"),
+    (tr("كوس / رذاذ", "Al-Kous / drizzle"), max(safe_max(now_df["AlKous Prob"]) if not now_df.empty else 0, safe_max(now_df["Drizzle Prob"]) if not now_df.empty else 0), "%"),
+    (tr("غبار الشمال", "Shamal dust"), safe_max(now_df["Shamal Index"]) if not now_df.empty else 0, "%"),
+    (tr("أقصى إحساس", "Peak feels-like"), safe_max(now_df["Apparent Temp"]) if not now_df.empty else 0, "°C"),
+]
+for col, (title, value, unit) in zip((c1, c2, c3, c4, c5), cards):
+    col.markdown(f"<div class='card'><div class='muted'>{title}</div><b>{value:.0f} {unit}</b></div>", unsafe_allow_html=True)
 
-    # Drizzle ≥ 60%
-    if max_drizzle_now >= 60 and not track["drizzle"]:
-        affected = current_time_df[current_time_df["Drizzle Prob"] >= 60]["Station"].tolist()
-        regions_str = "، ".join(sorted(set(get_sector_for_station(s) for s in affected)))
-        html_body = get_html_email_template(
-            "🌧️ رذاذ وسحب الكوس ، ☁️ سحب منخفضة",
-            "فرصة تكون سحب الكوس المنخفضة وتدفقها نحو السواحل والجبال الشرقية، قد يصاحبها تساقط الرذاذ المستمر وانخفاض في مدى الرؤية الأفقية.",
-            regions_str,
-            now_dt,
-            now_dt.replace(hour=10, minute=0, second=0, microsecond=0),
-            "#E0F2FE",
-        )
-        success, msg_info = send_secure_alert_email("71 weather model: Al Kouse warning", html_body)
-        if success:
-            track["drizzle"] = True
-            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (رذاذ): {msg_info}")
+brief = tr("الأعمدة الجوية مستقرة حالياً.", "The air column is currently stable.")
+if not now_df.empty:
+    if safe_max(now_df["Fog Probability"]) >= 50:
+        brief = tr("ضباب إشعاعي محتمل ويؤثر على الرؤية والطرق.", "Radiation fog may reduce visibility on roads.")
+    elif safe_max(now_df["Drizzle Prob"]) >= 60:
+        brief = tr("رذاذ الكوس محتمل على الحافة الشرقية.", "Al-Kous drizzle is possible on the east coast.")
+    elif safe_max(now_df["Storm Probability"]) >= 65:
+        brief = tr("نشاط ركامي معزول محتمل بعد الظهر.", "Isolated afternoon storms are possible.")
+    elif safe_max(now_df["Shamal Index"]) >= 60:
+        brief = tr("تدفق شمالي غربي قد يثير الغبار على السواحل والصحراء.", "A northwesterly shamal may raise dust on coasts and desert.")
+st.info(brief)
 
-    # Fog ≥ 50%
-    if max_fog_now >= 50 and not track["fog"]:
-        affected = current_time_df[current_time_df["Fog Probability"] >= 50]["Station"].tolist()
-        regions_str = "، ".join(sorted(set(get_sector_for_station(s) for s in affected)))
-        end_fog = (
-            now_dt.replace(hour=9, minute=30, second=0, microsecond=0)
-            if now_dt.hour < 9
-            else now_dt + timedelta(hours=4)
-        )
-        html_body = get_html_email_template(
-            "🌫️ ضباب ، 📉 تدني الرؤية الأفقية",
-            "فرصة تشكل ضباب أو ضباب خفيف وانخفاض مدى الرؤية الأفقية على بعض المناطق الداخلية والساحلية.",
-            regions_str,
-            now_dt,
-            end_fog,
-            "#E2E8F0",
-        )
-        success, msg_info = send_secure_alert_email("71 weather model: Fog & low Visibility", html_body)
-        if success:
-            track["fog"] = True
-            st.session_state["alert_logs"].insert(0, f"[{current_time_stamp}] ✅ نجاح (ضباب): {msg_info}")
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tr("القيادة", "Command"),
+    tr("المخاطر", "Hazards"),
+    tr("الحرارة والشمال", "Heat & shamal"),
+    tr("المحطات", "Stations"),
+    tr("خمسة أيام", "5-day outlook"),
+    tr("النينيو", "ENSO"),
+])
 
 
-# ==========================================
-# 9. AI BRIEFING
-# ==========================================
-ai_briefing = "🤖 **71wm AI Broadcaster:** "
-if not current_time_df.empty:
-    max_alkous = _safe_max(current_time_df["AlKous Prob"])
-    if max_fog_now >= 50:
-        ai_briefing += "🌫️ **🚨 Dense Fog Warning:** High risk of radiation fog affecting visibility. "
-    elif max_drizzle_now >= 60:
-        ai_briefing += f"🌧️ **🚨 Al-Kous Drizzle Warning:** High risk ({int(max_drizzle_now)}%) of morning drizzle forming over the eastern ridges. "
-    elif max_storm_now >= 65:
-        ai_briefing += f"🌩️ Convective activity shows a {int(max_storm_now)}% risk of isolated storms. "
-    elif max_alkous > 50:
-        ai_briefing += f"⚠️ High probability ({int(max_alkous)}%) of dense Al-Kous low clouds. "
-    else:
-        ai_briefing += "Atmospheric columns remain thermodynamically stable with no localized anomalies detected."
-else:
-    ai_briefing += "Waiting for live data feed..."
-
-st.markdown(f'<div class="ai-broadcaster">{ai_briefing}</div>', unsafe_allow_html=True)
-
-
-# ==========================================
-# 10. HELPER: density map
-# ==========================================
-def make_density_map(
-    df: pd.DataFrame,
-    z_col: str,
-    center_lat: float = 24.4,
-    center_lon: float = 54.6,
-    zoom: float = 5.5,
-    colorscale: Optional[List] = None,
-    opacity: float = 0.75,
-    title: str = "",
-):
-    if df.empty or z_col not in df.columns:
-        fig = px.scatter_mapbox(
-            lat=[center_lat],
-            lon=[center_lon],
-            zoom=zoom,
-            height=400,
-        )
-        fig.update_layout(
-            mapbox_style="open-street-map",
-            margin=dict(r=0, t=40 if title else 0, l=0, b=0),
-            title=title or None,
-        )
+def density(frame: pd.DataFrame, z: str, lat=24.4, lon=54.6, zoom=5.5, title=""):
+    if frame.empty:
+        fig = go.Figure()
+        fig.update_layout(title=title or "لا بيانات", height=420, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(size=16))
         return fig
-
-    colorscale = colorscale or [
-        "rgba(0,0,0,0)",
-        "#A3E635",
-        "#FDE047",
-        "#EF4444",
-        "#7E22CE",
-    ]
     fig = px.density_mapbox(
-        df,
-        lat="Latitude",
-        lon="Longitude",
-        z=z_col,
-        radius=45,
-        center=dict(lat=center_lat, lon=center_lon),
-        zoom=zoom,
-        mapbox_style="open-street-map",
-        opacity=opacity,
-        color_continuous_scale=colorscale,
-        range_color=[0, 100],
-        title=title or None,
+        frame, lat="Latitude", lon="Longitude", z=z, radius=42,
+        center=dict(lat=lat, lon=lon), zoom=zoom,
+        mapbox_style="open-street-map", range_color=[0, 100], opacity=0.72, title=title,
     )
-    fig.update_layout(margin=dict(r=0, t=40 if title else 0, l=0, b=0))
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=46, b=0), height=480,
+        paper_bgcolor="rgba(0,0,0,0)", font=dict(size=16, color="#e7eef8"),
+        title_font_size=20,
+    )
     return fig
 
 
-# ==========================================
-# 11. TABS
-# ==========================================
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-    [
-        "🌩️ Storms & Fog",
-        "🔥 Heat & Anomalies",
-        "☁️ Al-Kous & Drizzle",
-        "📋 Model Matrix",
-        "🤖 71wm AI Assistant",
-        "⚙️ Control Room",
-    ]
-)
-
-# ----- Tab 1: Storms & Fog -----
 with tab1:
-    st.markdown(
-        '<h4 style="color:#082F49;font-weight:900;margin-bottom:15px;">📋 5-Day Storm & Fog Forecast (National)</h4>',
-        unsafe_allow_html=True,
-    )
-    cols_t1 = st.columns(5)
-    for i, date in enumerate(unique_dates_display[:5]):
-        day_df = df_all[df_all["DateOnly"] == date] if not df_all.empty else pd.DataFrame()
-        m_s = int(_safe_max(day_df["Storm Probability"] if not day_df.empty else pd.Series(dtype=float)))
-        m_f = int(_safe_max(day_df["Fog Probability"] if not day_df.empty else pd.Series(dtype=float)))
-        bg = "#FEF2F2" if max(m_s, m_f) >= 60 else ("#FFFBEB" if max(m_s, m_f) >= 30 else "#F0FDF4")
-        cols_t1[i].markdown(
-            f"<div style='background-color:{bg};border:1px solid #CBD5E1;border-radius:8px;padding:15px;text-align:center;'>"
-            f"<div style='color:#082F49;font-size:15px;font-weight:900;margin-bottom:12px;'>📅 {date}</div>"
-            f"<div style='font-size:16px;font-weight:900;color:#EF4444;margin-bottom:8px;'>⛈️ Storm: {m_s}%</div>"
-            f"<div style='font-size:16px;font-weight:900;color:#64748B;'>🌫️ Fog: {m_f}%</div></div>",
-            unsafe_allow_html=True,
+    if not df.empty:
+        peak = df.groupby("Time")[["Storm Probability", "Fog Probability", "Shamal Index", "Drizzle Prob", "AlKous Prob"]].max().reset_index()
+        fig = go.Figure()
+        names = {
+            "Storm Probability": tr("عواصف", "Storms"),
+            "Fog Probability": tr("ضباب", "Fog"),
+            "Shamal Index": tr("شمال وغبار", "Shamal dust"),
+            "Drizzle Prob": tr("رذاذ", "Drizzle"),
+            "AlKous Prob": tr("سحب الكوس", "Al-Kous cloud"),
+        }
+        colors = {
+            "Storm Probability": "#f87171",
+            "Fog Probability": "#93c5fd",
+            "Shamal Index": "#fbbf24",
+            "Drizzle Prob": "#38bdf8",
+            "AlKous Prob": "#c4b5fd",
+        }
+        for col in names:
+            fig.add_trace(go.Scatter(x=peak["Time"], y=peak[col], name=names[col], line=dict(color=colors[col], width=3)))
+        fig.update_layout(
+            title=tr("ذروة كل خطر خلال 5 أيام", "Peak hazard over 5 days"),
+            height=480,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(size=16, color="#e7eef8"),
+            legend=dict(orientation="h", y=1.12, x=0, font=dict(size=16)),
+            margin=dict(l=10, r=10, t=80, b=100),
+            xaxis=dict(tickangle=-35, title=tr("الوقت", "Time")),
+            yaxis=dict(title=tr("الاحتمال %", "Probability %"), range=[0, 100]),
         )
+        st.plotly_chart(fig, use_container_width=True)
+    st.markdown(tr(
+        "**معنى الخطوط:** الأحمر عواصف، الأزرق ضباب، الذهبي شمال وغبار، السماوي رذاذ، البنفسجي سحب الكوس.",
+        "**Lines:** red storms, blue fog, gold shamal dust, cyan drizzle, purple Al-Kous cloud.",
+    ))
+    st.markdown(tr("#### أثر تشغيلي الآن", "#### Operational impact now"))
+    if now_df.empty:
+        st.warning(tr("لا توجد قراءة حالية.", "No current reading."))
+    else:
+        hot = now_df.assign(score=now_df[["Storm Probability", "Fog Probability", "Shamal Index", "Drizzle Prob"]].max(axis=1)).sort_values("score", ascending=False).head(6)
+        for _, row in hot.iterrows():
+            sector = row["Sector"] if lang == "ar" else SECTOR_EN.get(row["Sector"], row["Sector"])
+            st.markdown(f"**{row['Station']}** · {sector}  \n{ops_note(row)}")
+    st.markdown(tr("#### ملخص القطاعات", "#### Sector summary"))
+    if not now_df.empty:
+        sector = now_df.groupby("Sector")[["Storm Probability", "Fog Probability", "Shamal Index", "Apparent Temp"]].max().round(0)
+        sector = sector.rename(columns={"Storm Probability": tr("عواصف %", "Storms %"), "Fog Probability": tr("ضباب %", "Fog %"), "Shamal Index": tr("شمال %", "Shamal %"), "Apparent Temp": tr("الإحساس °C", "Feels-like °C")})
+        st.dataframe(sector, use_container_width=True)
 
-    selected_time_t1 = st.select_slider(
-        "Forecast Timeline",
-        options=timeline_str,
-        key="t1_slider",
-        label_visibility="collapsed",
-    )
-    df_time_t1 = (
-        df_all[df_all["Time"] == selected_time_t1].copy()
-        if not df_all.empty
-        else pd.DataFrame()
-    )
-    c1, c2 = st.columns(2)
-    with c1:
-        st.plotly_chart(
-            make_density_map(
-                df_time_t1,
-                "Storm Probability",
-                colorscale=["rgba(0,0,0,0)", "#A3E635", "#FDE047", "#EF4444", "#7E22CE"],
-            ),
-            use_container_width=True,
-        )
-    with c2:
-        st.plotly_chart(
-            make_density_map(
-                df_time_t1,
-                "Fog Probability",
-                colorscale=["rgba(0,0,0,0)", "#E2E8F0", "#94A3B8", "#475569"],
-                opacity=0.8,
-            ),
-            use_container_width=True,
-        )
-
-    st.markdown(
-        '<hr><h3 style="color:#082F49;font-weight:900;">🛰️ Live Telemetry: Satellite Cloud Imagery</h3>',
-        unsafe_allow_html=True,
-    )
-    components.html(
-        """
-        <div style="position:relative;width:100%;height:500px;border-radius:12px;overflow:hidden;
-                    box-shadow:0 4px 15px rgba(0,0,0,0.1);background:#F8FAFC;">
-            <iframe width="100%" height="520"
-                src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6"
-                frameborder="0" style="position:absolute;top:0;left:0;"></iframe>
-            <div style="position:absolute;bottom:0;right:0;width:180px;height:35px;
-                        background:rgba(8,47,73,0.95);display:flex;align-items:center;justify-content:center;
-                        border-top-left-radius:10px;border:1px solid #D4AF37;">
-                <span style="color:#D4AF37;font-family:sans-serif;font-size:14px;font-weight:900;">🛰️ 71wm SATELLITE LIVE</span>
-            </div>
-        </div>
-        """,
-        height=520,
-    )
-
-# ----- Tab 2: Heat -----
 with tab2:
-    st.markdown(
-        '<h4 style="color:#082F49;font-weight:900;margin-bottom:15px;">📋 5-Day Thermal Range (Min-Max By Zone)</h4>',
-        unsafe_allow_html=True,
-    )
-    cols_t2 = st.columns(5)
-    for i, date in enumerate(unique_dates_display[:5]):
-        day_df = df_all[df_all["DateOnly"] == date] if not df_all.empty else pd.DataFrame()
+    picked = st.select_slider(tr("الوقت", "Time"), options=timeline_str, key="risk_time")
+    frame = df[df["Time"] == picked] if not df.empty else pd.DataFrame()
+    a, b = st.columns(2)
+    a.plotly_chart(density(frame, "Storm Probability", title=tr("احتمال العواصف %", "Storm probability %")), use_container_width=True)
+    b.plotly_chart(density(frame, "Fog Probability", title=tr("احتمال الضباب %", "Fog probability %")), use_container_width=True)
+    c, d = st.columns(2)
+    east = frame[frame["Longitude"] >= 55.8] if not frame.empty else frame
+    c.plotly_chart(density(east, "AlKous Prob", 25.2, 56.2, 7.2, tr("سحب الكوس %", "Al-Kous cloud %")), use_container_width=True)
+    d.plotly_chart(density(east, "Drizzle Prob", 25.2, 56.2, 7.2, tr("رذاذ الكوس %", "Al-Kous drizzle %")), use_container_width=True)
+    st.info(tr(
+        "سحب الكوس: سحب منخفضة تأتي من بحر عمان مع رياح شرقية إلى جنوبية شرقية ورطوبة عالية، وغالباً تلامس جبال الفجيرة ورأس الخيمة. قد يصاحبها رذاذ صباحاً.",
+        "Al-Kous: low cloud from the Gulf of Oman with easterly to southeasterly wind and high humidity, often against the Fujairah and Ras Al Khaimah mountains. Morning drizzle may follow.",
+    ))
+    components.html('<iframe src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" width="100%" height="430" frameborder="0"></iframe>', height=450)
 
-        def zone_range(zone: str):
-            zdf = day_df[day_df["Zone"] == zone] if not day_df.empty else pd.DataFrame()
-            mx = round(_safe_max(zdf["Temperature"] if not zdf.empty else pd.Series(dtype=float), 0), 1)
-            mn = round(_safe_min(zdf["Temperature"] if not zdf.empty else pd.Series(dtype=float), 0), 1)
-            return mn, mx
-
-        c_mn, c_mx = zone_range("Coast")
-        m_mn, m_mx = zone_range("Mountains")
-        i_mn, i_mx = zone_range("Inland")
-
-        cols_t2[i].markdown(
-            f"<div style='background-color:#F0FDF4;border:1px solid #CBD5E1;border-radius:8px;padding:15px;'>"
-            f"<div style='color:#082F49;font-size:15px;font-weight:900;margin-bottom:12px;text-align:center;'>📅 {date}</div>"
-            f"<div style='display:flex;justify-content:space-between;font-size:14px;'><span>🌊 Coast:</span><b>⬇ {c_mn}° - ⬆ {c_mx}°</b></div>"
-            f"<div style='display:flex;justify-content:space-between;font-size:14px;'><span>⛰️ Mount:</span><b>⬇ {m_mn}° - ⬆ {m_mx}°</b></div>"
-            f"<div style='display:flex;justify-content:space-between;font-size:14px;'><span>🏜️ Inland:</span><b>⬇ {i_mn}° - ⬆ {i_mx}°</b></div>"
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-
-# ----- Tab 3: Al-Kous & Drizzle -----
 with tab3:
-    st.markdown(
-        '<h4 style="color:#082F49;font-weight:900;margin-bottom:15px;">☁️ Al-Kous Stratus & Orographic Drizzle Radar Tracker</h4>',
-        unsafe_allow_html=True,
-    )
-    cols_t3 = st.columns(5)
-    for i, date in enumerate(unique_dates_display[:5]):
-        day_df = df_all[df_all["DateOnly"] == date] if not df_all.empty else pd.DataFrame()
-        mx_k = int(_safe_max(day_df["AlKous Prob"] if not day_df.empty else pd.Series(dtype=float)))
-        mx_dr = int(_safe_max(day_df["Drizzle Prob"] if not day_df.empty else pd.Series(dtype=float)))
-        bg = "#FEF2F2" if mx_dr > 40 else "#F8FAFC"
-        cols_t3[i].markdown(
-            f"<div style='background-color:{bg};border:1px solid #CBD5E1;border-radius:8px;padding:15px;text-align:center;'>"
-            f"<div style='color:#082F49;font-size:14px;font-weight:900;'>📅 {date}</div>"
-            f"<div style='color:#1E293B;font-weight:bold;margin-top:5px;'>☁️ الكوس: {mx_k}%</div>"
-            f"<div style='color:#0284C7;font-weight:900;'>🌧️ الرذاذ: {mx_dr}%</div></div>",
-            unsafe_allow_html=True,
-        )
+    picked = st.select_slider(tr("الوقت", "Time"), options=timeline_str, key="heat_time")
+    frame = df[df["Time"] == picked] if not df.empty else pd.DataFrame()
+    a, b = st.columns(2)
+    a.plotly_chart(density(frame, "Shamal Index", title=tr("غبار الشمال %", "Shamal dust %")), use_container_width=True)
+    if not frame.empty:
+        heat = frame.sort_values("Apparent Temp", ascending=False)[["Station", "Sector", "Temperature", "Apparent Temp", "Humidity", "Wind"]].head(8).copy()
+        wind_unit = "كم/س" if lang == "ar" else "km/h"
+        heat["temp"] = heat["Temperature"].map(lambda v: f"{v:.1f} °C")
+        heat["feel"] = heat["Apparent Temp"].map(lambda v: f"{v:.1f} °C")
+        heat["rh"] = heat["Humidity"].map(lambda v: f"{v:.0f}%")
+        heat["wind"] = heat["Wind"].map(lambda v: f"{v:.0f} {wind_unit}")
+        heat["band"] = heat["Apparent Temp"].map(heat_band)
+        heat["sector"] = heat["Sector"].map(lambda s: s if lang == "ar" else SECTOR_EN.get(s, s))
+        b.dataframe(heat[["Station", "sector", "temp", "feel", "rh", "wind", "band"]].rename(columns={
+            "Station": tr("المحطة", "Station"), "sector": tr("القطاع", "Sector"),
+            "temp": tr("الحرارة", "Temperature"), "feel": tr("الإحساس", "Feels-like"),
+            "rh": tr("الرطوبة", "Humidity"), "wind": tr("الرياح", "Wind"), "band": tr("الإجهاد", "Stress"),
+        }), use_container_width=True, hide_index=True)
+        st.caption(tr(
+            "الشمال رياح شمالية غربية. فوق 20 كم/س قد تثير الغبار. الإجهاد: 35 حار، 40 مرتفع، 45 شديد.",
+            "Shamal is a northwesterly wind. Above 20 km/h it may raise dust. Heat stress: 35 hot, 40 high, 45 extreme.",
+        ))
 
-    selected_time_t3 = st.select_slider(
-        "Forecast Timeline",
-        options=timeline_str,
-        key="t3_slider",
-        label_visibility="collapsed",
-    )
-    df_time_t3 = (
-        df_all[df_all["Time"] == selected_time_t3].copy()
-        if not df_all.empty
-        else pd.DataFrame()
-    )
-    east_stations = (
-        df_time_t3[df_time_t3["Longitude"] >= 55.8].copy()
-        if not df_time_t3.empty
-        else pd.DataFrame()
-    )
-    st.plotly_chart(
-        make_density_map(
-            east_stations,
-            "Drizzle Prob",
-            center_lat=25.2,
-            center_lon=56.2,
-            zoom=7.5,
-            colorscale=["rgba(0,0,0,0)", "#BAE6FD", "#38BDF8", "#0284C7", "#0369A1"],
-            opacity=0.85,
-            title="AI Orographic Drizzle Condensation Index (%)",
-        ),
-        use_container_width=True,
-        key="kous_drizzle_map",
-    )
-
-# ----- Tab 4: Matrix -----
 with tab4:
-    selected_time_t4 = st.select_slider(
-        "Forecast Timeline",
-        options=timeline_str,
-        key="t4_slider",
-        label_visibility="collapsed",
-    )
-    df_time_t4 = (
-        df_all[df_all["Time"] == selected_time_t4].copy()
-        if not df_all.empty
-        else pd.DataFrame()
-    )
-    st.markdown(
-        "<h3 style='color:#082F49;font-weight:900;'>📊 Full 36-Station Atmospheric Matrix</h3>",
-        unsafe_allow_html=True,
-    )
-    if df_time_t4.empty:
-        st.warning("لا توجد بيانات متاحة لهذا الوقت حالياً.")
+    if df.empty:
+        st.warning(tr("لا توجد محطات للعرض.", "No stations to show."))
     else:
-        display_df = df_time_t4.sort_values(by="Temperature", ascending=False)
-        html_table = (
-            "<div class='table-responsive'><table class='custom-table'>"
-            "<tr><th>Station</th><th>Actual Temp</th><th>Feels Like</th><th>RH (%)</th>"
-            "<th>Al-Kous (%)</th><th>Morning Drizzle (%)</th><th>Convective Storm (%)</th></tr>"
-        )
-        for _, row in display_df.iterrows():
-            s_color = "#EF4444" if row["Storm Probability"] >= 75 else "#082F49"
-            dr_color = "#0284C7" if row["Drizzle Prob"] >= 40 else "#082F49"
-            html_table += (
-                f"<tr><td>{row['Station']}</td>"
-                f"<td>{row['Temperature']}°C</td>"
-                f"<td>{row['Apparent Temp']}°C</td>"
-                f"<td>{row['Humidity']}%</td>"
-                f"<td>{row['AlKous Prob']}%</td>"
-                f"<td style='color:{dr_color};font-weight:bold;'>{row['Drizzle Prob']}%</td>"
-                f"<td style='color:{s_color};'>{row['Storm Probability']}%</td></tr>"
-            )
-        st.markdown(html_table + "</table></div>", unsafe_allow_html=True)
+        names = sorted(df["Station"].unique())
+        s1, s2 = st.columns(2)
+        one = s1.selectbox(tr("المحطة", "Station"), names, index=0)
+        two = s2.selectbox(tr("قارن مع", "Compare with"), [tr("بدون", "None")] + names, index=0)
+        series = df[df["Station"] == one]
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=series["Time"], y=series["Temperature"], name=f"{one} °C", line=dict(color="#38bdf8")))
+        fig.add_trace(go.Scatter(x=series["Time"], y=series["Apparent Temp"], name=tr("الإحساس °C", "Feels-like °C"), line=dict(color="#f59e0b", dash="dot")))
+        if two not in ("بدون", "None"):
+            other = df[df["Station"] == two]
+            fig.add_trace(go.Scatter(x=other["Time"], y=other["Temperature"], name=f"{two} °C", line=dict(color="#d4af37")))
+        fig.update_layout(height=360, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", title=tr("مقارنة الحرارة °C", "Temperature comparison °C"))
+        st.plotly_chart(fig, use_container_width=True)
+        slot = st.select_slider(tr("جدول الوقت", "Table time"), options=timeline_str, key="table_time")
+        table = df[df["Time"] == slot].sort_values("Apparent Temp", ascending=False).copy()
+        unit = "كم/س" if lang == "ar" else "km/h"
+        show = pd.DataFrame({
+            tr("المحطة", "Station"): table["Station"],
+            tr("القطاع", "Sector"): table["Sector"].map(lambda s: s if lang == "ar" else SECTOR_EN.get(s, s)),
+            tr("الحرارة", "Temperature"): table["Temperature"].map(lambda v: f"{v:.1f} °C"),
+            tr("الإحساس", "Feels-like"): table["Apparent Temp"].map(lambda v: f"{v:.1f} °C"),
+            tr("الرطوبة", "Humidity"): table["Humidity"].map(lambda v: f"{v:.0f}%"),
+            tr("الرياح", "Wind"): table["Wind"].map(lambda v: f"{v:.0f} {unit}"),
+            tr("الهبات", "Gusts"): table["Gust"].map(lambda v: f"{v:.0f} {unit}"),
+            tr("عواصف", "Storms"): table["Storm Probability"].map(lambda v: f"{v:.0f}%"),
+            tr("ضباب", "Fog"): table["Fog Probability"].map(lambda v: f"{v:.0f}%"),
+            tr("سحب الكوس", "Al-Kous"): table["AlKous Prob"].map(lambda v: f"{v:.0f}%"),
+            tr("رذاذ", "Drizzle"): table["Drizzle Prob"].map(lambda v: f"{v:.0f}%"),
+            tr("الشمال", "Shamal"): table["Shamal Index"].map(lambda v: f"{v:.0f}%"),
+        })
+        st.dataframe(show, use_container_width=True, hide_index=True)
+        st.download_button(tr("تنزيل هذه اللقطة CSV", "Download this snapshot CSV"), show.to_csv(index=False).encode("utf-8-sig"), "71wm_snapshot.csv", "text/csv")
 
-# ----- Tab 5: AI Assistant -----
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_marine() -> Tuple[bool, Any]:
+    points = {
+        "gulf_coast": (24.55, 54.40),
+        "gulf_offshore": (25.40, 53.00),
+        "oman_coast": (25.15, 56.42),
+        "oman_offshore": (25.30, 57.20),
+    }
+    try:
+        params = {
+            "latitude": ",".join(str(v[0]) for v in points.values()),
+            "longitude": ",".join(str(v[1]) for v in points.values()),
+            "hourly": "wave_height,wave_period,sea_surface_temperature",
+            "timezone": "Asia/Dubai",
+            "forecast_days": 5,
+        }
+        response = requests.get("https://marine-api.open-meteo.com/v1/marine", params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        if isinstance(data, dict):
+            data = [data]
+        return True, dict(zip(points.keys(), data))
+    except Exception as exc:
+        return False, str(exc)
+
+
+def sea_words(height: float) -> str:
+    if height < 0.5:
+        return tr("هادئ", "calm")
+    if height < 1.25:
+        return tr("خفيف الموج", "slight")
+    if height < 2.5:
+        return tr("معتدل الموج", "moderate")
+    if height < 4:
+        return tr("مضطرب", "rough")
+    return tr("هائج", "very rough")
+
+
+def feet_phrase(meters: float) -> str:
+    feet = max(1, round(meters * 3.28084)) if meters >= 0.2 else 1
+    if lang == "ar":
+        return "قدم" if feet == 1 else ("قدمين" if feet == 2 else f"{feet} أقدام")
+    return "1 foot" if feet == 1 else f"{feet} feet"
+
+
+def wind_words(direction: float, speed: float) -> str:
+    names_ar = ["شمالية", "شمالية شرقية", "شرقية", "جنوبية شرقية", "جنوبية", "جنوبية غربية", "غربية", "شمالية غربية"]
+    names_en = ["northerly", "northeasterly", "easterly", "southeasterly", "southerly", "southwesterly", "westerly", "northwesterly"]
+    idx = int(((direction + 22.5) % 360) / 45)
+    name = names_ar[idx] if lang == "ar" else names_en[idx]
+    if speed < 15:
+        force = tr("خفيفة", "light")
+    elif speed < 30:
+        force = tr("خفيفة إلى معتدلة", "light to moderate")
+    elif speed < 40:
+        force = tr("نشطة", "fresh")
+    else:
+        force = tr("قوية", "strong")
+    return name, force
+
+
 with tab5:
-    st.markdown(
-        '<h4 style="color:#082F49;font-weight:900;">🤖 71wm AI Data Assistant</h4>',
-        unsafe_allow_html=True,
-    )
-    prompt = st.chat_input("Ask about parameters... (drizzle / رذاذ / storm / fog / كوس)")
-    if prompt:
-        st.chat_message("user").write(prompt)
-        p_l = prompt.lower()
-        curr = (
-            df_all[df_all["Time"] == timeline_str[0]]
-            if not df_all.empty
-            else pd.DataFrame()
-        )
-        if curr.empty:
-            res = "البيانات الحية غير متوفرة حالياً. حاول مرة أخرى بعد قليل."
-        elif "drizzle" in p_l or "رذاذ" in p_l:
-            dr_stations = curr[curr["Drizzle Prob"] > 30]
-            res = (
-                f"🌧️ Drizzle mapped at: {', '.join(dr_stations['Station'].tolist())}."
-                if not dr_stations.empty
-                else "No microclimatic drizzle mapped."
-            )
-        elif "storm" in p_l or "عاصفة" in p_l or "رعد" in p_l:
-            st_stations = curr[curr["Storm Probability"] > 40]
-            res = (
-                f"🌩️ Elevated storm probability at: {', '.join(st_stations['Station'].tolist())}."
-                if not st_stations.empty
-                else "No significant convective risk currently."
-            )
-        elif "fog" in p_l or "ضباب" in p_l:
-            fg_stations = curr[curr["Fog Probability"] > 30]
-            res = (
-                f"🌫️ Fog risk at: {', '.join(fg_stations['Station'].tolist())}."
-                if not fg_stations.empty
-                else "No significant fog risk currently."
-            )
-        elif "كوس" in p_l or "kous" in p_l or "alkous" in p_l:
-            k_stations = curr[curr["AlKous Prob"] > 40]
-            res = (
-                f"☁️ Al-Kous probability elevated at: {', '.join(k_stations['Station'].tolist())}."
-                if not k_stations.empty
-                else "Al-Kous activity is low."
-            )
-        else:
-            res = "I am ready. Ask me about drizzle, storm, fog, or Al-Kous for the current time slot."
-        st.chat_message("assistant").write(res)
+    st.markdown(tr("#### التوقع التفصيلي لخمسة أيام", "#### Detailed five-day outlook"))
+    marine_ok, marine = fetch_marine()
+    if not marine_ok:
+        st.warning(tr(f"تعذر جلب حالة البحر: {marine}", f"Sea state unavailable: {marine}"))
+    for date in dates[:5]:
+        day = df[df["DateOnly"] == date] if not df.empty else pd.DataFrame()
+        if day.empty:
+            continue
+        noon = day[day["Time"].str.contains("13:00|16:00")]
+        sample = noon if not noon.empty else day
+        direction = safe_max(sample["Wind Dir"]) if "Wind Dir" in sample else 320
+        speed = safe_max(day["Wind"])
+        wname, wforce = wind_words(direction, speed)
+        cloud = safe_max(day["AlKous Prob"])
+        sky = tr("غائم", "cloudy") if cloud >= 60 else (tr("صحو إلى غائم جزئياً", "fair to partly cloudy") if cloud >= 25 else tr("صحو بوجه عام", "generally fair"))
+        tmax, tmin = safe_max(day["Temperature"]), day["Temperature"].min()
+        extras = []
+        if safe_max(day["Fog Probability"]) >= 45:
+            where = day.loc[day["Fog Probability"].idxmax(), "Sector"]
+            where = SECTOR_EN.get(where, where) if lang == "en" else where
+            extras.append(tr(f"مع فرصة ضباب على {where} فجراً", f"with a chance of fog over {where} at dawn"))
+        if safe_max(day["Storm Probability"]) >= 40 or safe_max(day["Drizzle Prob"]) >= 45:
+            where = day.loc[day[["Storm Probability", "Drizzle Prob"]].max(axis=1).idxmax(), "Sector"]
+            where = SECTOR_EN.get(where, where) if lang == "en" else where
+            extras.append(tr(f"وفرصة أمطار على {where}", f"and a chance of rain over {where}"))
+        if safe_max(day["Shamal Index"]) >= 45:
+            where = day.loc[day["Shamal Index"].idxmax(), "Sector"]
+            where = SECTOR_EN.get(where, where) if lang == "en" else where
+            extras.append(tr(f"مع غبار مثار على {where}", f"with raised dust over {where}"))
+        extra = ("، " if lang == "ar" else ", ").join(extras)
 
-# ----- Tab 6: Control Room -----
+        def wave_pair(key):
+            if not marine_ok:
+                return 0.3, 0.6
+            hourly = marine[key].get("hourly") or {}
+            times = hourly.get("time") or []
+            heights = hourly.get("wave_height") or []
+            day_no = date.split()[-1]
+            vals = [safe_num(h, 0.3) for t, h in zip(times, heights) if f"-{day_no}T" in t or t[8:10] == day_no]
+            if not vals:
+                return 0.3, 0.6
+            return min(vals), max(vals)
+
+        gc0, gc1 = wave_pair("gulf_coast")
+        go0, go1 = wave_pair("gulf_offshore")
+        oc0, oc1 = wave_pair("oman_coast")
+        oo0, oo1 = wave_pair("oman_offshore")
+        afternoon = tr("يضطرب بعد الظهر", "becoming rougher in the afternoon") if go1 > gc1 + 0.4 else tr("يبقى على حاله", "staying similar")
+        text = tr(
+            f"الطقس {sky} بوجه عام{('، ' + extra) if extra else ''}، والحرارة بين {tmin:.0f} و{tmax:.0f} درجة. الرياح {wname} على البحر، {wforce}، وقد تنشط بعد الظهر. البحر في الخليج العربي {sea_words(gc1)} و{afternoon}، وارتفاع الموج قرب الساحل من {feet_phrase(gc0)} إلى {feet_phrase(gc1)} وفي العمق يصل إلى {feet_phrase(go1)}. أما بحر عمان فيكون {sea_words(oc1)} بوجه عام، وارتفاع الموج قرب الساحل {feet_phrase(oc1)} وفي العمق من {feet_phrase(oo0)} إلى {feet_phrase(oo1)}.",
+            f"Weather will be {sky} overall{(', ' + extra) if extra else ''}, with temperatures from {tmin:.0f} to {tmax:.0f} °C. Wind over the sea will be {wname} and {wforce}, freshening in the afternoon. The Arabian Gulf will be {sea_words(gc1)} and {afternoon}; waves near the coast {feet_phrase(gc0)} to {feet_phrase(gc1)}, and up to {feet_phrase(go1)} offshore. The Gulf of Oman will be {sea_words(oc1)} overall, with waves near the coast {feet_phrase(oc1)} and {feet_phrase(oo0)} to {feet_phrase(oo1)} offshore.",
+        )
+        st.markdown(f"<div class='card'><div class='kicker'>{date}</div><p>{text}</p></div>", unsafe_allow_html=True)
+    st.caption(tr(
+        "النشرة وصفية من بيانات الرياح والموج. ارتفاع الموج بالقدم قرب ميناء أبوظبي وميناء الفجيرة وفي العمق.",
+        "The bulletin is written from wind and wave data. Wave height is in feet near Abu Dhabi and Fujairah ports and offshore.",
+    ))
+
 with tab6:
-    st.markdown("### ⚙️ 71wm Secure Control Room")
-    if not st.session_state["admin_logged_in"]:
-        st.warning("🔒 هذه الغرفة مقفلة أمنياً ومخصصة لمدير النظام فقط.")
-        admin_pwd = st.text_input("الرمز السري الحالي (PIN):", type="password", key="login_pin_input")
-        if st.button("🔓 فتح الغرفة"):
-            if admin_pwd == st.session_state["admin_password"]:
-                st.session_state["admin_logged_in"] = True
-                st.rerun()
-            else:
-                st.error("❌ الرمز السري غير صحيح، تم رفض الوصول.")
+    ok_oni, oni = fetch_oni()
+    if not ok_oni:
+        st.error(tr(f"تعذر مؤشر ONI: {oni}", f"ONI fetch failed: {oni}"))
     else:
-        st.success("✅ تم فتح القفل. أهلاً بك في غرفة التحكم الآمنة.")
-        if st.button("🔒 قفل الغرفة (تسجيل الخروج)"):
-            st.session_state["admin_logged_in"] = False
-            st.rerun()
-
-        st.markdown("---")
-        st.markdown("#### 🔑 تغيير الرمز السري للمشرف")
-        new_pwd_input = st.text_input("أدخل الرمز السري الجديد:", type="password", key="change_pin_field")
-        if st.button("💾 حفظ الرمز السري الجديد"):
-            if new_pwd_input.strip():
-                st.session_state["admin_password"] = new_pwd_input.strip()
-                st.success("✅ تأكيد: تم تغيير الرمز السري بنجاح!")
-            else:
-                st.error("❌ خطأ: لا يمكن إدخال رمز سري فارغ.")
-
-        st.markdown("---")
-        st.markdown("#### 📧 إعدادات خادم التنبيهات والبريد الإلكتروني")
-        st.session_state["email_enabled"] = st.checkbox(
-            "تفعيل نظام الإرسال التلقائي (Email Alerts Active)",
-            value=st.session_state["email_enabled"],
-        )
-        st.session_state["email_sender"] = st.text_input(
-            "بريد المرسل (Gmail)",
-            value=st.session_state["email_sender"],
-            key="email_sender_input",
-        )
-        st.session_state["email_password"] = st.text_input(
-            "كلمة مرور التطبيقات السرية (16 حرفاً من جوجل)",
-            type="password",
-            value=st.session_state["email_password"],
-            key="email_password_input",
-        )
-
-        st.info("💡 **تلميح:** أضف الإيميل ثم اضغط الزر. يمكنك أيضاً التعديل اليدوي في القائمة أدناه.")
-
-        new_email = st.text_input("إضافة بريد مستلم جديد:", key="new_email_input")
-        if st.button("➕ إضافة للقائمة"):
-            if new_email and "@" in new_email:
-                current_list = [
-                    e.strip()
-                    for e in st.session_state["email_receiver"].split(",")
-                    if e.strip()
-                ]
-                if new_email.strip() not in current_list:
-                    current_list.append(new_email.strip())
-                    st.session_state["email_receiver"] = ", ".join(current_list)
-                    st.success(f"تم إضافة {new_email} للقائمة.")
-                else:
-                    st.warning("هذا البريد موجود مسبقاً في القائمة.")
-            else:
-                st.error("يرجى إدخال بريد إلكتروني صحيح.")
-
-        # Use a unique key and sync back to session state
-        edited_receivers = st.text_area(
-            "قائمة المستلمين الحالية (يمكنك التعديل اليدوي أو الحذف من هنا):",
-            value=st.session_state["email_receiver"],
-            key="email_receiver_editor",
-        )
-        if edited_receivers != st.session_state["email_receiver"]:
-            st.session_state["email_receiver"] = edited_receivers
-
-        if st.button("🔄 تصفير الذاكرة وإجبار الإرسال الآن"):
-            st.session_state["email_sent_track"] = {}
-            st.success("تم التصفير! سيقوم النظام الآن بإعادة تقييم الطقس ومحاولة الإرسال فوراً...")
-            st.rerun()
-
-        st.markdown("---")
-        st.markdown("#### 📡 سجل عمليات الإرسال الحي (Live Delivery Log)")
-        logs_html = "<div class='log-box'>"
-        if not st.session_state["alert_logs"]:
-            logs_html += ">> النظام في وضع الاستعداد. لم يتم رصد أي عمليات إرسال..."
+        latest = oni.iloc[-1]
+        anom = float(latest["anom"])
+        phase = tr("نينيو", "El Niño") if anom >= 0.5 else (tr("نينيا", "La Niña") if anom <= -0.5 else tr("محايد", "Neutral"))
+        m1, m2, m3 = st.columns(3)
+        m1.metric(tr("آخر موسم", "Latest season"), f"{latest['season']} {int(latest['year'])}")
+        m2.metric("ONI", f"{anom:+.2f} °C")
+        m3.metric(tr("الحالة", "Phase"), phase)
+        recent = oni.tail(36)
+        fig = go.Figure()
+        fig.add_hrect(y0=0.5, y1=3, fillcolor="#7f1d1d", opacity=0.25, line_width=0)
+        fig.add_hrect(y0=-3, y1=-0.5, fillcolor="#1e3a8a", opacity=0.25, line_width=0)
+        fig.add_trace(go.Scatter(x=recent["label"], y=recent["anom"], mode="lines+markers", line=dict(color="#d4af37", width=3)))
+        fig.update_layout(height=380, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", title=tr("مؤشر النينيو 3.4 °C", "Niño 3.4 index °C"))
+        st.plotly_chart(fig, use_container_width=True)
+        if anom >= 0.5:
+            st.info(tr("النينيو يميل إحصائياً إلى شتاء أرطب نسبياً على أجزاء من شبه الجزيرة. ليس ضماناً لموسم ماطر في الإمارات.", "El Niño statistically leans toward a relatively wetter winter on parts of the peninsula. It does not guarantee a wet UAE season."))
+        elif anom <= -0.5:
+            st.info(tr("النينيا تميل إحصائياً إلى شتاء أجف. الحالات القوية المنفردة تبقى ممكنة.", "La Niña statistically leans toward a drier winter. Strong individual events remain possible."))
         else:
-            for log in st.session_state["alert_logs"][:50]:
-                logs_html += f">> {log}<br>"
-        logs_html += "</div>"
-        st.markdown(logs_html, unsafe_allow_html=True)
+            st.info(tr("الوضع المحايد يعني أن طقس الإمارات يتحدد أكثر بالمنخفضات المحلية ودورة الخليج.", "Neutral means UAE weather is driven more by local lows and the Gulf cycle."))
+        st.dataframe(oni.tail(8)[["label", "sst", "anom"]].iloc[::-1].rename(columns={"label": tr("الموسم", "Season"), "sst": tr("الحرارة °C", "SST °C"), "anom": tr("الشذوذ °C", "Anomaly °C")}), use_container_width=True, hide_index=True)

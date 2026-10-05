@@ -599,18 +599,43 @@ with tab4:
     if not metar_ok:
         st.warning(tr(f"تعذر جلب الرصد: {metars}", f"Observations unavailable: {metars}"))
     elif metars:
+        def phenomenon(raw: str) -> str:
+            text = raw.upper()
+            hits = []
+            if any(code in text.split() for code in ("FG", "BCFG", "PRFG", "FZFG", "MIFG")):
+                hits.append(tr("ضباب", "Fog"))
+            if any(code in text for code in ("TSRA", "TS", "VCTS", "+TS", "CB")):
+                hits.append(tr("عاصفة أو سحب ركامية CB", "Storm or CB"))
+            if any(code in text.split() for code in ("RA", "SHRA", "DZ", "+RA", "SHRA")):
+                hits.append(tr("مطر", "Rain"))
+            if any(code in text.split() for code in ("DU", "SA", "BLDU", "BLSA", "SS", "DS", "DRDU", "DRSA")):
+                hits.append(tr("غبار", "Dust"))
+            return "، ".join(hits) if lang == "ar" else ", ".join(hits)
+
         rows_obs = []
         for item in metars:
             code = item.get("icaoId", "")
+            raw = item.get("rawOb", "")
+            event = phenomenon(raw)
             rows_obs.append({
                 tr("المطار", "Airport"): f"{AIRPORTS.get(code, code)} ({code})",
+                tr("الحالة", "Status"): event or tr("مستقر", "Quiet"),
                 tr("الحرارة", "Temperature"): f"{item.get('temp', '—')} °C",
                 tr("الندى", "Dew point"): f"{item.get('dewp', '—')} °C",
                 tr("الرياح", "Wind"): f"{item.get('wdir', 'VRB')}° / {item.get('wspd', '—')} kt",
                 tr("الرؤية", "Visibility"): item.get("visib", "—"),
-                tr("التقرير", "Report"): item.get("rawOb", ""),
+                tr("التقرير", "Report"): raw,
             })
-        st.dataframe(pd.DataFrame(rows_obs), use_container_width=True, hide_index=True)
+        frame_obs = pd.DataFrame(rows_obs)
+        status_col = tr("الحالة", "Status")
+        quiet = tr("مستقر", "Quiet")
+
+        def paint(row):
+            if row[status_col] != quiet:
+                return ["background-color: #7F1D1D; color: #FEE2E2"] * len(row)
+            return [""] * len(row)
+
+        st.dataframe(frame_obs.style.apply(paint, axis=1), use_container_width=True, hide_index=True)
     st.markdown("---")
     if df.empty:
         st.warning(tr("لا توجد محطات للعرض.", "No stations to show."))

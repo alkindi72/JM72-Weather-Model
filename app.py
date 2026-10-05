@@ -563,7 +563,55 @@ with tab3:
             "Shamal is a northwesterly wind. Above 20 km/h it may raise dust. Heat stress: 35 hot, 40 high, 45 extreme.",
         ))
 
+AIRPORTS = {
+    "OMAA": "مطار زايد الدولي",
+    "OMDB": "مطار دبي",
+    "OMDW": "مطار آل مكتوم",
+    "OMAL": "مطار العين",
+    "OMSJ": "مطار الشارقة",
+    "OMRK": "مطار رأس الخيمة",
+    "OMFJ": "مطار الفجيرة",
+    "OMAD": "مطار البطين",
+}
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def fetch_metar() -> Tuple[bool, Any]:
+    try:
+        response = requests.get(
+            "https://aviationweather.gov/api/data/metar",
+            params={"ids": ",".join(AIRPORTS), "format": "json"},
+            timeout=25,
+        )
+        response.raise_for_status()
+        return True, response.json()
+    except Exception as exc:
+        return False, str(exc)
+
+
 with tab4:
+    st.markdown(tr("#### الرصد الفعلي للمطارات", "#### Live airport observations"))
+    st.caption(tr(
+        "قراءات METAR الفعلية من مطارات الدولة عبر شبكة أرصاد الطيران، وتتجدد كل عشر دقائق. المركز الوطني لا يتيح واجهة مفتوحة لبقية المحطات الأرضية.",
+        "Live METAR from UAE airports via the aviation weather network, refreshed every ten minutes. NCM does not publish an open feed for the other surface stations.",
+    ))
+    metar_ok, metars = fetch_metar()
+    if not metar_ok:
+        st.warning(tr(f"تعذر جلب الرصد: {metars}", f"Observations unavailable: {metars}"))
+    elif metars:
+        rows_obs = []
+        for item in metars:
+            code = item.get("icaoId", "")
+            rows_obs.append({
+                tr("المطار", "Airport"): f"{AIRPORTS.get(code, code)} ({code})",
+                tr("الحرارة", "Temperature"): f"{item.get('temp', '—')} °C",
+                tr("الندى", "Dew point"): f"{item.get('dewp', '—')} °C",
+                tr("الرياح", "Wind"): f"{item.get('wdir', 'VRB')}° / {item.get('wspd', '—')} kt",
+                tr("الرؤية", "Visibility"): item.get("visib", "—"),
+                tr("التقرير", "Report"): item.get("rawOb", ""),
+            })
+        st.dataframe(pd.DataFrame(rows_obs), use_container_width=True, hide_index=True)
+    st.markdown("---")
     if df.empty:
         st.warning(tr("لا توجد محطات للعرض.", "No stations to show."))
     else:

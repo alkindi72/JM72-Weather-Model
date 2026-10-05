@@ -132,11 +132,15 @@ def tr(ar: str, en: str) -> str:
 
 
 SECTOR_EN = {
-    "الشرقية": "East",
-    "الوسطى": "Central",
-    "أبوظبي والظفرة": "Abu Dhabi & Dhafra",
+    "الساحل الشرقي": "East coast",
+    "الجبال الشرقية": "Eastern mountains",
+    "المنطقة الوسطى": "Central region",
     "العين": "Al Ain",
-    "دبي والشمال": "Dubai & North",
+    "دبي": "Dubai",
+    "الشارقة وعجمان وأم القيوين": "Sharjah, Ajman and Umm Al Quwain",
+    "رأس الخيمة": "Ras Al Khaimah",
+    "أبوظبي": "Abu Dhabi",
+    "الظفرة": "Al Dhafra",
     "متفرقة": "Other",
 }
 def sector_of(name: str) -> str:
@@ -378,21 +382,37 @@ cards = [
 for col, (title, value, unit) in zip((c1, c2, c3, c4, c5), cards):
     col.markdown(f"<div class='card'><div class='muted'>{title}</div><b>{value:.0f} {unit}</b></div>", unsafe_allow_html=True)
 
-def hazard_window(frame: pd.DataFrame, column: str, threshold: float):
-    if frame.empty or column not in frame:
+def hazard_window(frame: pd.DataFrame, column: str, threshold: float, sector: str):
+    part = frame[frame["Sector"] == sector] if not frame.empty else frame
+    if part.empty or column not in part:
         return None
-    active = frame[frame[column] >= threshold]
-    if active.empty:
+    active_times = []
+    for slot in timeline_str:
+        slot_df = part[part["Time"] == slot]
+        if not slot_df.empty and safe_max(slot_df[column]) >= threshold:
+            active_times.append(slot)
+    if not active_times:
         return None
-    times = [t for t in timeline_str if t in set(active["Time"])]
-    if not times:
+    now_index = 0
+    start_index = timeline_str.index(active_times[0])
+    if start_index > now_index + 1:
         return None
-    start, end = times[0], times[-1]
-    peak = active.loc[active[column].idxmax()]
-    stations = active[active["Time"] == peak["Time"]].sort_values(column, ascending=False)["Station"].head(4).tolist()
-    sector = peak["Sector"]
-    sector = SECTOR_EN.get(sector, sector) if st.session_state.get("lang") == "en" else sector
-    return start, end, int(peak[column]), sector, "، ".join(stations) if st.session_state.get("lang") != "en" else ", ".join(stations)
+    run = [active_times[0]]
+    previous = timeline_str.index(active_times[0])
+    for slot in active_times[1:]:
+        current = timeline_str.index(slot)
+        if current == previous + 1:
+            run.append(slot)
+            previous = current
+        else:
+            break
+    peak_slot = max(run, key=lambda slot: safe_max(part[part["Time"] == slot][column]))
+    peak_df = part[part["Time"] == peak_slot].sort_values(column, ascending=False)
+    stations = peak_df[peak_df[column] >= threshold]["Station"].head(4).tolist()
+    if not stations:
+        return None
+    joiner = "، " if st.session_state.get("lang") != "en" else ", "
+    return run[0], run[-1], int(safe_max(peak_df[column])), joiner.join(stations)
 
 
 alerts = []
@@ -404,12 +424,15 @@ if not df.empty:
         ("Drizzle Prob", 60, "رذاذ الكوس", "Al-Kous drizzle"),
     ]
     for column, threshold, ar, en in checks:
-        found = hazard_window(df, column, threshold)
-        if found:
-            start, end, level, sector, stations = found
+        for sector in SECTOR_MAP:
+            found = hazard_window(df, column, threshold, sector)
+            if not found:
+                continue
+            start, end, level, stations = found
+            place = SECTOR_EN.get(sector, sector) if lang == "en" else sector
             alerts.append(tr(
-                f"الخطر الحالي: {ar} بنسبة {level}% على {sector}، وأبرز المحطات {stations}. البداية {start} والنهاية المتوقعة {end}.",
-                f"Current hazard: {en} at {level}% over {sector}, led by {stations}. Starts {start} and is expected to end {end}.",
+                f"الخطر الحالي: {ar} بنسبة {level}% على {place}، في {stations}. البداية {start} والنهاية المتوقعة {end}.",
+                f"Current hazard: {en} at {level}% over {place}, at {stations}. Starts {start} and is expected to end {end}.",
             ))
 if alerts and risk >= 40:
     st.markdown(

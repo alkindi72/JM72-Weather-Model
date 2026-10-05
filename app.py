@@ -79,6 +79,10 @@ st.markdown(
 )
 
 DAYS_EN = {"Monday": "Mon", "Tuesday": "Tue", "Wednesday": "Wed", "Thursday": "Thu", "Friday": "Fri", "Saturday": "Sat", "Sunday": "Sun"}
+ELEVATION = {
+    "Jabal Jais": 1934, "Jabal Al Rahba": 1543, "Hatta": 330, "Al Tawiyen": 450,
+    "Al Heben": 700, "AlQor": 520, "Fujairah Port": 5, "Khor Fakkan Port": 8,
+}
 STATIONS: Dict[str, Dict[str, Any]] = {
     "Abu Dhabi": {"lat": 24.4760, "lon": 54.3290, "type": "Coast"},
     "ADNOC HQ": {"lat": 24.4621, "lon": 54.3241, "type": "Coast"},
@@ -118,11 +122,15 @@ STATIONS: Dict[str, Dict[str, Any]] = {
     "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"},
 }
 SECTOR_MAP = {
-    "الشرقية": ["Fujairah Port", "Fujairah Int'l Airport", "Hatta", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"],
-    "الوسطى": ["Al Dhaid", "Al Malaiha"],
-    "أبوظبي والظفرة": ["Abu Dhabi", "ADNOC HQ", "Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Sir Bu Nair", "Al Wathbah", "Madinat Zayed", "Mukhariz", "Owtaid", "Zayed Int'l Airport", "Al Bateen Executive Airport"],
+    "الساحل الشرقي": ["Fujairah Port", "Fujairah Int'l Airport", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"],
+    "الجبال الشرقية": ["Hatta", "Jabal Jais", "Jabal Al Rahba"],
+    "المنطقة الوسطى": ["Al Dhaid", "Al Malaiha"],
     "العين": ["Al Ain Int'l Airport", "Al Aamerah"],
-    "دبي والشمال": ["Burj Khalifah", "Sharjah University", "Ajman", "Umm Al Quwain", "Ras Al khaimah", "Jabal Jais", "Jabal Al Rahba", "Dubai Int'l Airport", "Sharjah Int'l Airport", "Ras Al Khaimah Int'l Airport", "Al Maktoum Int'l Airport"],
+    "دبي": ["Burj Khalifah", "Dubai Int'l Airport", "Al Maktoum Int'l Airport"],
+    "الشارقة وعجمان وأم القيوين": ["Sharjah University", "Sharjah Int'l Airport", "Ajman", "Umm Al Quwain"],
+    "رأس الخيمة": ["Ras Al khaimah", "Ras Al Khaimah Int'l Airport"],
+    "أبوظبي": ["Abu Dhabi", "ADNOC HQ", "Al Wathbah", "Zayed Int'l Airport", "Al Bateen Executive Airport", "Sir Bu Nair"],
+    "الظفرة": ["Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Madinat Zayed", "Mukhariz", "Owtaid"],
 }
 SEASON_ORDER = ["DJF", "JFM", "FMA", "MAM", "AMJ", "MJJ", "JJA", "JAS", "ASO", "SON", "OND", "NDJ"]
 
@@ -299,6 +307,10 @@ if ok and isinstance(live, list):
                 if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 65:
                     base_k = (rh - 65) * 2 + cloud * 0.5
                     alkous = float(np.clip(base_k * (1.2 if temp >= 35 else 1), 0, 100))
+                elev = ELEVATION.get(name, 0)
+                if elev >= 800 and 45 <= wind_dir <= 160 and rh >= 60:
+                    alkous = max(alkous, 40)
+                    drizzle = max(drizzle, 15)
                 if coords["lon"] >= 55.8 and 3 <= dt.hour <= 9 and 45 <= wind_dir <= 160 and rh >= 85 and cloud >= 75:
                     drizzle = float(np.clip((rh - 85) * 4 + (cloud - 75) * 2 + wind * 0.8, 0, 100))
                 nw = wind_dir >= 300 or wind_dir <= 30
@@ -444,13 +456,15 @@ if alerts and risk >= 40:
 else:
     st.info(tr("لا خطر وطني قائم حالياً.", "No national hazard is active now."))
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     tr("القيادة", "Command"),
     tr("المخاطر", "Hazards"),
     tr("الحرارة والشمال", "Heat & shamal"),
     tr("المحطات", "Stations"),
     tr("خمسة أيام", "5-day outlook"),
     tr("النينيو", "ENSO"),
+    tr("النماذج والغبار", "Models & dust"),
+    tr("في مثل هذا اليوم", "On this day"),
 ])
 
 
@@ -826,3 +840,138 @@ with tab6:
         else:
             st.info(tr("الوضع المحايد يعني أن طقس الإمارات يتحدد أكثر بالمنخفضات المحلية ودورة الخليج.", "Neutral means UAE weather is driven more by local lows and the Gulf cycle."))
         st.dataframe(oni.tail(8)[["label", "sst", "anom"]].iloc[::-1].rename(columns={"label": tr("الموسم", "Season"), "sst": tr("الحرارة °C", "SST °C"), "anom": tr("الشذوذ °C", "Anomaly °C")}), use_container_width=True, hide_index=True)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_model_rain(model: str) -> Tuple[bool, Any]:
+    try:
+        response = requests.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude": "25.12,25.95,24.45",
+                "longitude": "56.33,56.17,54.38",
+                "hourly": "precipitation,cloudcover_low,windspeed_10m",
+                "models": model,
+                "forecast_days": 3,
+                "timezone": "Asia/Dubai",
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return True, data if isinstance(data, list) else [data]
+    except Exception as exc:
+        return False, str(exc)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_dust() -> Tuple[bool, Any]:
+    points = {"الساحل الشرقي": (25.12, 56.33), "جبل جيس": (25.95, 56.17), "أبوظبي": (24.45, 54.38), "العين": (24.26, 55.61)}
+    try:
+        response = requests.get(
+            "https://air-quality-api.open-meteo.com/v1/air-quality",
+            params={
+                "latitude": ",".join(str(v[0]) for v in points.values()),
+                "longitude": ",".join(str(v[1]) for v in points.values()),
+                "hourly": "pm10,dust",
+                "forecast_days": 3,
+                "timezone": "Asia/Dubai",
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return True, dict(zip(points, data if isinstance(data, list) else [data]))
+    except Exception as exc:
+        return False, str(exc)
+
+
+@st.cache_data(ttl=24 * 3600, show_spinner=False)
+def fetch_on_this_day(month: int, day: int) -> Tuple[bool, Any]:
+    spots = {
+        "أبوظبي": (24.45, 54.38), "دبي": (25.25, 55.33), "الشارقة": (25.35, 55.39),
+        "رأس الخيمة": (25.79, 55.94), "الفجيرة": (25.12, 56.33), "العين": (24.26, 55.61),
+        "الظفرة": (23.68, 53.70), "جبل جيس": (25.95, 56.17), "الذيد": (25.29, 55.88),
+    }
+    rows = []
+    try:
+        for name, (lat, lon) in spots.items():
+            response = requests.get(
+                "https://archive-api.open-meteo.com/v1/archive",
+                params={
+                    "latitude": lat,
+                    "longitude": lon,
+                    "start_date": "2000-01-01",
+                    "end_date": "2025-12-31",
+                    "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
+                    "timezone": "Asia/Dubai",
+                },
+                timeout=40,
+            )
+            response.raise_for_status()
+            daily = response.json().get("daily") or {}
+            for date, tmax, tmin, rain, wind in zip(daily.get("time", []), daily.get("temperature_2m_max", []), daily.get("temperature_2m_min", []), daily.get("precipitation_sum", []), daily.get("wind_speed_10m_max", [])):
+                if date[5:10] == f"{month:02d}-{day:02d}":
+                    rows.append({"place": name, "date": date, "tmax": tmax, "tmin": tmin, "rain": rain, "wind": wind})
+        return True, pd.DataFrame(rows)
+    except Exception as exc:
+        return False, str(exc)
+
+
+with tab7:
+    st.markdown(tr("#### مقارنة GFS وECMWF وغبار CAMS", "#### GFS, ECMWF and CAMS dust"))
+    st.caption(tr(
+        "الجبال فوق 800 م، مثل جبل جيس، ترفع فرصة الكوس والرذاذ عندما تكون الرياح شرقية رطبة. الغبار من نموذج CAMS وليس من سرعة الرياح فقط.",
+        "Peaks above 800 m, such as Jebel Jais, raise Al-Kous and drizzle chances in moist easterly flow. Dust comes from CAMS, not wind speed alone.",
+    ))
+    g_ok, gfs = fetch_model_rain("gfs_seamless")
+    e_ok, ecmwf = fetch_model_rain("ecmwf_ifs")
+    labels = [tr("الفجيرة", "Fujairah"), tr("جبل جيس", "Jebel Jais"), tr("أبوظبي", "Abu Dhabi")]
+    if g_ok and e_ok:
+        rows = []
+        for i, label in enumerate(labels):
+            g_rain = max(gfs[i].get("hourly", {}).get("precipitation") or [0])
+            e_rain = max(ecmwf[i].get("hourly", {}).get("precipitation") or [0])
+            rows.append({tr("الموقع", "Place"): label, "GFS mm": round(g_rain, 1), "ECMWF mm": round(e_rain, 1)})
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        st.info(tr("إذا اقترب الرقمان فالثقة أعلى. إذا افترقا فالحالة غير محسومة.", "Close numbers mean higher confidence. A wide gap means the event is uncertain."))
+    else:
+        st.warning(tr("تعذر جلب أحد النموذجين.", "One of the models could not be fetched."))
+    d_ok, dust = fetch_dust()
+    if d_ok:
+        dust_rows = []
+        for place, payload in dust.items():
+            values = [v for v in (payload.get("hourly") or {}).get("dust") or [] if v is not None]
+            pm = [v for v in (payload.get("hourly") or {}).get("pm10") or [] if v is not None]
+            dust_rows.append({tr("الموقع", "Place"): place, tr("أعلى غبار", "Peak dust"): round(max(values or [0]), 1), "PM10": round(max(pm or [0]), 1)})
+        st.dataframe(pd.DataFrame(dust_rows), use_container_width=True, hide_index=True)
+    else:
+        st.warning(tr(f"تعذر جلب الغبار: {dust}", f"Dust unavailable: {dust}"))
+
+with tab8:
+    st.markdown(tr("#### في مثل هذا اليوم", "#### On this day"))
+    ok_day, history = fetch_on_this_day(uae_now.month, uae_now.day)
+    if not ok_day:
+        st.warning(tr(f"تعذر الأرشيف: {history}", f"Archive unavailable: {history}"))
+    elif history.empty:
+        st.info(tr("لا سجل لهذا التاريخ.", "No record for this date."))
+    else:
+        wet = history.loc[history["rain"].idxmax()]
+        hot = history.loc[history["tmax"].idxmax()]
+        cold = history.loc[history["tmin"].idxmin()]
+        windy = history.loc[history["wind"].idxmax()]
+        st.markdown(tr(
+            f"في مثل هذا اليوم على الدولة:\n\n"
+            f"- أعلى كمية أمطار: {wet['rain']:.1f} مم، سُجّلت في {wet['place']} بتاريخ {wet['date']}.\n"
+            f"- أعلى درجة حرارة: {hot['tmax']:.1f} °C، سُجّلت في {hot['place']} بتاريخ {hot['date']}.\n"
+            f"- أقل درجة حرارة: {cold['tmin']:.1f} °C، سُجّلت في {cold['place']} بتاريخ {cold['date']}.\n"
+            f"- أعلى سرعة رياح: {windy['wind']:.0f} كم/س، سُجّلت في {windy['place']} بتاريخ {windy['date']}.",
+            f"On this day nationwide:\n\n"
+            f"- Highest rainfall: {wet['rain']:.1f} mm at {wet['place']} on {wet['date']}.\n"
+            f"- Highest temperature: {hot['tmax']:.1f} °C at {hot['place']} on {hot['date']}.\n"
+            f"- Lowest temperature: {cold['tmin']:.1f} °C at {cold['place']} on {cold['date']}.\n"
+            f"- Highest wind: {windy['wind']:.0f} km/h at {windy['place']} on {windy['date']}.",
+        ))
+        if wet["rain"] >= 20:
+            st.info(tr(f"الظاهرة الأبرز: يوم ماطر استثنائي في {wet['place']}.", f"Notable event: an exceptional wet day at {wet['place']}."))
+        st.caption(tr("السجل من أرشيف إعادة التحليل منذ 2000 لعدد من مواقع الدولة، ويذكر أعلى قيمة ومكانها. ليس سجل المركز الوطني الرسمي.", "The record uses the reanalysis archive since 2000 at several UAE sites and names the place of each extreme. It is not the official NCM record."))

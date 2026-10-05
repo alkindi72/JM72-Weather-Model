@@ -893,29 +893,34 @@ def fetch_on_this_day(month: int, day: int) -> Tuple[bool, Any]:
         "رأس الخيمة": (25.79, 55.94), "الفجيرة": (25.12, 56.33), "العين": (24.26, 55.61),
         "الظفرة": (23.68, 53.70), "جبل جيس": (25.95, 56.17), "الذيد": (25.29, 55.88),
     }
-    rows = []
+    names = list(spots)
     try:
-        for name, (lat, lon) in spots.items():
-            response = requests.get(
-                "https://archive-api.open-meteo.com/v1/archive",
-                params={
-                    "latitude": lat,
-                    "longitude": lon,
-                    "start_date": "2000-01-01",
-                    "end_date": "2025-12-31",
-                    "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
-                    "timezone": "Asia/Dubai",
-                },
-                timeout=40,
-            )
-            response.raise_for_status()
-            daily = response.json().get("daily") or {}
+        response = requests.get(
+            "https://archive-api.open-meteo.com/v1/archive",
+            params={
+                "latitude": ",".join(str(v[0]) for v in spots.values()),
+                "longitude": ",".join(str(v[1]) for v in spots.values()),
+                "start_date": "2010-01-01",
+                "end_date": "2025-12-31",
+                "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
+                "timezone": "Asia/Dubai",
+            },
+            timeout=50,
+        )
+        if response.status_code == 429:
+            return False, "تجاوز حد الطلبات. أعد فتح التبويب بعد دقيقة."
+        response.raise_for_status()
+        payload = response.json()
+        blocks = payload if isinstance(payload, list) else [payload]
+        rows = []
+        for name, block in zip(names, blocks):
+            daily = block.get("daily") or {}
             for date, tmax, tmin, rain, wind in zip(daily.get("time", []), daily.get("temperature_2m_max", []), daily.get("temperature_2m_min", []), daily.get("precipitation_sum", []), daily.get("wind_speed_10m_max", [])):
-                if date[5:10] == f"{month:02d}-{day:02d}":
-                    rows.append({"place": name, "date": date, "tmax": tmax, "tmin": tmin, "rain": rain, "wind": wind})
+                if date[5:10] == f"{month:02d}-{day:02d}" and tmax is not None:
+                    rows.append({"place": name, "date": date, "tmax": tmax, "tmin": tmin, "rain": rain or 0, "wind": wind or 0})
         return True, pd.DataFrame(rows)
     except Exception as exc:
-        return False, str(exc)
+        return False, "تعذر الأرشيف مؤقتاً. أعد المحاولة بعد دقيقة."
 
 
 with tab7:

@@ -965,18 +965,19 @@ with tab8:
         hot = history.loc[history["tmax"].idxmax()]
         cold = history.loc[history["tmin"].idxmin()]
         windy = history.loc[history["wind"].idxmax()]
-        st.markdown(tr(
-            f"في مثل هذا اليوم على الدولة:\n\n"
-            f"- أعلى كمية أمطار: {wet['rain']:.1f} مم، سُجّلت في {wet['place']} بتاريخ {wet['date']}.\n"
-            f"- أعلى درجة حرارة: {hot['tmax']:.1f} °C، سُجّلت في {hot['place']} بتاريخ {hot['date']}.\n"
-            f"- أقل درجة حرارة: {cold['tmin']:.1f} °C، سُجّلت في {cold['place']} بتاريخ {cold['date']}.\n"
-            f"- أعلى سرعة رياح: {windy['wind']:.0f} كم/س، سُجّلت في {windy['place']} بتاريخ {windy['date']}.",
-            f"On this day nationwide:\n\n"
-            f"- Highest rainfall: {wet['rain']:.1f} mm at {wet['place']} on {wet['date']}.\n"
-            f"- Highest temperature: {hot['tmax']:.1f} °C at {hot['place']} on {hot['date']}.\n"
-            f"- Lowest temperature: {cold['tmin']:.1f} °C at {cold['place']} on {cold['date']}.\n"
-            f"- Highest wind: {windy['wind']:.0f} km/h at {windy['place']} on {windy['date']}.",
-        ))
+        lines = [
+            tr(f"أعلى كمية أمطار: {wet['rain']:.1f} مم، سُجّلت في {wet['place']} بتاريخ {wet['date']}.", f"Highest rainfall: {wet['rain']:.1f} mm at {wet['place']} on {wet['date']}."),
+            tr(f"أعلى درجة حرارة: {hot['tmax']:.1f} °C، سُجّلت في {hot['place']} بتاريخ {hot['date']}.", f"Highest temperature: {hot['tmax']:.1f} °C at {hot['place']} on {hot['date']}."),
+            tr(f"أقل درجة حرارة: {cold['tmin']:.1f} °C، سُجّلت في {cold['place']} بتاريخ {cold['date']}.", f"Lowest temperature: {cold['tmin']:.1f} °C at {cold['place']} on {cold['date']}."),
+            tr(f"أعلى سرعة رياح: {windy['wind']:.0f} كم/س، سُجّلت في {windy['place']} بتاريخ {windy['date']}.", f"Highest wind: {windy['wind']:.0f} km/h at {windy['place']} on {windy['date']}."),
+        ]
+        align = "right" if lang == "ar" else "left"
+        side = "rtl" if lang == "ar" else "ltr"
+        items = "".join(f"<li style='margin:8px 0;'>{line}</li>" for line in lines)
+        st.markdown(
+            f"<div dir='{side}' style='direction:{side};text-align:{align};background:#0f172a;border-radius:14px;padding:14px 18px;'><b>{tr('في مثل هذا اليوم على الدولة', 'On this day nationwide')}</b><ul style='direction:{side};text-align:{align};padding-inline-start:1.2rem;'>{items}</ul></div>",
+            unsafe_allow_html=True,
+        )
         if wet["rain"] >= 20:
             st.info(tr(f"الظاهرة الأبرز: يوم ماطر استثنائي في {wet['place']}.", f"Notable event: an exceptional wet day at {wet['place']}."))
         st.caption(tr("السجل من أرشيف إعادة التحليل منذ 2000 لعدد من مواقع الدولة، ويذكر أعلى قيمة ومكانها. ليس سجل المركز الوطني الرسمي.", "The record uses the reanalysis archive since 2000 at several UAE sites and names the place of each extreme. It is not the official NCM record."))

@@ -955,29 +955,26 @@ with tab7:
 
 with tab8:
     st.markdown(tr("#### في مثل هذا اليوم", "#### On this day"))
-    ok_day, history = fetch_on_this_day(uae_now.month, uae_now.day)
-    if not ok_day:
-        st.warning(tr(f"تعذر الأرشيف: {history}", f"Archive unavailable: {history}"))
-    elif history.empty:
-        st.info(tr("لا سجل لهذا التاريخ.", "No record for this date."))
+    try:
+        almanac = pd.read_csv("climate_yearly_almanac_till_dec_20252.csv", header=1)
+        row = almanac[(almanac["month"].astype(str).str.lower() == uae_now.strftime("%B").lower()) & (almanac["month_day"].astype(int) == uae_now.day)]
+    except Exception:
+        row = pd.DataFrame()
+    if row.empty:
+        st.warning(tr("تعذر قراءة أرشيف المناخ الوطني لهذا اليوم.", "The national climate almanac could not be read for today."))
     else:
-        wet = history.loc[history["rain"].idxmax()]
-        hot = history.loc[history["tmax"].idxmax()]
-        cold = history.loc[history["tmin"].idxmin()]
-        windy = history.loc[history["wind"].idxmax()]
+        item = row.iloc[0]
         lines = [
-            tr(f"أعلى كمية أمطار: {wet['rain']:.1f} مم، سُجّلت في {wet['place']} بتاريخ {wet['date']}.", f"Highest rainfall: {wet['rain']:.1f} mm at {wet['place']} on {wet['date']}."),
-            tr(f"أعلى درجة حرارة: {hot['tmax']:.1f} °C، سُجّلت في {hot['place']} بتاريخ {hot['date']}.", f"Highest temperature: {hot['tmax']:.1f} °C at {hot['place']} on {hot['date']}."),
-            tr(f"أقل درجة حرارة: {cold['tmin']:.1f} °C، سُجّلت في {cold['place']} بتاريخ {cold['date']}.", f"Lowest temperature: {cold['tmin']:.1f} °C at {cold['place']} on {cold['date']}."),
-            tr(f"أعلى سرعة رياح: {windy['wind']:.0f} كم/س، سُجّلت في {windy['place']} بتاريخ {windy['date']}.", f"Highest wind: {windy['wind']:.0f} km/h at {windy['place']} on {windy['date']}."),
+            tr(f"أعلى كمية أمطار: {item['highest_rainfall_value']} مم، سُجّلت في {item['highest_rainfall_location_ar']} سنة {item['highest_rainfall_year']}.", f"Highest rainfall: {item['highest_rainfall_value']} mm at {item['highest_rainfall_location_en']} in {item['highest_rainfall_year']}."),
+            tr(f"أعلى درجة حرارة: {item['highest_temperature_value']} °C، سُجّلت في {item['highest_temperature_location_ar']} سنة {item['highest_temperature_year']}.", f"Highest temperature: {item['highest_temperature_value']} °C at {item['highest_temperature_location_en']} in {item['highest_temperature_year']}."),
+            tr(f"أقل درجة حرارة: {item['lowest_temperature_value']} °C، سُجّلت في {item['lowest_temperature_location_ar']} سنة {item['lowest_temperature_year']}.", f"Lowest temperature: {item['lowest_temperature_value']} °C at {item['lowest_temperature_location_en']} in {item['lowest_temperature_year']}."),
+            tr(f"أعلى سرعة رياح: {item['maximum_wind_value']} كم/س، سُجّلت في {item['maximum_wind_location_ar']} سنة {item['maximum_wind_year']}.", f"Highest wind: {item['maximum_wind_value']} km/h at {item['maximum_wind_location_en']} in {item['maximum_wind_year']}."),
+            tr(f"عدد سنوات حدوث المطر في هذا التاريخ: {item['rainfall_occurence_value']} من {item['rainfall_period_years']}.", f"Rain occurred on this date in {item['rainfall_occurence_value']} of {item['rainfall_period_years']} years."),
         ]
         align = "right" if lang == "ar" else "left"
         side = "rtl" if lang == "ar" else "ltr"
         items = "".join(f"<li style='margin:8px 0;'>{line}</li>" for line in lines)
         st.markdown(
-            f"<div dir='{side}' style='direction:{side};text-align:{align};background:#0f172a;border-radius:14px;padding:14px 18px;'><b>{tr('في مثل هذا اليوم على الدولة', 'On this day nationwide')}</b><ul style='direction:{side};text-align:{align};padding-inline-start:1.2rem;'>{items}</ul></div>",
+            f"<div dir='{side}' style='direction:{side};text-align:{align};background:#0f172a;border-radius:14px;padding:14px 18px;'><b>{tr('السجل الوطني من 2003 إلى 2025', 'National record, 2003 to 2025')}</b><ul style='direction:{side};text-align:{align};padding-inline-start:1.2rem;'>{items}</ul></div>",
             unsafe_allow_html=True,
         )
-        if wet["rain"] >= 20:
-            st.info(tr(f"الظاهرة الأبرز: يوم ماطر استثنائي في {wet['place']}.", f"Notable event: an exceptional wet day at {wet['place']}."))
-        st.caption(tr("السجل من أرشيف إعادة التحليل منذ 2000 لعدد من مواقع الدولة، ويذكر أعلى قيمة ومكانها. ليس سجل المركز الوطني الرسمي.", "The record uses the reanalysis archive since 2000 at several UAE sites and names the place of each extreme. It is not the official NCM record."))

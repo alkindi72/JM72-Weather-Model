@@ -321,6 +321,7 @@ choice = st.radio("Language", ["العربية", "English"], horizontal=True, ke
 st.session_state.lang = "ar" if choice == "العربية" else "en"
 lang = st.session_state.lang
 status = status_ar if lang == "ar" else status_en
+risk_color = "#DC2626" if risk >= 70 else ("#D97706" if risk >= 40 else "#166534")
 side = "rtl" if lang == "ar" else "ltr"
 align = "right" if lang == "ar" else "left"
 st.markdown(
@@ -356,7 +357,7 @@ st.markdown(
   </div>
   <div class="sub">{tr(f"قراءة موحّدة للعواصف، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Storms, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
   <span class="pill">{tr("توقيت الإمارات", "UAE time")} {uae_now.strftime('%H:%M')}</span>
-  <span class="pill">{tr("المخاطر الوطنية", "National risk")} {risk}% · {status}</span>
+  <span class="pill" style="background:{risk_color};color:#fff;">{tr("المخاطر الوطنية", "National risk")} {risk}% · {status}</span>
   <span class="pill">{tr("دورة النموذج", "Model cycle")} {cycle}</span>
   <span class="pill">{tr("نشرة الخمسة أيام", "Five-day bulletin")} {bulletin_day} · 05:00</span>
 </div>
@@ -377,17 +378,48 @@ cards = [
 for col, (title, value, unit) in zip((c1, c2, c3, c4, c5), cards):
     col.markdown(f"<div class='card'><div class='muted'>{title}</div><b>{value:.0f} {unit}</b></div>", unsafe_allow_html=True)
 
-brief = tr("الأعمدة الجوية مستقرة حالياً.", "The air column is currently stable.")
-if not now_df.empty:
-    if safe_max(now_df["Fog Probability"]) >= 50:
-        brief = tr("ضباب إشعاعي محتمل ويؤثر على الرؤية والطرق.", "Radiation fog may reduce visibility on roads.")
-    elif safe_max(now_df["Drizzle Prob"]) >= 60:
-        brief = tr("رذاذ الكوس محتمل على الحافة الشرقية.", "Al-Kous drizzle is possible on the east coast.")
-    elif safe_max(now_df["Storm Probability"]) >= 65:
-        brief = tr("نشاط ركامي معزول محتمل بعد الظهر.", "Isolated afternoon storms are possible.")
-    elif safe_max(now_df["Shamal Index"]) >= 60:
-        brief = tr("تدفق شمالي غربي قد يثير الغبار على السواحل والصحراء.", "A northwesterly shamal may raise dust on coasts and desert.")
-st.info(brief)
+def hazard_window(frame: pd.DataFrame, column: str, threshold: float):
+    if frame.empty or column not in frame:
+        return None
+    active = frame[frame[column] >= threshold]
+    if active.empty:
+        return None
+    times = [t for t in timeline_str if t in set(active["Time"])]
+    if not times:
+        return None
+    start, end = times[0], times[-1]
+    peak = active.loc[active[column].idxmax()]
+    stations = active[active["Time"] == peak["Time"]].sort_values(column, ascending=False)["Station"].head(4).tolist()
+    sector = peak["Sector"]
+    sector = SECTOR_EN.get(sector, sector) if st.session_state.get("lang") == "en" else sector
+    return start, end, int(peak[column]), sector, "، ".join(stations) if st.session_state.get("lang") != "en" else ", ".join(stations)
+
+
+alerts = []
+if not df.empty:
+    checks = [
+        ("Fog Probability", 50, "ضباب وتدني رؤية", "fog and low visibility"),
+        ("Storm Probability", 65, "عواصف وأمطار رعدية", "storms and thundery rain"),
+        ("Shamal Index", 60, "غبار الشمال", "shamal dust"),
+        ("Drizzle Prob", 60, "رذاذ الكوس", "Al-Kous drizzle"),
+    ]
+    for column, threshold, ar, en in checks:
+        found = hazard_window(df, column, threshold)
+        if found:
+            start, end, level, sector, stations = found
+            alerts.append(tr(
+                f"الخطر الحالي: {ar} بنسبة {level}% على {sector}، وأبرز المحطات {stations}. البداية {start} والنهاية المتوقعة {end}.",
+                f"Current hazard: {en} at {level}% over {sector}, led by {stations}. Starts {start} and is expected to end {end}.",
+            ))
+if alerts and risk >= 40:
+    st.markdown(
+        "<div style='background:#7F1D1D;border:1px solid #FCA5A5;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'>"
+        + "".join(f"<p style='color:#FEE2E2;margin:6px 0;font-size:18px;'>{line}</p>" for line in alerts)
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+else:
+    st.info(tr("لا خطر وطني قائم حالياً.", "No national hazard is active now."))
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     tr("القيادة", "Command"),

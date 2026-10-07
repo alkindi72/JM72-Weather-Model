@@ -524,6 +524,15 @@ if badge:
         f"<div style='position:fixed;top:18px;left:18px;z-index:9999;background:#DC2626;color:white;border-radius:999px;padding:8px 12px;font-weight:800;'>⚠ {badge}</div>",
         unsafe_allow_html=True,
     )
+    try:
+        requests.post(
+            "https://ntfy.sh/71wm-alkindi-uae",
+            data=alerts[0].encode("utf-8"),
+            headers={"Title": "تحذير 71WM", "Priority": "high", "Tags": "warning"},
+            timeout=8,
+        )
+    except Exception:
+        pass
 if alerts:
     st.markdown(
         "<div style='background:#7F1D1D;border:1px solid #FCA5A5;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'><b style='color:#FEE2E2;'>"

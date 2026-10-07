@@ -1077,27 +1077,55 @@ def fetch_on_this_day(month: int, day: int) -> Tuple[bool, Any]:
 
 
 with tab7:
-    st.markdown(tr("#### مقارنة GFS وECMWF وغبار CAMS", "#### GFS, ECMWF and CAMS dust"))
+    st.markdown(tr("#### اتفاق النماذج ونماذج الذكاء الاصطناعي", "#### Model agreement and AI guidance"))
     st.caption(tr(
-        "الجبال فوق 800 م، مثل جبل جيس، ترفع فرصة الكوس والرذاذ عندما تكون الرياح شرقية رطبة. الغبار من نموذج CAMS وليس من سرعة الرياح فقط.",
-        "Peaks above 800 m, such as Jebel Jais, raise Al-Kous and drizzle chances in moist easterly flow. Dust comes from CAMS, not wind speed alone.",
+        "71WM طبقة قواعد على GFS، وليست نموذجاً مدرباً. النسبة هنا اتفاق النماذج على المطر خلال 3 أيام، لا دقة تاريخية مضمونة. AIFS من ECMWF وGraphCast من Google نماذج ذكاء اصطناعي.",
+        "71WM is a rules layer on GFS, not a trained model. The percentage is model agreement on rain over 3 days, not a guaranteed historical accuracy. AIFS and GraphCast are AI models.",
     ))
-    g_ok, gfs = fetch_model_rain("gfs_seamless")
-    e_ok, ecmwf = fetch_model_rain("ecmwf_ifs")
-    if g_ok and e_ok:
-        compare = pd.DataFrame(gfs).rename(columns={"rain": "gfs"}).merge(
-            pd.DataFrame(ecmwf).rename(columns={"rain": "ecmwf"})[["place", "ecmwf"]], on="place"
-        )
+    model_names = {
+        "GFS": "gfs_seamless",
+        "ECMWF": "ecmwf_ifs",
+        "AIFS": "ecmwf_aifs025_single",
+        "GraphCast": "gfs_graphcast025",
+    }
+    points = {"أبوظبي": (24.45, 54.38), "دبي": (25.20, 55.27), "العين": (24.26, 55.61), "ناهل": (24.62, 55.58), "الفجيرة": (25.12, 56.33)}
+    scores = []
+    fetched = {}
+    for label, model in model_names.items():
+        ok, rows = fetch_model_rain(model) if model != "gfs_graphcast025" else fetch_model_rain(model)
+        fetched[label] = rows if ok else []
+        if not ok:
+            st.caption(tr(f"{label} غير متاح الآن.", f"{label} is unavailable now."))
+    available = [name for name, rows in fetched.items() if rows]
+    if len(available) >= 2:
+        base = {row["place"]: row for row in fetched[available[0]]}
+        for place, row in base.items():
+            rains = []
+            for name in available:
+                match = next((item for item in fetched[name] if item["place"] == place), None)
+                if match:
+                    rains.append(match["rain"])
+            wet = sum(1 for value in rains if value >= 0.5)
+            agreement = int(round(100 * max(wet, len(rains) - wet) / max(len(rains), 1)))
+            scores.append({"الموقع": place, "اتفاق %": agreement, "مطر النماذج مم": " / ".join(f"{v:.1f}" for v in rains)})
+        st.dataframe(pd.DataFrame(scores), use_container_width=True, hide_index=True)
+        mean_agreement = int(round(sum(item["اتفاق %"] for item in scores) / len(scores)))
+        st.metric(tr("اتفاق النماذج على الدولة", "National model agreement"), f"{mean_agreement}%")
         fig = go.Figure()
-        fig.add_trace(go.Scattermapbox(lat=compare["lat"], lon=compare["lon"] - 0.12, mode="markers+text", text=compare["gfs"], name="GFS", marker=dict(size=compare["gfs"] + 12, color="#f87171")))
-        fig.add_trace(go.Scattermapbox(lat=compare["lat"], lon=compare["lon"] + 0.12, mode="markers+text", text=compare["ecmwf"], name="ECMWF", marker=dict(size=compare["ecmwf"] + 12, color="#38bdf8")))
+        colors = {"GFS": "#f87171", "ECMWF": "#38bdf8", "AIFS": "#d4af37", "GraphCast": "#c4b5fd"}
+        offsets = {"GFS": -0.18, "ECMWF": -0.06, "AIFS": 0.06, "GraphCast": 0.18}
+        for name in available:
+            frame = pd.DataFrame(fetched[name])
+            fig.add_trace(go.Scattermapbox(
+                lat=frame["lat"], lon=frame["lon"] + offsets.get(name, 0),
+                mode="markers+text", text=frame["rain"], name=name,
+                marker=dict(size=frame["rain"] + 12, color=colors.get(name, "#fff")),
+            ))
         fig.update_layout(mapbox_style="open-street-map", mapbox_center=dict(lat=24.4, lon=54.6), mapbox_zoom=6, height=520, margin=dict(l=0, r=0, t=30, b=0), paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#e7eef8"), legend=dict(orientation="h"))
         st.plotly_chart(fig, use_container_width=True)
-        st.caption(tr("الأحمر GFS والأزرق ECMWF على الخريطة نفسها. الرقم أعلى مطر متوقع خلال 3 أيام بالمليمتر.", "Red is GFS and blue is ECMWF on the same map. The number is the highest rain expected in 3 days, in millimetres."))
-        rows = [{"الموقع": a["place"], "GFS mm": a["rain"], "ECMWF mm": b["rain"]} for a, b in zip(gfs, ecmwf)]
-        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        st.info(tr("إذا زاد الاتفاق عن 80% فالحالة أوضح. إذا نزل عن 60% فالنماذج مختلفة ولا يُرفع تحذير من رقم واحد.", "Above 80% the signal is clearer. Below 60% the models disagree and one number should not raise a warning."))
     else:
-        st.warning(tr("تعذر جلب أحد النموذجين.", "One of the models could not be fetched."))
+        st.warning(tr("تعذر جلب نموذجين على الأقل.", "At least two models could not be fetched."))
     d_ok, dust = fetch_dust()
     if d_ok:
         dust_rows = []

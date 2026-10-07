@@ -87,6 +87,7 @@ DAYS_EN = {"Monday": "Mon", "Tuesday": "Tue", "Wednesday": "Wed", "Thursday": "T
 ELEVATION = {
     "Jabal Jais": 1934, "Jabal Al Rahba": 1543, "Hatta": 330, "Al Tawiyen": 450,
     "Al Heben": 700, "AlQor": 520, "Fujairah Port": 5, "Khor Fakkan Port": 8,
+    "Masafi": 500, "Jebel Hafeet": 1240, "Shaam": 700, "Dibba": 15,
 }
 STATIONS: Dict[str, Dict[str, Any]] = {
     "Abu Dhabi": {"lat": 24.4760, "lon": 54.3290, "type": "Coast"},
@@ -129,18 +130,33 @@ STATIONS: Dict[str, Dict[str, Any]] = {
     "Sweihan": {"lat": 24.4660, "lon": 55.3300, "type": "Inland"},
     "Shwaib": {"lat": 24.7800, "lon": 55.8000, "type": "Inland"},
     "Masafi": {"lat": 25.3100, "lon": 56.1600, "type": "Mountains"},
+    "Dibba": {"lat": 25.6200, "lon": 56.2700, "type": "Coast"},
+    "Jebel Hafeet": {"lat": 24.0600, "lon": 55.7800, "type": "Mountains"},
+    "Al Quaa": {"lat": 23.4000, "lon": 55.4200, "type": "Desert"},
+    "Al Wagan": {"lat": 23.5900, "lon": 55.5000, "type": "Desert"},
+    "Remah": {"lat": 24.1700, "lon": 55.1300, "type": "Inland"},
+    "Madam": {"lat": 24.9500, "lon": 55.7800, "type": "Inland"},
+    "Falaj Al Mualla": {"lat": 25.3500, "lon": 55.8500, "type": "Inland"},
+    "Shaam": {"lat": 26.0300, "lon": 56.0900, "type": "Mountains"},
+    "Digdaga": {"lat": 25.6300, "lon": 55.9300, "type": "Inland"},
+    "Liwa": {"lat": 23.1300, "lon": 53.7700, "type": "Desert"},
+    "Ghayathi": {"lat": 23.8400, "lon": 52.8100, "type": "Desert"},
+    "Sila": {"lat": 24.0800, "lon": 51.7600, "type": "Coast"},
+    "Jebel Ali": {"lat": 25.0100, "lon": 55.0600, "type": "Coast"},
+    "Yas Island": {"lat": 24.4900, "lon": 54.6100, "type": "Coast"},
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"},
     "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"},
 }
 SECTOR_MAP = {
-    "الساحل الشرقي": ["Fujairah Port", "Fujairah Int'l Airport", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"],
-    "العين": ["Al Ain Int'l Airport", "Al Aamerah", "Nahil", "Al Faqa", "Al Ajban", "Sweihan", "Shwaib"],
-    "الجبال الشرقية": ["Hatta", "Jabal Jais", "Jabal Al Rahba", "Masafi"],
-    "دبي": ["Burj Khalifah", "Dubai Int'l Airport", "Al Maktoum Int'l Airport"],
+    "الساحل الشرقي": ["Fujairah Port", "Fujairah Int'l Airport", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port", "Dibba"],
+    "الجبال الشرقية": ["Hatta", "Jabal Jais", "Jabal Al Rahba", "Masafi", "Jebel Hafeet", "Shaam"],
+    "المنطقة الوسطى": ["Al Dhaid", "Al Malaiha", "Madam", "Falaj Al Mualla", "Digdaga"],
+    "العين": ["Al Ain Int'l Airport", "Al Aamerah", "Nahil", "Al Faqa", "Al Ajban", "Sweihan", "Shwaib", "Al Quaa", "Al Wagan", "Remah"],
+    "دبي": ["Burj Khalifah", "Dubai Int'l Airport", "Al Maktoum Int'l Airport", "Jebel Ali"],
     "الشارقة وعجمان وأم القيوين": ["Sharjah University", "Sharjah Int'l Airport", "Ajman", "Umm Al Quwain"],
     "رأس الخيمة": ["Ras Al khaimah", "Ras Al Khaimah Int'l Airport"],
-    "أبوظبي": ["Abu Dhabi", "ADNOC HQ", "Al Wathbah", "Zayed Int'l Airport", "Al Bateen Executive Airport", "Sir Bu Nair"],
-    "الظفرة": ["Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Madinat Zayed", "Mukhariz", "Owtaid"],
+    "أبوظبي": ["Abu Dhabi", "ADNOC HQ", "Al Wathbah", "Zayed Int'l Airport", "Al Bateen Executive Airport", "Sir Bu Nair", "Yas Island"],
+    "الظفرة": ["Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Madinat Zayed", "Mukhariz", "Owtaid", "Liwa", "Ghayathi", "Sila"],
 }
 SEASON_ORDER = ["DJF", "JFM", "FMA", "MAM", "AMJ", "MJJ", "JJA", "JAS", "ASO", "SON", "OND", "NDJ"]
 

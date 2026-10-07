@@ -329,7 +329,29 @@ if ok and isinstance(live, list):
                 storm = float(np.clip(prob, 0, 100))
                 if dt.hour < 12 or dt.hour > 19:
                     storm *= 0.35
-                if (dt.hour < 8 or dt.hour > 22) and rh > 80 and wind < 15:
+                elev = ELEVATION.get(name, 0)
+                east_hajar = coords["lon"] >= 55.9 and (coords["type"] == "Mountains" or elev >= 400)
+                ain_plain = 24.1 <= coords["lat"] <= 24.9 and 55.2 <= coords["lon"] <= 55.9
+                gulf_coast = coords["type"] == "Coast" and coords["lon"] < 55.6
+                oman_coast = coords["lon"] >= 56.15
+                empty_quarter = coords["type"] == "Desert" and coords["lat"] < 23.8
+                if east_hajar and 50 <= wind_dir <= 160:
+                    storm = min(100, storm * 1.35 + 8)
+                    alkous = max(alkous, 45 if rh >= 60 else 25)
+                if ain_plain and 12 <= dt.hour <= 19 and rh850 >= 50 and cape >= 250:
+                    storm = max(storm, 30 + min(40, cape / 25))
+                if gulf_coast:
+                    storm *= 0.55
+                    if dt.hour <= 9 and rh >= 78 and wind < 16:
+                        fog = max(fog, float(np.clip((rh - 76) * 3.5, 0, 90)))
+                if oman_coast and 40 <= wind_dir <= 170:
+                    alkous = max(alkous, float(np.clip((rh - 60) * 2, 0, 85)))
+                    storm *= 0.8
+                if empty_quarter:
+                    storm *= 0.35
+                    if wind >= 18 and (wind_dir >= 300 or wind_dir <= 40):
+                        shamal = max(shamal, float(np.clip((wind - 16) * 3.5, 0, 100)))
+                if (dt.hour < 8 or dt.hour > 22) and rh > 80 and wind < 15 and not east_hajar:
                     fog = float(np.clip((rh - 80) * 4 + (15 - wind) * 3, 0, 100))
                 if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 65:
                     base_k = (rh - 65) * 2 + cloud * 0.5
@@ -341,7 +363,8 @@ if ok and isinstance(live, list):
                 if coords["lon"] >= 55.8 and 3 <= dt.hour <= 9 and 45 <= wind_dir <= 160 and rh >= 85 and cloud >= 75:
                     drizzle = float(np.clip((rh - 85) * 4 + (cloud - 75) * 2 + wind * 0.8, 0, 100))
                 nw = wind_dir >= 300 or wind_dir <= 30
-                shamal = float(np.clip((wind - 18) * 3.2 + (12 if nw else 0) + (8 if coords["type"] in ("Desert", "Coast") else 0), 0, 100)) if wind >= 20 and nw else 0.0
+                if shamal == 0 and wind >= 20 and nw:
+                    shamal = float(np.clip((wind - 18) * 3.2 + (12 if nw else 0) + (8 if coords["type"] in ("Desert", "Coast") else 0), 0, 100))
             except Exception:
                 pass
             rows.append({
@@ -356,6 +379,36 @@ if ok and isinstance(live, list):
             })
 
 df = pd.DataFrame(rows)
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def ai_sector_bias() -> dict:
+    anchors = {
+        "العين": (24.40, 55.60), "الساحل الشرقي": (25.12, 56.33), "الجبال الشرقية": (25.40, 56.10),
+        "أبوظبي": (24.45, 54.38), "دبي": (25.20, 55.27), "الظفرة": (23.40, 53.50),
+    }
+    bias = {}
+    for sector, (lat, lon) in anchors.items():
+        votes = []
+        for model in ("ecmwf_ifs", "ecmwf_aifs025_single"):
+            try:
+                response = requests.get(
+                    "https://api.open-meteo.com/v1/forecast",
+                    params={"latitude": lat, "longitude": lon, "hourly": "precipitation", "models": model, "forecast_days": 2, "timezone": "Asia/Dubai"},
+                    timeout=20,
+                )
+                response.raise_for_status()
+                rain = max(response.json().get("hourly", {}).get("precipitation") or [0])
+                votes.append(rain >= 0.4)
+            except Exception:
+                continue
+        if len(votes) == 2:
+            bias[sector] = 1.2 if all(votes) else (0.6 if not any(votes) else 1.0)
+    return bias
+
+if not df.empty:
+    for sector, factor in ai_sector_bias().items():
+        mask = df["Sector"] == sector
+        df.loc[mask, "Storm Probability"] = (df.loc[mask, "Storm Probability"] * factor).clip(0, 100).round()
 now_df = df[df["Time"] == timeline_str[0]] if not df.empty else pd.DataFrame()
 risk = 0 if now_df.empty else int(np.clip(max(safe_max(now_df["Storm Probability"]), safe_max(now_df["Fog Probability"]), safe_max(now_df["Shamal Index"]) * 0.7, safe_max(now_df["Drizzle Prob"]) * 0.8), 0, 100))
 status_ar = "حرج" if risk >= 70 else ("مراقب" if risk >= 40 else "مستقر")
@@ -1079,8 +1132,8 @@ def fetch_on_this_day(month: int, day: int) -> Tuple[bool, Any]:
 with tab7:
     st.markdown(tr("#### اتفاق النماذج ونماذج الذكاء الاصطناعي", "#### Model agreement and AI guidance"))
     st.caption(tr(
-        "71WM طبقة قواعد على GFS، وليست نموذجاً مدرباً. النسبة هنا اتفاق النماذج على المطر خلال 3 أيام، لا دقة تاريخية مضمونة. AIFS من ECMWF وGraphCast من Google نماذج ذكاء اصطناعي.",
-        "71WM is a rules layer on GFS, not a trained model. The percentage is model agreement on rain over 3 days, not a guaranteed historical accuracy. AIFS and GraphCast are AI models.",
+        "71WM نموذج محلي للإمارات: يأخذ GFS ثم يعدّله حسب جبال الحجر، سهل العين وناهل، ساحل الخليج، ساحل عمان، وصحراء الظفرة. النسبة اتفاق هذا التعديل المحلي مع ECMWF وAIFS وGraphCast، لا دقة تاريخية مضمونة.",
+        "71WM is a UAE local model: it takes GFS and adjusts it for the Hajar, the Al Ain–Nahil plain, the Gulf coast, the Oman coast and the Al Dhafra desert. The percentage is agreement with ECMWF, AIFS and GraphCast, not guaranteed historical accuracy.",
     ))
     model_names = {
         "GFS": "gfs_seamless",
@@ -1096,6 +1149,13 @@ with tab7:
         fetched[label] = rows if ok else []
         if not ok:
             st.caption(tr(f"{label} غير متاح الآن.", f"{label} is unavailable now."))
+    if not df.empty:
+        wm = []
+        for place, (lat, lon) in points.items():
+            near = df[(df["Latitude"].sub(lat).abs() < 0.35) & (df["Longitude"].sub(lon).abs() < 0.35)]
+            chance = safe_max(near["Storm Probability"]) if not near.empty else 0
+            wm.append({"place": place, "lat": lat, "lon": lon, "rain": round(chance / 10, 1), "chance": int(chance)})
+        fetched["71WM"] = wm
     available = [name for name, rows in fetched.items() if rows]
     if len(available) >= 2:
         base = {row["place"]: row for row in fetched[available[0]]}
@@ -1104,21 +1164,21 @@ with tab7:
             for name in available:
                 match = next((item for item in fetched[name] if item["place"] == place), None)
                 if match:
-                    rains.append(match["rain"])
-            wet = sum(1 for value in rains if value >= 0.5)
+                    rains.append(match["chance"] if name == "71WM" else match["rain"])
+            wet = sum(1 for value in rains if value >= (40 if isinstance(value, int) else 0.5))
             agreement = int(round(100 * max(wet, len(rains) - wet) / max(len(rains), 1)))
             scores.append({"الموقع": place, "اتفاق %": agreement, "مطر النماذج مم": " / ".join(f"{v:.1f}" for v in rains)})
         st.dataframe(pd.DataFrame(scores), use_container_width=True, hide_index=True)
         mean_agreement = int(round(sum(item["اتفاق %"] for item in scores) / len(scores)))
         st.metric(tr("اتفاق النماذج على الدولة", "National model agreement"), f"{mean_agreement}%")
         fig = go.Figure()
-        colors = {"GFS": "#f87171", "ECMWF": "#38bdf8", "AIFS": "#d4af37", "GraphCast": "#c4b5fd"}
-        offsets = {"GFS": -0.18, "ECMWF": -0.06, "AIFS": 0.06, "GraphCast": 0.18}
+        colors = {"71WM": "#22c55e", "GFS": "#f87171", "ECMWF": "#38bdf8", "AIFS": "#d4af37", "GraphCast": "#c4b5fd"}
+        offsets = {"71WM": -0.24, "GFS": -0.12, "ECMWF": 0, "AIFS": 0.12, "GraphCast": 0.24}
         for name in available:
             frame = pd.DataFrame(fetched[name])
             fig.add_trace(go.Scattermapbox(
                 lat=frame["lat"], lon=frame["lon"] + offsets.get(name, 0),
-                mode="markers+text", text=frame["rain"], name=name,
+                mode="markers+text", text=frame["chance"] if "chance" in frame else frame["rain"], name=name,
                 marker=dict(size=frame["rain"] + 12, color=colors.get(name, "#fff")),
             ))
         fig.update_layout(mapbox_style="open-street-map", mapbox_center=dict(lat=24.4, lon=54.6), mapbox_zoom=6, height=520, margin=dict(l=0, r=0, t=30, b=0), paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#e7eef8"), legend=dict(orientation="h"))

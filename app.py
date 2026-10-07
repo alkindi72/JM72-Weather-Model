@@ -592,17 +592,13 @@ with tab1:
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             font=dict(size=14, color="#e7eef8"),
-            legend=dict(orientation="h", y=-0.35, x=0, font=dict(size=13)),
+            legend=dict(orientation="h", y=-0.28, x=0, font=dict(size=18, color="#f8fafc")),
             margin=dict(l=8, r=8, t=50, b=120),
             xaxis=dict(tickangle=-40, nticks=6, title=""),
             yaxis=dict(title=tr("الاحتمال %", "Probability %"), range=[0, 100]),
         )
         fig.update_xaxes(automargin=True)
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-    st.markdown(tr(
-        "**معنى الخطوط:** الأحمر عواصف، الأزرق ضباب، الذهبي شمال وغبار، السماوي رذاذ، البنفسجي سحب الكوس.",
-        "**Lines:** red storms, blue fog, gold shamal dust, cyan drizzle, purple Al-Kous cloud.",
-    ))
     st.markdown(tr("#### أثر تشغيلي الآن", "#### Operational impact now"))
     if now_df.empty:
         st.warning(tr("لا توجد قراءة حالية.", "No current reading."))

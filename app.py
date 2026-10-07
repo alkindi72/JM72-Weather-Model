@@ -658,9 +658,21 @@ with tab2:
         "سحب الكوس: سحب منخفضة تأتي من بحر عمان مع رياح شرقية إلى جنوبية شرقية ورطوبة عالية، وغالباً تلامس جبال الفجيرة ورأس الخيمة. قد يصاحبها رذاذ صباحاً.",
         "Al-Kous: low cloud from the Gulf of Oman with easterly to southeasterly wind and high humidity, often against the Fujairah and Ras Al Khaimah mountains. Morning drizzle may follow.",
     ))
-    st.markdown(tr("#### الرادار اللحظي", "#### Live radar"))
-    components.html('<iframe src="https://www.rainviewer.com/map.html?loc=24.6,55.4,7&oFa=0&oC=0&oU=0&oCS=1&oF=0&oAP=1&c=1&o=83&lm=1&layer=radar&sm=1&sn=1" width="100%" height="460" frameborder="0"></iframe>', height=480)
-    components.html('<iframe src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=radar&lat=24.6&lon=54.8&zoom=6" width="100%" height="430" frameborder="0"></iframe>', height=450)
+    st.markdown(tr("#### آخر صورة رادار", "#### Latest radar frame"))
+    try:
+        info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=20).json()
+        frame = info["radar"]["past"][-1]
+        host = info["host"]
+        tiles = []
+        for y in (27, 28):
+            row = []
+            for x in (41, 42):
+                row.append(f'<img alt="radar" src="{host}{frame["path"]}/256/6/{x}/{y}/2/1_1.png" width="256" height="256">')
+            tiles.append("<div>" + "".join(row) + "</div>")
+        st.markdown("<div>" + "".join(tiles) + "</div>", unsafe_allow_html=True)
+        st.caption(tr("صورة ثابتة لآخر مسح رادار، من غير تحريك.", "A still image of the latest radar scan, without animation."))
+    except Exception:
+        st.info(tr("تعذر جلب صورة الرادار الآن.", "The latest radar image could not be loaded."))
 
 with tab3:
     picked = st.select_slider(tr("الوقت", "Time"), options=timeline_str, key="heat_time")

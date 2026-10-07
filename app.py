@@ -530,10 +530,14 @@ try:
     previous = open(state_path, encoding="utf-8").read() if os.path.exists(state_path) else ""
     if current_key != previous:
         message = current_key or "انتهى التحذير. لا خطر قائم حالياً."
+        headers = {"Title": "71WM warning", "Priority": "high", "Tags": "warning", "Content-Type": "text/plain; charset=utf-8"}
+        token = os.getenv("NTFY_TOKEN", "")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
         requests.post(
             "https://ntfy.sh/71wm-alkindi-uae",
             data=message.encode("utf-8"),
-            headers={"Title": "71WM warning", "Priority": "high", "Tags": "warning", "Content-Type": "text/plain; charset=utf-8"},
+            headers=headers,
             timeout=8,
         )
         open(state_path, "w", encoding="utf-8").write(current_key)
@@ -950,13 +954,18 @@ with tab6:
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_model_rain(model: str) -> Tuple[bool, Any]:
+    points = {
+        "أبوظبي": (24.45, 54.38), "دبي": (25.20, 55.27), "الشارقة": (25.35, 55.39),
+        "رأس الخيمة": (25.79, 55.94), "الفجيرة": (25.12, 56.33), "العين": (24.26, 55.61),
+        "ناهل": (24.62, 55.58), "ليوا": (23.13, 53.77), "جبل جيس": (25.95, 56.17),
+    }
     try:
         response = requests.get(
             "https://api.open-meteo.com/v1/forecast",
             params={
-                "latitude": "25.12,25.95,24.45",
-                "longitude": "56.33,56.17,54.38",
-                "hourly": "precipitation,cloudcover_low,windspeed_10m",
+                "latitude": ",".join(str(v[0]) for v in points.values()),
+                "longitude": ",".join(str(v[1]) for v in points.values()),
+                "hourly": "precipitation",
                 "models": model,
                 "forecast_days": 3,
                 "timezone": "Asia/Dubai",
@@ -965,7 +974,12 @@ def fetch_model_rain(model: str) -> Tuple[bool, Any]:
         )
         response.raise_for_status()
         data = response.json()
-        return True, data if isinstance(data, list) else [data]
+        blocks = data if isinstance(data, list) else [data]
+        rows = []
+        for name, (lat, lon), block in zip(points, points.values(), blocks):
+            rain = max(block.get("hourly", {}).get("precipitation") or [0])
+            rows.append({"place": name, "lat": lat, "lon": lon, "rain": round(rain, 1)})
+        return True, rows
     except Exception as exc:
         return False, str(exc)
 
@@ -1037,15 +1051,15 @@ with tab7:
     ))
     g_ok, gfs = fetch_model_rain("gfs_seamless")
     e_ok, ecmwf = fetch_model_rain("ecmwf_ifs")
-    labels = [tr("الفجيرة", "Fujairah"), tr("جبل جيس", "Jebel Jais"), tr("أبوظبي", "Abu Dhabi")]
     if g_ok and e_ok:
-        rows = []
-        for i, label in enumerate(labels):
-            g_rain = max(gfs[i].get("hourly", {}).get("precipitation") or [0])
-            e_rain = max(ecmwf[i].get("hourly", {}).get("precipitation") or [0])
-            rows.append({tr("الموقع", "Place"): label, "GFS mm": round(g_rain, 1), "ECMWF mm": round(e_rain, 1)})
+        left, right = st.columns(2)
+        gfs_frame = pd.DataFrame(gfs).assign(size=lambda d: d["rain"] + 1)
+        ecmwf_frame = pd.DataFrame(ecmwf).assign(size=lambda d: d["rain"] + 1)
+        left.plotly_chart(px.scatter_mapbox(gfs_frame, lat="lat", lon="lon", size="size", color="rain", hover_name="place", zoom=6, center=dict(lat=24.4, lon=54.6), mapbox_style="open-street-map", title="GFS", range_color=[0, 20]), use_container_width=True)
+        right.plotly_chart(px.scatter_mapbox(ecmwf_frame, lat="lat", lon="lon", size="size", color="rain", hover_name="place", zoom=6, center=dict(lat=24.4, lon=54.6), mapbox_style="open-street-map", title="ECMWF", range_color=[0, 20]), use_container_width=True)
+        rows = [{"الموقع": a["place"], "GFS mm": a["rain"], "ECMWF mm": b["rain"]} for a, b in zip(gfs, ecmwf)]
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-        st.info(tr("إذا اقترب الرقمان فالثقة أعلى. إذا افترقا فالحالة غير محسومة.", "Close numbers mean higher confidence. A wide gap means the event is uncertain."))
+        st.info(tr("الدائرة الأكبر تعني مطراً أعلى خلال 3 أيام. إذا تقارب لون الخريطتين فالثقة أعلى.", "A larger circle means more rain over 3 days. Similar colors mean higher confidence."))
     else:
         st.warning(tr("تعذر جلب أحد النموذجين.", "One of the models could not be fetched."))
     d_ok, dust = fetch_dust()
@@ -1127,5 +1141,8 @@ with tab8:
         trait = next(text for span, text in traits.items() if dur_no in span)
         dur_title = f"در {ten_name} من {hundred_name}"
         dur_body = f"اليوم {day_in} من هذا الدر، والدر رقم {dur_no} من 36، واليوم {day_no} بعد طلوع سهيل. {trait}"
+    st.markdown(f"<div class='card'><h3>{dur_title}</h3><p>{dur_body}</p></div>", unsafe_allow_html=True)
+
+�ليوم {day_in} من هذا الدر، والدر رقم {dur_no} من 36، واليوم {day_no} بعد طلوع سهيل. {trait}"
     st.markdown(f"<div class='card'><h3>{dur_title}</h3><p>{dur_body}</p></div>", unsafe_allow_html=True)
 

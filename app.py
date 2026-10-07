@@ -527,8 +527,8 @@ if badge:
     try:
         requests.post(
             "https://ntfy.sh/71wm-alkindi-uae",
-            data=alerts[0].encode("utf-8"),
-            headers={"Title": "تحذير 71WM", "Priority": "high", "Tags": "warning"},
+            data="\n".join(alerts).encode("utf-8"),
+            headers={"Title": "تحذير 71WM | 71WM warning", "Priority": "high", "Tags": "warning"},
             timeout=8,
         )
     except Exception:

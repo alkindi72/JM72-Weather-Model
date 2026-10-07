@@ -828,6 +828,20 @@ with tab4:
                 hits.append(tr("غبار", "Dust"))
             return "، ".join(hits) if lang == "ar" else ", ".join(hits)
 
+        def visibility_text(raw: str) -> str:
+            parts = str(raw).upper().split()
+            if "CAVOK" in parts:
+                return tr("10 كم أو أكثر", "10 km or more")
+            for token in parts:
+                if token.isdigit() and len(token) == 4:
+                    meters = int(token)
+                    if meters >= 9999:
+                        return tr("10 كم أو أكثر", "10 km or more")
+                    if meters >= 1000:
+                        return f"{meters / 1000:.1f} " + tr("كم", "km")
+                    return f"{meters} " + tr("م", "m")
+            return "—"
+
         rows_obs = []
         for item in metars:
             code = item.get("icaoId", "")
@@ -839,7 +853,7 @@ with tab4:
                 tr("الحرارة", "Temperature"): f"{item.get('temp', '—')} °C",
                 tr("الندى", "Dew point"): f"{item.get('dewp', '—')} °C",
                 tr("الرياح", "Wind"): f"{item.get('wdir', 'VRB')}° / {item.get('wspd', '—')} kt",
-                tr("الرؤية", "Visibility"): item.get("visib", "—"),
+                tr("الرؤية", "Visibility"): visibility_text(raw),
                 tr("التقرير", "Report"): raw,
             })
         frame_obs = pd.DataFrame(rows_obs)

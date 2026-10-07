@@ -22,14 +22,26 @@ st.markdown(
 <style>
   html, body, [data-testid="stAppViewContainer"], .stApp {
     background:
-      radial-gradient(900px 420px at 10% -10%, rgba(56,189,248,.16), transparent 55%),
-      radial-gradient(700px 380px at 100% 0%, rgba(212,175,55,.12), transparent 50%),
-      #07111f !important;
-    color: #e7eef8;
+      radial-gradient(900px 420px at 8% -10%, rgba(43,179,199,.22), transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, rgba(212,175,55,.2), transparent 50%),
+      #102033 !important;
+    color: #f4efe4;
   }
   [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
   .block-container { padding: 1.1rem 1.4rem 2rem; max-width: 1380px; }
-  h1, h2, h3, h4, p, span, label, li, div { color: #e7eef8; }
+  h1, h2, h3, h4, p, span, label, li, div { color: #f4efe4; }
+  .hero {
+    border: 1px solid rgba(212,175,55,.45);
+    background: linear-gradient(120deg, rgba(16,42,67,.94), rgba(24,78,92,.82) 55%, rgba(92,68,28,.55));
+    border-radius: 26px; padding: 22px 24px; margin-bottom: 14px;
+    box-shadow: 0 18px 40px rgba(8,20,32,.28);
+    animation: rise .7s ease;
+  }
+  .logo-wrap { animation: float 4.5s ease-in-out infinite; filter: drop-shadow(0 8px 16px rgba(212,175,55,.35)); }
+  .pulse { width: 10px; height: 10px; border-radius: 50%; background: #34d399; display: inline-block; margin-left: 8px; animation: blink 1.4s infinite; }
+  @keyframes float { 50% { transform: translateY(-6px); } }
+  @keyframes blink { 50% { opacity: .25; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
   html, body, [data-testid="stAppViewContainer"], .stApp, .stMarkdown, p, span, label {
     font-size: 18px !important;
   }
@@ -37,12 +49,6 @@ st.markdown(
   h2, h3, h4 { font-size: 26px !important; }
   .sub, .muted, .pill { font-size: 16px !important; }
   div[data-testid="stMetric"] label, div[data-testid="stMetric"] div { font-size: 18px !important; }
-  .hero {
-    border: 1px solid rgba(148,163,184,.22);
-    background: linear-gradient(135deg, rgba(15,23,42,.92), rgba(8,47,73,.78));
-    border-radius: 22px; padding: 18px 22px; margin-bottom: 14px;
-    box-shadow: 0 18px 50px rgba(0,0,0,.28);
-  }
   .stApp, .stMarkdown p, label, [data-testid="stCaptionContainer"] { font-size: 18px !important; }
   div[data-testid="stTabs"] button p { font-size: 18px !important; }
   .kicker { letter-spacing: .22em; color: #d4af37 !important; font-size: 14px !important; font-weight: 800; }
@@ -53,7 +59,8 @@ st.markdown(
     background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); font-size: 16px !important;
   }
   .card {
-    background: rgba(15,23,42,.72); border: 1px solid rgba(148,163,184,.18);
+    background: linear-gradient(180deg, rgba(28,48,68,.88), rgba(18,36,52,.8));
+    border: 1px solid rgba(212,175,55,.22);
     border-radius: 16px; padding: 14px 16px; min-height: 108px;
   }
   .daychip {
@@ -438,21 +445,23 @@ st.markdown(
     f"""
 <div class="hero">
   <div style="display:flex;align-items:center;gap:14px;">
-    <svg width="78" height="92" viewBox="0 0 78 92" aria-label="71WM">
-      <polygon points="39,3 73,22 73,70 39,89 5,70 5,22" fill="#082F49" stroke="#D4AF37" stroke-width="2.4"/>
+    <div class="logo-wrap">
+    <svg width="108" height="126" viewBox="0 0 78 92" aria-label="71WM">
+      <polygon points="39,3 73,22 73,70 39,89 5,70 5,22" fill="#0b3a4a" stroke="#D4AF37" stroke-width="2.8"/>
       <circle cx="52" cy="28" r="5" fill="#D4AF37"/>
       <path d="M18 36c6-5 10-5 16 0 5-4 9-4 14 0" fill="#fff"/>
       <path d="M14 46c10-6 16-2 24 2 8 4 14 2 26-4v8c-12 6-18 8-26 4-8-4-14-8-24-2z" fill="#2BB3C7"/>
       <path d="M14 58c10-8 22-8 50 2v10H14z" fill="#D4AF37"/>
       <text x="39" y="80" text-anchor="middle" font-size="11" font-family="Arial" font-weight="700" fill="#D4AF37">71WM</text>
     </svg>
+    </div>
     <div>
       <div class="kicker">71WM · UAE WEATHER INTELLIGENCE</div>
       <h1>{tr("لوحة القيادة الجوية", "Weather command deck")}</h1>
     </div>
   </div>
   <div class="sub">{tr(f"قراءة موحّدة للعواصف، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Storms, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
-  <span class="pill">{tr("توقيت الإمارات", "UAE time")} {uae_now.strftime('%H:%M')}</span>
+  <span class="pill">{tr("مباشر", "Live")} <span class="pulse"></span> {uae_now.strftime('%H:%M')}</span>
   <span class="pill" style="background:{risk_color};color:#fff;">{tr("التحذيرات", "Warnings")} {risk}% · {status}</span>
   <span class="pill">{tr("دورة النموذج", "Model cycle")} {cycle}</span>
   <span class="pill">{tr("نشرة الخمسة أيام", "Five-day bulletin")} {bulletin_day} · 05:00</span>
@@ -639,6 +648,30 @@ def density(frame: pd.DataFrame, z: str, lat=24.4, lon=54.6, zoom=5.5, title="")
 
 
 with tab1:
+    st.markdown(tr("#### الوضع الآن على الدولة", "#### Country status now"))
+    if now_df.empty:
+        st.warning(tr("لا توجد قراءة حالية.", "No current reading."))
+    else:
+        tiles = []
+        for sector, part in now_df.groupby("Sector"):
+            label = sector if lang == "ar" else SECTOR_EN.get(sector, sector)
+            storm = int(safe_max(part["Storm Probability"]))
+            fog = int(safe_max(part["Fog Probability"]))
+            shamal = int(safe_max(part["Shamal Index"]))
+            heat = safe_max(part["Apparent Temp"])
+            lead = max(storm, fog, shamal)
+            tone = "#7F1D1D" if lead >= 60 else ("#92400E" if lead >= 35 else "#14532d")
+            tiles.append(
+                f"<div class='card' style='border-color:{tone};animation:rise .6s ease'><div class='muted'>{label}</div>"
+                f"<b>{heat:.0f} °C</b><div>{tr('عواصف', 'Storms')} {storm}% · {tr('ضباب', 'Fog')} {fog}% · {tr('غبار', 'Dust')} {shamal}%</div></div>"
+            )
+        st.markdown("<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px'>" + "".join(tiles) + "</div>", unsafe_allow_html=True)
+        hot = now_df.assign(score=now_df[["Storm Probability", "Fog Probability", "Shamal Index"]].max(axis=1)).sort_values("score", ascending=False).head(1).iloc[0]
+        place = hot["Sector"] if lang == "ar" else SECTOR_EN.get(hot["Sector"], hot["Sector"])
+        st.info(tr(
+            f"أبرز نقطة الآن: {hot['Station']} في {place}. الإحساس {hot['Apparent Temp']:.0f} °C، والرياح {hot['Wind']:.0f} كم/س. هذا أعلى خطر محسوب حالياً، لا تحذير إلا إذا أكده الرصد.",
+            f"Lead point now: {hot['Station']} in {place}. Feels like {hot['Apparent Temp']:.0f} °C, wind {hot['Wind']:.0f} km/h. This is the highest calculated risk, not a warning unless observations confirm it.",
+        ))
     if not df.empty:
         peak = df.groupby("Time")[["Storm Probability", "Fog Probability", "Shamal Index", "Drizzle Prob", "AlKous Prob"]].max().reset_index()
         fig = go.Figure()
@@ -660,30 +693,15 @@ with tab1:
             fig.add_trace(go.Scatter(x=peak["Time"], y=peak[col], name=names[col], line=dict(color=colors[col], width=3)))
         fig.update_layout(
             title=tr("ذروة كل خطر خلال 5 أيام", "Peak hazard over 5 days"),
-            height=520,
+            height=460,
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(size=14, color="#e7eef8"),
-            legend=dict(orientation="h", y=-0.28, x=0, font=dict(size=18, color="#f8fafc")),
-            margin=dict(l=8, r=8, t=50, b=120),
-            xaxis=dict(tickangle=-40, nticks=6, title=""),
+            plot_bgcolor="rgba(16,32,51,.35)",
+            font=dict(size=15, color="#f4efe4"),
+            legend=dict(orientation="h", y=-0.28, x=0, font=dict(size=16, color="#f8fafc")),
+            margin=dict(l=8, r=8, t=50, b=110),
             yaxis=dict(title=tr("الاحتمال %", "Probability %"), range=[0, 100]),
         )
-        fig.update_xaxes(automargin=True)
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-    st.markdown(tr("#### أثر تشغيلي الآن", "#### Operational impact now"))
-    if now_df.empty:
-        st.warning(tr("لا توجد قراءة حالية.", "No current reading."))
-    else:
-        hot = now_df.assign(score=now_df[["Storm Probability", "Fog Probability", "Shamal Index", "Drizzle Prob"]].max(axis=1)).sort_values("score", ascending=False).head(6)
-        for _, row in hot.iterrows():
-            sector = row["Sector"] if lang == "ar" else SECTOR_EN.get(row["Sector"], row["Sector"])
-            st.markdown(f"**{row['Station']}** · {sector}  \n{ops_note(row)}")
-    st.markdown(tr("#### ملخص القطاعات", "#### Sector summary"))
-    if not now_df.empty:
-        sector = now_df.groupby("Sector")[["Storm Probability", "Fog Probability", "Shamal Index", "Apparent Temp"]].max().round(0)
-        sector = sector.rename(columns={"Storm Probability": tr("عواصف %", "Storms %"), "Fog Probability": tr("ضباب %", "Fog %"), "Shamal Index": tr("شمال %", "Shamal %"), "Apparent Temp": tr("الإحساس °C", "Feels-like °C")})
-        st.dataframe(sector, use_container_width=True)
 
 with tab2:
     st.markdown(tr("#### التنبؤ لخمسة أيام", "#### Five-day forecast"))
@@ -772,6 +790,8 @@ AIRPORTS = {
     "OMRK": "مطار رأس الخيمة",
     "OMFJ": "مطار الفجيرة",
     "OMAD": "مطار البطين",
+    "OMDL": "مطار دلما",
+    "OMBY": "مطار صير بني ياس",
 }
 
 

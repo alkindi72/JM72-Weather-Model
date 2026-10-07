@@ -443,10 +443,9 @@ st.markdown(
 
 st.markdown(
     f"""
-<div class="hero">
-  <div style="display:flex;align-items:center;gap:14px;">
-    <div class="logo-wrap">
-    <svg width="108" height="126" viewBox="0 0 78 92" aria-label="71WM">
+<div class="hero" style="text-align:center;">
+  <div class="logo-wrap" style="display:flex;justify-content:center;">
+    <svg width="150" height="176" viewBox="0 0 78 92" aria-label="71WM">
       <polygon points="39,3 73,22 73,70 39,89 5,70 5,22" fill="#0b3a4a" stroke="#D4AF37" stroke-width="2.8"/>
       <circle cx="52" cy="28" r="5" fill="#D4AF37"/>
       <path d="M18 36c6-5 10-5 16 0 5-4 9-4 14 0" fill="#fff"/>
@@ -455,11 +454,8 @@ st.markdown(
       <text x="39" y="80" text-anchor="middle" font-size="11" font-family="Arial" font-weight="700" fill="#D4AF37">71WM</text>
     </svg>
     </div>
-    <div>
-      <div class="kicker">71WM · UAE WEATHER INTELLIGENCE</div>
-      <h1>{tr("لوحة القيادة الجوية", "Weather command deck")}</h1>
-    </div>
-  </div>
+    <div class="kicker">71WM · UAE WEATHER INTELLIGENCE</div>
+    <h1>{tr("لوحة القيادة الجوية", "Weather command deck")}</h1>
   <div class="sub">{tr(f"قراءة موحّدة للعواصف، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Storms, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
   <span class="pill">{tr("مباشر", "Live")} <span class="pulse"></span> {uae_now.strftime('%H:%M')}</span>
   <span class="pill" style="background:{risk_color};color:#fff;">{tr("التحذيرات", "Warnings")} {risk}% · {status}</span>

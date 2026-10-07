@@ -373,7 +373,7 @@ st.markdown(
   </div>
   <div class="sub">{tr(f"قراءة موحّدة للعواصف، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Storms, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
   <span class="pill">{tr("توقيت الإمارات", "UAE time")} {uae_now.strftime('%H:%M')}</span>
-  <span class="pill" style="background:{risk_color};color:#fff;">{tr("المخاطر الوطنية", "National risk")} {risk}% · {status}</span>
+  <span class="pill" style="background:{risk_color};color:#fff;">{tr("التحذيرات", "Warnings")} {risk}% · {status}</span>
   <span class="pill">{tr("دورة النموذج", "Model cycle")} {cycle}</span>
   <span class="pill">{tr("نشرة الخمسة أيام", "Five-day bulletin")} {bulletin_day} · 05:00</span>
 </div>
@@ -430,35 +430,52 @@ def hazard_window(frame: pd.DataFrame, column: str, threshold: float, sector: st
 alerts = []
 if not df.empty:
     checks = [
-        ("Fog Probability", 50, "ضباب وتدني رؤية", "fog and low visibility"),
-        ("Storm Probability", 65, "عواصف وأمطار رعدية", "storms and thundery rain"),
-        ("Shamal Index", 60, "غبار الشمال", "shamal dust"),
-        ("Drizzle Prob", 60, "رذاذ الكوس", "Al-Kous drizzle"),
+        ("Fog Probability", 50, "تحذير ضباب", "Fog warning", "يُتوقع تدني الرؤية", "reduced visibility is expected"),
+        ("Storm Probability", 65, "تحذير عواصف", "Storm warning", "يُتوقع نشاط رعدي وأمطار", "thundery rain is expected"),
+        ("Shamal Index", 60, "تحذير غبار", "Dust warning", "يُتوقع غبار مثار مع رياح الشمال", "raised dust is expected with shamal winds"),
+        ("Drizzle Prob", 60, "تحذير رذاذ", "Drizzle warning", "يُتوقع رذاذ الكوس", "Al-Kous drizzle is expected"),
     ]
-    for column, threshold, ar, en in checks:
+    for column, threshold, title_ar, title_en, verb_ar, verb_en in checks:
+        found_areas = []
+        starts, ends = [], []
         for sector in SECTOR_MAP:
             found = hazard_window(df, column, threshold, sector)
             if not found:
                 continue
             start, end, level, stations = found
             place = SECTOR_EN.get(sector, sector) if lang == "en" else sector
-            alerts.append(tr(
-                f"الخطر الحالي: {ar} بنسبة {level}% على {place}، في {stations}. البداية {start} والنهاية المتوقعة {end}.",
-                f"Current hazard: {en} at {level}% over {place}, at {stations}. Starts {start} and is expected to end {end}.",
-            ))
-if alerts and risk >= 40:
+            found_areas.append(f"{place} ({level}%)")
+            starts.append(start)
+            ends.append(end)
+        if not found_areas:
+            continue
+        joiner = "، " if lang == "ar" else ", "
+        alerts.append(tr(
+            f"{title_ar}: {verb_ar} على {joiner.join(found_areas)}. الفترة المتوقعة من {min(starts)} إلى {max(ends)}.",
+            f"{title_en}: {verb_en} over {joiner.join(found_areas)}. Expected from {min(starts)} until {max(ends)}.",
+        ))
+badge = len(alerts)
+if badge:
+    st.toast(tr(f"تحذير قائم: {badge}", f"Active warning: {badge}"))
     st.markdown(
-        "<div style='background:#7F1D1D;border:1px solid #FCA5A5;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'>"
-        + "".join(f"<p style='color:#FEE2E2;margin:6px 0;font-size:18px;'>{line}</p>" for line in alerts)
+        f"<div style='position:fixed;top:18px;left:18px;z-index:9999;background:#DC2626;color:white;border-radius:999px;padding:8px 12px;font-weight:800;'>⚠ {badge}</div>",
+        unsafe_allow_html=True,
+    )
+if alerts:
+    st.markdown(
+        "<div style='background:#7F1D1D;border:1px solid #FCA5A5;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'><b style='color:#FEE2E2;'>"
+        + tr("التحذيرات", "Warnings")
+        + "</b>"
+        + "".join(f"<p style='color:#FEE2E2;margin:8px 0;font-size:18px;'>{line}</p>" for line in alerts)
         + "</div>",
         unsafe_allow_html=True,
     )
 else:
-    st.info(tr("لا خطر وطني قائم حالياً.", "No national hazard is active now."))
+    st.info(tr("لا تحذيرات قائمة خلال الساعات الثلاث القادمة.", "No warnings are in force for the next three hours."))
 
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     tr("القيادة", "Command"),
-    tr("المخاطر", "Hazards"),
+    tr("التحذيرات", "Warnings"),
     tr("الحرارة والشمال", "Heat & shamal"),
     tr("المحطات", "Stations"),
     tr("خمسة أيام", "5-day outlook"),

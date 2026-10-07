@@ -54,7 +54,11 @@ st.markdown(
     background: rgba(15,23,42,.72); border: 1px solid rgba(148,163,184,.18);
     border-radius: 16px; padding: 14px 16px; min-height: 108px;
   }
-  .card b { display: block; font-size: 34px !important; margin-top: 4px; }
+  .daychip {
+    background: linear-gradient(180deg, rgba(15,23,42,.9), rgba(8,47,73,.72));
+    border: 1px solid rgba(212,175,55,.28); border-radius: 18px; padding: 12px; text-align: center;
+  }
+  .daychip b { font-size: 28px !important; }
   .muted { color: #cbd5e1 !important; font-size: 16px !important; }
   div[data-testid="stTabs"] [data-baseweb="tab-list"] {
     gap: 6px; overflow-x: auto; flex-wrap: nowrap;
@@ -474,11 +478,11 @@ else:
     st.info(tr("لا تحذيرات قائمة خلال الساعات الثلاث القادمة.", "No warnings are in force for the next three hours."))
 
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
-    tr("القيادة", "Command"),
-    tr("التحذيرات", "Warnings"),
-    tr("الحرارة والشمال", "Heat & shamal"),
+    tr("لوحة التحكم", "Control"),
+    tr("التنبؤ", "Forecast"),
+    tr("الحرارة والرياح", "Heat & wind"),
     tr("المحطات", "Stations"),
-    tr("خمسة أيام", "5-day outlook"),
+    tr("النشرة الجوية", "Bulletin"),
     tr("النينيو", "ENSO"),
     tr("النماذج والغبار", "Models & dust"),
     tr("في مثل هذا اليوم", "On this day"),
@@ -555,7 +559,19 @@ with tab1:
         st.dataframe(sector, use_container_width=True)
 
 with tab2:
-    picked = st.select_slider(tr("الوقت", "Time"), options=timeline_str, key="risk_time")
+    st.markdown(tr("#### التنبؤ لخمسة أيام", "#### Five-day forecast"))
+    if not df.empty:
+        chips = st.columns(5)
+        for col, date in zip(chips, dates[:5]):
+            day = df[df["DateOnly"] == date]
+            if day.empty:
+                continue
+            icon = "🌫️" if safe_max(day["Fog Probability"]) >= 50 else ("⛈️" if safe_max(day["Storm Probability"]) >= 45 else ("💨" if safe_max(day["Shamal Index"]) >= 45 else ("☁️" if safe_max(day["AlKous Prob"]) >= 40 else "🌤️")))
+            col.markdown(
+                f"<div class='daychip'><div>{date}</div><b>{icon}</b><div>{day['Temperature'].min():.0f}–{safe_max(day['Temperature']):.0f} °C</div></div>",
+                unsafe_allow_html=True,
+            )
+    picked = st.select_slider(tr("اختر الوقت للخريطة", "Choose map time"), options=timeline_str, key="risk_time")
     frame = df[df["Time"] == picked] if not df.empty else pd.DataFrame()
     a, b = st.columns(2)
     a.plotly_chart(density(frame, "Storm Probability", title=tr("احتمال العواصف %", "Storm probability %")), use_container_width=True)
@@ -787,22 +803,23 @@ with tab5:
         speed = safe_max(day["Wind"])
         wname, wforce = wind_words(direction, speed)
         cloud = safe_max(day["AlKous Prob"])
-        sky = tr("غائم", "cloudy") if cloud >= 60 else (tr("صحو إلى غائم جزئياً", "fair to partly cloudy") if cloud >= 25 else tr("صحو بوجه عام", "generally fair"))
+        sky = tr("غائم", "cloudy") if cloud >= 60 else (tr("صحو إلى غائم جزئياً", "fair to partly cloudy") if cloud >= 25 else tr("صحو", "fair"))
         tmax, tmin = safe_max(day["Temperature"]), day["Temperature"].min()
         extras = []
         if safe_max(day["Fog Probability"]) >= 45:
             where = day.loc[day["Fog Probability"].idxmax(), "Sector"]
             where = SECTOR_EN.get(where, where) if lang == "en" else where
-            extras.append(tr(f"مع فرصة ضباب على {where} فجراً", f"with a chance of fog over {where} at dawn"))
+            extras.append(tr(f"ضباب فجراً على {where}", f"dawn fog over {where}"))
         if safe_max(day["Storm Probability"]) >= 40 or safe_max(day["Drizzle Prob"]) >= 45:
             where = day.loc[day[["Storm Probability", "Drizzle Prob"]].max(axis=1).idxmax(), "Sector"]
             where = SECTOR_EN.get(where, where) if lang == "en" else where
-            extras.append(tr(f"وفرصة أمطار على {where}", f"and a chance of rain over {where}"))
+            extras.append(tr(f"فرصة أمطار على {where}", f"a chance of rain over {where}"))
         if safe_max(day["Shamal Index"]) >= 45:
             where = day.loc[day["Shamal Index"].idxmax(), "Sector"]
             where = SECTOR_EN.get(where, where) if lang == "en" else where
-            extras.append(tr(f"مع غبار مثار على {where}", f"with raised dust over {where}"))
+            extras.append(tr(f"غبار مثار على {where}", f"raised dust over {where}"))
         extra = ("، " if lang == "ar" else ", ").join(extras)
+        event = (tr(" الظاهرة: ", " Event: ") + extra + ".") if extra else ""
 
         def wave_pair(key):
             if not marine_ok:
@@ -822,8 +839,8 @@ with tab5:
         oo0, oo1 = wave_pair("oman_offshore")
         afternoon = tr("يضطرب بعد الظهر", "becoming rougher in the afternoon") if go1 > gc1 + 0.4 else tr("يبقى على حاله", "staying similar")
         text = tr(
-            f"الطقس {sky} بوجه عام{('، ' + extra) if extra else ''}، والحرارة بين {tmin:.0f} و{tmax:.0f} درجة. الرياح {wname} على البحر، {wforce}، وقد تنشط بعد الظهر. البحر في الخليج العربي {sea_words(gc1)} و{afternoon}، وارتفاع الموج قرب الساحل من {feet_phrase(gc0)} إلى {feet_phrase(gc1)} وفي العمق يصل إلى {feet_phrase(go1)}. أما بحر عمان فيكون {sea_words(oc1)} بوجه عام، وارتفاع الموج قرب الساحل {feet_phrase(oc1)} وفي العمق من {feet_phrase(oo0)} إلى {feet_phrase(oo1)}.",
-            f"Weather will be {sky} overall{(', ' + extra) if extra else ''}, with temperatures from {tmin:.0f} to {tmax:.0f} °C. Wind over the sea will be {wname} and {wforce}, freshening in the afternoon. The Arabian Gulf will be {sea_words(gc1)} and {afternoon}; waves near the coast {feet_phrase(gc0)} to {feet_phrase(gc1)}, and up to {feet_phrase(go1)} offshore. The Gulf of Oman will be {sea_words(oc1)} overall, with waves near the coast {feet_phrase(oc1)} and {feet_phrase(oo0)} to {feet_phrase(oo1)} offshore.",
+            f"الطقس {sky}، والحرارة من {tmin:.0f} إلى {tmax:.0f} درجة. الرياح {wname}، {wforce}، وقد تنشط بعد الظهر على البحر.{event} الخليج العربي {sea_words(gc1)}: من {feet_phrase(gc0)} إلى {feet_phrase(gc1)} قرب الساحل، وحتى {feet_phrase(go1)} في العمق. بحر عمان {sea_words(oc1)}: {feet_phrase(oc1)} قرب الساحل، ومن {feet_phrase(oo0)} إلى {feet_phrase(oo1)} في العمق.",
+            f"{sky.capitalize()} skies, {tmin:.0f} to {tmax:.0f} °C. Wind {wname}, {wforce}, freshening over the sea in the afternoon.{event} Arabian Gulf {sea_words(gc1)}: {feet_phrase(gc0)} to {feet_phrase(gc1)} near shore, up to {feet_phrase(go1)} offshore. Gulf of Oman {sea_words(oc1)}: {feet_phrase(oc1)} near shore, {feet_phrase(oo0)} to {feet_phrase(oo1)} offshore.",
         )
         st.markdown(f"<div class='card'><div class='kicker'>{date}</div><p>{text}</p></div>", unsafe_allow_html=True)
     st.caption(tr(
@@ -995,3 +1012,25 @@ with tab8:
             f"<div dir='{side}' style='direction:{side};text-align:{align};background:#0f172a;border-radius:14px;padding:14px 18px;'><b>{tr('السجل الوطني من 2003 إلى 2025', 'National record, 2003 to 2025')}</b><ul style='direction:{side};text-align:{align};padding-inline-start:1.2rem;'>{items}</ul></div>",
             unsafe_allow_html=True,
         )
+    lessons = [
+        ("الضباب الإشعاعي", "Radiation fog", "يتكون ليلاً حين يبرد سطح الأرض ويصل الهواء إلى التشبع مع رياح ضعيفة. في الإمارات يكثر على الوسطى والسواحل فجراً، ثم يتلاشى بعد الشروق.", "It forms at night when the ground cools and the air reaches saturation in light wind. In the UAE it is most common inland and on coasts at dawn, then clears after sunrise.", "🌫️"),
+        ("رياح الشمال", "Shamal", "رياح شمالية غربية جافة. إذا تجاوزت 20 كم/س قد تثير الغبار وتقلل الرؤية، خصوصاً على السواحل الغربية والصحراء.", "A dry northwesterly wind. Above 20 km/h it can raise dust and cut visibility, especially on the western coast and desert.", "💨"),
+        ("سحب الكوس", "Al-Kous", "سحب منخفضة تأتي من بحر عمان مع رياح شرقية رطبة، وتصطدم بجبال الفجيرة ورأس الخيمة. قد يصاحبها رذاذ صباحاً.", "Low cloud from the Gulf of Oman in moist easterly flow, banking against the Fujairah and Ras Al Khaimah mountains. Morning drizzle may follow.", "☁️"),
+        ("نسيم البحر", "Sea breeze", "بعد الظهر يسخن اليابس أسرع من البحر، فيهب نسيم بحري يلطف الساحل وقد يدفع السحب الركامية إلى الداخل.", "In the afternoon land heats faster than the sea, so a sea breeze cools the coast and can push convective cloud inland.", "🌊"),
+        ("الانقلاب الحراري", "Temperature inversion", "طبقة هواء أدفأ فوق طبقة أبرد تحبس الغبار والرطوبة قرب السطح، فتطول فترات الضباب وتدني الرؤية.", "A warmer layer above cooler air traps dust and moisture near the surface, prolonging fog and poor visibility.", "🌡️"),
+        ("السحب الركامية", "Cumulonimbus", "تتكون مع تسخين قوي ورطوبة في الطبقات العليا. قد تعطي مطراً رعدياً وعواصف غبارية محلية، خصوصاً على الجبال الشرقية.", "They build with strong heating and moisture aloft, and can bring thunder, rain and local dust storms, especially over the eastern mountains.", "⛈️"),
+    ]
+    topic = lessons[uae_now.timetuple().tm_yday % len(lessons)]
+    st.markdown(tr("#### ظاهرة اليوم", "#### Phenomenon of the day"))
+    drawing = {
+        "🌫️": "<svg width='220' height='90' viewBox='0 0 220 90'><ellipse cx='70' cy='40' rx='46' ry='18' fill='#cbd5e1'/><ellipse cx='120' cy='48' rx='54' ry='16' fill='#94a3b8'/><rect x='20' y='70' width='180' height='6' fill='#334155'/></svg>",
+        "💨": "<svg width='220' height='90' viewBox='0 0 220 90'><path d='M20 30h120' stroke='#d4af37' stroke-width='4'/><path d='M40 50h140' stroke='#38bdf8' stroke-width='4'/><path d='M30 70h100' stroke='#e7eef8' stroke-width='4'/></svg>",
+        "☁️": "<svg width='220' height='90' viewBox='0 0 220 90'><ellipse cx='90' cy='36' rx='40' ry='16' fill='#e2e8f0'/><path d='M30 70c20-20 40-8 70 0 20-16 50-8 80 4' fill='none' stroke='#2BB3C7' stroke-width='4'/></svg>",
+        "🌊": "<svg width='220' height='90' viewBox='0 0 220 90'><path d='M10 50c20-16 30 16 50 0s30 16 50 0 30 16 50 0 30 16 50 0' fill='none' stroke='#38bdf8' stroke-width='4'/></svg>",
+        "🌡️": "<svg width='220' height='90' viewBox='0 0 220 90'><rect x='40' y='20' width='140' height='14' fill='#f59e0b'/><rect x='40' y='48' width='140' height='14' fill='#38bdf8'/></svg>",
+        "⛈️": "<svg width='220' height='90' viewBox='0 0 220 90'><ellipse cx='100' cy='32' rx='46' ry='16' fill='#64748b'/><path d='M120 48l-16 24h14l-10 16 24-28h-14z' fill='#d4af37'/></svg>",
+    }
+    st.markdown(
+        f"<div class='card'><div>{drawing.get(topic[4], '')}</div><h3>{tr(topic[0], topic[1])}</h3><p>{topic[2] if lang=='ar' else topic[3]}</p></div>",
+        unsafe_allow_html=True,
+    )

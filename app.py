@@ -1,6 +1,7 @@
 """71wm AI Weather Model — UAE command deck."""
 
 import base64
+import json
 import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -892,6 +893,7 @@ with tab5:
     marine_ok, marine = fetch_marine()
     if not marine_ok:
         st.warning(tr(f"تعذر جلب حالة البحر: {marine}", f"Sea state unavailable: {marine}"))
+    cards = []
     for date in dates[:5]:
         day = df[df["DateOnly"] == date] if not df.empty else pd.DataFrame()
         if day.empty:
@@ -938,10 +940,18 @@ with tab5:
         oo0, oo1 = wave_pair("oman_offshore")
         afternoon = tr("يضطرب بعد الظهر", "becoming rougher in the afternoon") if go1 > gc1 + 0.4 else tr("يبقى على حاله", "staying similar")
         text = tr(
-            f"الطقس {sky}، والحرارة من {tmin:.0f} إلى {tmax:.0f} درجة. الرياح {wname}، {wforce}، وقد تنشط بعد الظهر على البحر.{event} الخليج العربي {sea_words(gc1)}: من {feet_phrase(gc0)} إلى {feet_phrase(gc1)} قرب الساحل، وحتى {feet_phrase(go1)} في العمق. بحر عمان {sea_words(oc1)}: {feet_phrase(oc1)} قرب الساحل، ومن {feet_phrase(oo0)} إلى {feet_phrase(oo1)} في العمق.",
-            f"{sky.capitalize()} skies, {tmin:.0f} to {tmax:.0f} °C. Wind {wname}, {wforce}, freshening over the sea in the afternoon.{event} Arabian Gulf {sea_words(gc1)}: {feet_phrase(gc0)} to {feet_phrase(gc1)} near shore, up to {feet_phrase(go1)} offshore. Gulf of Oman {sea_words(oc1)}: {feet_phrase(oc1)} near shore, {feet_phrase(oo0)} to {feet_phrase(oo1)} offshore.",
+            f"الطقس {sky} بوجه عام، والحرارة من {tmin:.0f} إلى {tmax:.0f} درجة. الرياح {wname}، {wforce} على البحر، وقد تنشط بعد الظهر.{event} الخليج العربي {sea_words(max(gc1, go1))} {afternoon}، وارتفاع الموج قرب ميناء أبوظبي من {feet_phrase(gc0)} إلى {feet_phrase(gc1)}، وفي العمق إلى {feet_phrase(go1)}. بحر عمان {sea_words(max(oc1, oo1))}، وارتفاع الموج قرب ميناء الفجيرة {feet_phrase(oc1)}، وفي العمق من {feet_phrase(oo0)} إلى {feet_phrase(oo1)}.",
+            f"{sky.capitalize()} overall, {tmin:.0f} to {tmax:.0f} °C. Wind {wname}, {wforce} over the sea, freshening in the afternoon.{event} Arabian Gulf {sea_words(max(gc1, go1))}, {afternoon}. Waves near Abu Dhabi port {feet_phrase(gc0)} to {feet_phrase(gc1)}, offshore {feet_phrase(go1)}. Gulf of Oman {sea_words(max(oc1, oo1))}: near Fujairah port {feet_phrase(oc1)}, offshore {feet_phrase(oo0)} to {feet_phrase(oo1)}.",
         )
-        st.markdown(f"<div class='card'><div class='kicker'>{date}</div><p>{text}</p></div>", unsafe_allow_html=True)
+        cards.append(f"<div class='card'><div class='kicker'>{date}</div><p>{text}</p></div>")
+    bulletin_path = f"/tmp/71wm_bulletin_{bulletin_day}.json"
+    if os.path.exists(bulletin_path):
+        cards = json.loads(open(bulletin_path, encoding="utf-8").read())
+        st.caption(tr("هذه نشرة الخامسة صباحاً المحفوظة، ولا تتبدل مع تحديث النموذج.", "This is the saved 05:00 bulletin and does not change with later model runs."))
+    elif cards:
+        open(bulletin_path, "w", encoding="utf-8").write(json.dumps(cards, ensure_ascii=False))
+    for card in cards:
+        st.markdown(card, unsafe_allow_html=True)
     st.caption(tr(
         "النشرة وصفية من بيانات الرياح والموج. ارتفاع الموج بالقدم قرب ميناء أبوظبي وميناء الفجيرة وفي العمق.",
         "The bulletin is written from wind and wave data. Wave height is in feet near Abu Dhabi and Fujairah ports and offshore.",
@@ -1075,14 +1085,17 @@ with tab7:
     g_ok, gfs = fetch_model_rain("gfs_seamless")
     e_ok, ecmwf = fetch_model_rain("ecmwf_ifs")
     if g_ok and e_ok:
-        left, right = st.columns(2)
-        gfs_frame = pd.DataFrame(gfs).assign(size=lambda d: d["rain"] + 1)
-        ecmwf_frame = pd.DataFrame(ecmwf).assign(size=lambda d: d["rain"] + 1)
-        left.plotly_chart(px.scatter_mapbox(gfs_frame, lat="lat", lon="lon", size="size", color="rain", hover_name="place", zoom=6, center=dict(lat=24.4, lon=54.6), mapbox_style="open-street-map", title="GFS", range_color=[0, 20]), use_container_width=True)
-        right.plotly_chart(px.scatter_mapbox(ecmwf_frame, lat="lat", lon="lon", size="size", color="rain", hover_name="place", zoom=6, center=dict(lat=24.4, lon=54.6), mapbox_style="open-street-map", title="ECMWF", range_color=[0, 20]), use_container_width=True)
+        compare = pd.DataFrame(gfs).rename(columns={"rain": "gfs"}).merge(
+            pd.DataFrame(ecmwf).rename(columns={"rain": "ecmwf"})[["place", "ecmwf"]], on="place"
+        )
+        fig = go.Figure()
+        fig.add_trace(go.Scattermapbox(lat=compare["lat"], lon=compare["lon"] - 0.12, mode="markers+text", text=compare["gfs"], name="GFS", marker=dict(size=compare["gfs"] + 12, color="#f87171")))
+        fig.add_trace(go.Scattermapbox(lat=compare["lat"], lon=compare["lon"] + 0.12, mode="markers+text", text=compare["ecmwf"], name="ECMWF", marker=dict(size=compare["ecmwf"] + 12, color="#38bdf8")))
+        fig.update_layout(mapbox_style="open-street-map", mapbox_center=dict(lat=24.4, lon=54.6), mapbox_zoom=6, height=520, margin=dict(l=0, r=0, t=30, b=0), paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#e7eef8"), legend=dict(orientation="h"))
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption(tr("الأحمر GFS والأزرق ECMWF على الخريطة نفسها. الرقم أعلى مطر متوقع خلال 3 أيام بالمليمتر.", "Red is GFS and blue is ECMWF on the same map. The number is the highest rain expected in 3 days, in millimetres."))
         rows = [{"الموقع": a["place"], "GFS mm": a["rain"], "ECMWF mm": b["rain"]} for a, b in zip(gfs, ecmwf)]
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-        st.info(tr("الدائرة الأكبر تعني مطراً أعلى خلال 3 أيام. إذا تقارب لون الخريطتين فالثقة أعلى.", "A larger circle means more rain over 3 days. Similar colors mean higher confidence."))
     else:
         st.warning(tr("تعذر جلب أحد النموذجين.", "One of the models could not be fetched."))
     d_ok, dust = fetch_dust()

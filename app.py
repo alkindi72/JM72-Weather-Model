@@ -1,6 +1,7 @@
 """71wm AI Weather Model — UAE command deck."""
 
 import base64
+import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -1013,24 +1014,37 @@ with tab8:
             unsafe_allow_html=True,
         )
     lessons = [
-        ("الضباب الإشعاعي", "Radiation fog", "يتكون ليلاً حين يبرد سطح الأرض ويصل الهواء إلى التشبع مع رياح ضعيفة. في الإمارات يكثر على الوسطى والسواحل فجراً، ثم يتلاشى بعد الشروق.", "It forms at night when the ground cools and the air reaches saturation in light wind. In the UAE it is most common inland and on coasts at dawn, then clears after sunrise.", "🌫️"),
-        ("رياح الشمال", "Shamal", "رياح شمالية غربية جافة. إذا تجاوزت 20 كم/س قد تثير الغبار وتقلل الرؤية، خصوصاً على السواحل الغربية والصحراء.", "A dry northwesterly wind. Above 20 km/h it can raise dust and cut visibility, especially on the western coast and desert.", "💨"),
-        ("سحب الكوس", "Al-Kous", "سحب منخفضة تأتي من بحر عمان مع رياح شرقية رطبة، وتصطدم بجبال الفجيرة ورأس الخيمة. قد يصاحبها رذاذ صباحاً.", "Low cloud from the Gulf of Oman in moist easterly flow, banking against the Fujairah and Ras Al Khaimah mountains. Morning drizzle may follow.", "☁️"),
-        ("نسيم البحر", "Sea breeze", "بعد الظهر يسخن اليابس أسرع من البحر، فيهب نسيم بحري يلطف الساحل وقد يدفع السحب الركامية إلى الداخل.", "In the afternoon land heats faster than the sea, so a sea breeze cools the coast and can push convective cloud inland.", "🌊"),
-        ("الانقلاب الحراري", "Temperature inversion", "طبقة هواء أدفأ فوق طبقة أبرد تحبس الغبار والرطوبة قرب السطح، فتطول فترات الضباب وتدني الرؤية.", "A warmer layer above cooler air traps dust and moisture near the surface, prolonging fog and poor visibility.", "🌡️"),
-        ("السحب الركامية", "Cumulonimbus", "تتكون مع تسخين قوي ورطوبة في الطبقات العليا. قد تعطي مطراً رعدياً وعواصف غبارية محلية، خصوصاً على الجبال الشرقية.", "They build with strong heating and moisture aloft, and can bring thunder, rain and local dust storms, especially over the eastern mountains.", "⛈️"),
+        ("phenomenon_fog.jpg", "الضباب الإشعاعي", "Radiation fog",
+         "يتكون بعد منتصف الليل حين يفقد سطح الأرض حرارته بالإشعاع، فيبرد الهواء الملامس له حتى يبلغ درجة الندى. يحتاج رطوبة عالية ورياحاً أضعف من 15 كم/س. في الإمارات يكثر على السهول الداخلية والسواحل والمنطقة الوسطى فجراً، وقد يهبط إلى الطرق السريعة، ثم ينقشع غالباً خلال ساعة إلى ثلاث بعد الشروق. محلياً يسميه البعض الغبشة إذا خف، والضباب إذا هبطت الرؤية دون كيلومتر."),
+        ("phenomenon_shamal.jpg", "رياح الشمال", "Shamal",
+         "الشمال ريح شمالية غربية جافة تهب من منطقة الضغط المرتفع باتجاه المنخفض الحراري. إذا تجاوزت 20 كم/س تثير الغبار على الظفرة والسواحل الغربية، وقد تصل الهبات إلى 40 كم/س. ليست جهة الشمال الجغرافي وحدها، بل نمط ريحي معروف لدى أهل البحر، وترتبط أحياناً باضطراب الموج في الخليج العربي."),
+        ("phenomenon_kous.jpg", "سحب الكوس", "Al-Kous",
+         "الكوس سحب منخفضة تأتي من بحر عمان مع رياح شرقية إلى جنوبية شرقية رطبة، فتصطدم بجبال الحجر على ساحل الفجيرة ورأس الخيمة. الرفع التضاريسي يكثف السحاب وقد ينزل رذاذاً صباحاً على الحبن والطويين وخورفكان. إذا ضعفت الرياح الشرقية ينحسر الكوس نحو البحر."),
+        ("phenomenon_storm.jpg", "المطر الرعدي الجبلي", "Mountain storms",
+         "في الصيف والخريف يسخن سفح الجبل الشرقي، فيصعد الهواء الرطب ويتكون سحاب ركامي قد يبلغ مرحلة CB. يعطي زخات قوية قصيرة على مسافي والذيد والجبال، وأحياناً عاصفة غبار عند قاعدة السحابة. هذا مطر تضاريسي محلي، لا يشترط منخفضاً شاملاً على الدولة."),
     ]
     topic = lessons[uae_now.timetuple().tm_yday % len(lessons)]
     st.markdown(tr("#### ظاهرة اليوم", "#### Phenomenon of the day"))
-    drawing = {
-        "🌫️": "<svg width='220' height='90' viewBox='0 0 220 90'><ellipse cx='70' cy='40' rx='46' ry='18' fill='#cbd5e1'/><ellipse cx='120' cy='48' rx='54' ry='16' fill='#94a3b8'/><rect x='20' y='70' width='180' height='6' fill='#334155'/></svg>",
-        "💨": "<svg width='220' height='90' viewBox='0 0 220 90'><path d='M20 30h120' stroke='#d4af37' stroke-width='4'/><path d='M40 50h140' stroke='#38bdf8' stroke-width='4'/><path d='M30 70h100' stroke='#e7eef8' stroke-width='4'/></svg>",
-        "☁️": "<svg width='220' height='90' viewBox='0 0 220 90'><ellipse cx='90' cy='36' rx='40' ry='16' fill='#e2e8f0'/><path d='M30 70c20-20 40-8 70 0 20-16 50-8 80 4' fill='none' stroke='#2BB3C7' stroke-width='4'/></svg>",
-        "🌊": "<svg width='220' height='90' viewBox='0 0 220 90'><path d='M10 50c20-16 30 16 50 0s30 16 50 0 30 16 50 0 30 16 50 0' fill='none' stroke='#38bdf8' stroke-width='4'/></svg>",
-        "🌡️": "<svg width='220' height='90' viewBox='0 0 220 90'><rect x='40' y='20' width='140' height='14' fill='#f59e0b'/><rect x='40' y='48' width='140' height='14' fill='#38bdf8'/></svg>",
-        "⛈️": "<svg width='220' height='90' viewBox='0 0 220 90'><ellipse cx='100' cy='32' rx='46' ry='16' fill='#64748b'/><path d='M120 48l-16 24h14l-10 16 24-28h-14z' fill='#d4af37'/></svg>",
-    }
+    if os.path.exists(topic[0]):
+        st.image(topic[0], use_container_width=True)
+    st.markdown(f"<div class='card'><h3>{topic[1]}</h3><p>{topic[3]}</p></div>", unsafe_allow_html=True)
+    suhail = datetime(uae_now.year, 8, 14)
+    today = uae_now.date()
+    if today < suhail.date():
+        suhail = datetime(uae_now.year - 1, 8, 14)
+    if uae_now.month == 8 and 9 <= uae_now.day <= 13:
+        dur_text = "اليوم من الخمس المساريق، وهي الأيام الخمسة قبل طلوع سهيل، وتكمل السنة قبل بدء الدرور."
+    else:
+        elapsed = (today - suhail.date()).days
+        day_no = elapsed + 1
+        dur_no = ((day_no - 1) // 10) + 1
+        day_in = ((day_no - 1) % 10) + 1
+        hundred = ((day_no - 1) // 100) + 1
+        ten = (((day_no - 1) % 100) // 10 + 1) * 10
+        ten_name = {10: "العشر", 20: "العشرين", 30: "الثلاثين", 40: "الأربعين", 50: "الخمسين", 60: "الستين", 70: "السبعين", 80: "الثمانين", 90: "التسعين", 100: "المئة"}.get(ten, str(ten))
+        hundred_name = {1: "المئة الأولى", 2: "المئة الثانية", 3: "المئة الثالثة", 4: "المئة الرابعة"}.get(hundred, f"المئة {hundred}")
+        dur_text = f"اليوم {day_no} بعد طلوع سهيل. الدر رقم {dur_no} من 36، وهو اليوم {day_in} من 10 في {ten_name} من {hundred_name}."
     st.markdown(
-        f"<div class='card'><div>{drawing.get(topic[4], '')}</div><h3>{tr(topic[0], topic[1])}</h3><p>{topic[2] if lang=='ar' else topic[3]}</p></div>",
+        f"<div class='card'><h3>حساب الدرور</h3><p>حساب أهل الإمارات وعمان: السنة 36 دراً، كل در عشرة أيام، ويبدأ بطلوع نجم سهيل في 14 أغسطس. تبقى خمسة أيام تسمى الخمس المساريق. {dur_text}</p></div>",
         unsafe_allow_html=True,
     )

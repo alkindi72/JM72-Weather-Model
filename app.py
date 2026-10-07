@@ -1143,6 +1143,4 @@ with tab8:
         dur_body = f"اليوم {day_in} من هذا الدر، والدر رقم {dur_no} من 36، واليوم {day_no} بعد طلوع سهيل. {trait}"
     st.markdown(f"<div class='card'><h3>{dur_title}</h3><p>{dur_body}</p></div>", unsafe_allow_html=True)
 
-�ليوم {day_in} من هذا الدر، والدر رقم {dur_no} من 36، واليوم {day_no} بعد طلوع سهيل. {trait}"
-    st.markdown(f"<div class='card'><h3>{dur_title}</h3><p>{dur_body}</p></div>", unsafe_allow_html=True)
 

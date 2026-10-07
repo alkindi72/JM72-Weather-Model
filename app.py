@@ -123,14 +123,19 @@ STATIONS: Dict[str, Dict[str, Any]] = {
     "Ras Al Khaimah Int'l Airport": {"lat": 25.6135, "lon": 55.9388, "type": "Inland"},
     "Fujairah Int'l Airport": {"lat": 25.1122, "lon": 56.3240, "type": "Inland"},
     "Al Ain Int'l Airport": {"lat": 24.2617, "lon": 55.6092, "type": "Inland"},
+    "Nahil": {"lat": 24.6160, "lon": 55.5750, "type": "Inland"},
+    "Al Faqa": {"lat": 24.7160, "lon": 55.6200, "type": "Inland"},
+    "Al Ajban": {"lat": 24.6000, "lon": 55.3000, "type": "Inland"},
+    "Sweihan": {"lat": 24.4660, "lon": 55.3300, "type": "Inland"},
+    "Shwaib": {"lat": 24.7800, "lon": 55.8000, "type": "Inland"},
+    "Masafi": {"lat": 25.3100, "lon": 56.1600, "type": "Mountains"},
     "Al Bateen Executive Airport": {"lat": 24.4283, "lon": 54.4581, "type": "Coast"},
     "Al Maktoum Int'l Airport": {"lat": 24.8961, "lon": 55.1614, "type": "Inland"},
 }
 SECTOR_MAP = {
     "الساحل الشرقي": ["Fujairah Port", "Fujairah Int'l Airport", "Al Tawiyen", "Al Heben", "AlQor", "Kalba", "Khor Fakkan Port"],
-    "الجبال الشرقية": ["Hatta", "Jabal Jais", "Jabal Al Rahba"],
-    "المنطقة الوسطى": ["Al Dhaid", "Al Malaiha"],
-    "العين": ["Al Ain Int'l Airport", "Al Aamerah"],
+    "العين": ["Al Ain Int'l Airport", "Al Aamerah", "Nahil", "Al Faqa", "Al Ajban", "Sweihan", "Shwaib"],
+    "الجبال الشرقية": ["Hatta", "Jabal Jais", "Jabal Al Rahba", "Masafi"],
     "دبي": ["Burj Khalifah", "Dubai Int'l Airport", "Al Maktoum Int'l Airport"],
     "الشارقة وعجمان وأم القيوين": ["Sharjah University", "Sharjah Int'l Airport", "Ajman", "Umm Al Quwain"],
     "رأس الخيمة": ["Ras Al khaimah", "Ras Al Khaimah Int'l Airport"],
@@ -304,9 +309,11 @@ if ok and isinstance(live, list):
                 prob *= 0.1 if moisture < 40 else (1.2 if moisture > 70 else 1)
                 if coords["type"] == "Mountains" and temp > 38:
                     prob *= 1.3
-                if dt.hour < 12 or dt.hour > 19:
-                    prob *= 0.1
                 storm = float(np.clip(prob, 0, 100))
+                if 11 <= dt.hour <= 21 and cape >= 350 and 55.1 <= coords["lon"] <= 56.3 and 24.1 <= coords["lat"] <= 25.5:
+                    storm = max(storm, 60 if cape >= 700 else 45)
+                elif dt.hour < 12 or dt.hour > 19:
+                    storm *= 0.35
                 if (dt.hour < 8 or dt.hour > 22) and rh > 80 and wind < 15:
                     fog = float(np.clip((rh - 80) * 4 + (15 - wind) * 3, 0, 100))
                 if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 65:
@@ -436,7 +443,7 @@ alerts = []
 if not df.empty:
     checks = [
         ("Fog Probability", 50, "تحذير ضباب", "Fog warning", "يُتوقع تدني الرؤية", "reduced visibility is expected"),
-        ("Storm Probability", 65, "تحذير عواصف", "Storm warning", "يُتوقع نشاط رعدي وأمطار", "thundery rain is expected"),
+        ("Storm Probability", 45, "تحذير عواصف", "Storm warning", "يُتوقع نشاط رعدي وأمطار", "thundery rain is expected"),
         ("Shamal Index", 60, "تحذير غبار", "Dust warning", "يُتوقع غبار مثار مع رياح الشمال", "raised dust is expected with shamal winds"),
         ("Drizzle Prob", 60, "تحذير رذاذ", "Drizzle warning", "يُتوقع رذاذ الكوس", "Al-Kous drizzle is expected"),
     ]
@@ -458,6 +465,41 @@ if not df.empty:
         alerts.append(tr(
             f"{title_ar}: {verb_ar} على {joiner.join(found_areas)}. الفترة المتوقعة من {min(starts)} إلى {max(ends)}.",
             f"{title_en}: {verb_en} over {joiner.join(found_areas)}. Expected from {min(starts)} until {max(ends)}.",
+        ))
+
+@st.cache_data(ttl=600, show_spinner=False)
+def fetch_nowcast() -> Tuple[bool, Any]:
+    points = {"ناهل": (24.616, 55.575), "الفقع": (24.716, 55.620), "العجبان": (24.600, 55.300), "سويحان": (24.466, 55.330), "الشويب": (24.780, 55.800), "مسافي": (25.310, 56.160), "العين": (24.220, 55.760)}
+    try:
+        response = requests.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude": ",".join(str(v[0]) for v in points.values()),
+                "longitude": ",".join(str(v[1]) for v in points.values()),
+                "current": "precipitation,weather_code,cloud_cover",
+                "timezone": "Asia/Dubai",
+            },
+            timeout=25,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return True, list(zip(points, payload if isinstance(payload, list) else [payload]))
+    except Exception as exc:
+        return False, str(exc)
+
+now_ok, nowcast = fetch_nowcast()
+if now_ok:
+    wet = []
+    for name, payload in nowcast:
+        current = payload.get("current") or {}
+        rain = safe_num(current.get("precipitation"), 0)
+        code = int(safe_num(current.get("weather_code"), 0))
+        if rain >= 0.2 or code in (80, 81, 82, 95, 96, 99, 61, 63, 65):
+            wet.append(f"{name} ({rain:.1f} مم)")
+    if wet:
+        alerts.insert(0, tr(
+            f"رصد آني: تكونات رعدية أو مطر على {'، '.join(wet)}. الخلية صغيرة وقد لا تظهر في التوقع الخشن.",
+            f"Nowcast: convective rain at {', '.join(wet)}. The cell is small and may be missed by the coarse forecast.",
         ))
 badge = len(alerts)
 if badge:

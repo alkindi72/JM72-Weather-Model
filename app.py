@@ -326,9 +326,7 @@ if ok and isinstance(live, list):
                 if coords["type"] == "Mountains" and temp > 38:
                     prob *= 1.3
                 storm = float(np.clip(prob, 0, 100))
-                if 11 <= dt.hour <= 21 and cape >= 350 and 55.1 <= coords["lon"] <= 56.3 and 24.1 <= coords["lat"] <= 25.5:
-                    storm = max(storm, 60 if cape >= 700 else 45)
-                elif dt.hour < 12 or dt.hour > 19:
+                if dt.hour < 12 or dt.hour > 19:
                     storm *= 0.35
                 if (dt.hour < 8 or dt.hour > 22) and rh > 80 and wind < 15:
                     fog = float(np.clip((rh - 80) * 4 + (15 - wind) * 3, 0, 100))
@@ -459,7 +457,7 @@ alerts = []
 if not df.empty:
     checks = [
         ("Fog Probability", 50, "تحذير ضباب", "Fog warning", "يُتوقع تدني الرؤية", "reduced visibility is expected"),
-        ("Storm Probability", 45, "تحذير عواصف", "Storm warning", "يُتوقع نشاط رعدي وأمطار", "thundery rain is expected"),
+        ("Storm Probability", 80, "تحذير عواصف", "Storm warning", "مؤشرات عواصف مرتفعة وتحتاج تأكيد الرادار", "storm signals are high and need radar confirmation"),
         ("Shamal Index", 60, "تحذير غبار", "Dust warning", "يُتوقع غبار مثار مع رياح الشمال", "raised dust is expected with shamal winds"),
         ("Drizzle Prob", 60, "تحذير رذاذ", "Drizzle warning", "يُتوقع رذاذ الكوس", "Al-Kous drizzle is expected"),
     ]
@@ -514,9 +512,11 @@ if now_ok:
             wet.append(f"{name} ({rain:.1f} مم)")
     if wet:
         alerts.insert(0, tr(
-            f"رصد آني: تكونات رعدية أو مطر على {'، '.join(wet)}. الخلية صغيرة وقد لا تظهر في التوقع الخشن.",
-            f"Nowcast: convective rain at {', '.join(wet)}. The cell is small and may be missed by the coarse forecast.",
+            f"رصد آني: مطر أو سحب رعدية على {'، '.join(wet)}.",
+            f"Nowcast: rain or thunder at {', '.join(wet)}.",
         ))
+    else:
+        alerts = [line for line in alerts if "عواصف" not in line and "Storm" not in line]
 badge = len(alerts)
 if badge:
     st.toast(tr(f"تحذير قائم: {badge}", f"Active warning: {badge}"))
@@ -658,21 +658,28 @@ with tab2:
         "سحب الكوس: سحب منخفضة تأتي من بحر عمان مع رياح شرقية إلى جنوبية شرقية ورطوبة عالية، وغالباً تلامس جبال الفجيرة ورأس الخيمة. قد يصاحبها رذاذ صباحاً.",
         "Al-Kous: low cloud from the Gulf of Oman with easterly to southeasterly wind and high humidity, often against the Fujairah and Ras Al Khaimah mountains. Morning drizzle may follow.",
     ))
-    st.markdown(tr("#### آخر صورة رادار", "#### Latest radar frame"))
+    st.markdown(tr("#### آخر مسح رادار وقمر صناعي", "#### Latest radar and satellite"))
     try:
         info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=20).json()
-        frame = info["radar"]["past"][-1]
         host = info["host"]
-        tiles = []
-        for y in (27, 28):
-            row = []
-            for x in (41, 42):
-                row.append(f'<img alt="radar" src="{host}{frame["path"]}/256/6/{x}/{y}/2/1_1.png" width="256" height="256">')
-            tiles.append("<div>" + "".join(row) + "</div>")
-        st.markdown("<div>" + "".join(tiles) + "</div>", unsafe_allow_html=True)
-        st.caption(tr("صورة ثابتة لآخر مسح رادار، من غير تحريك.", "A still image of the latest radar scan, without animation."))
+        radar = info["radar"]["past"][-1]["path"]
+        sat = info["satellite"]["infrared"][-1]["path"]
+        def mosaic(path):
+            rows = []
+            for y in (54, 55):
+                rows.append("".join(
+                    f'<img alt="scan" src="{host}{path}/512/7/{x}/{y}/2/1_1.png" width="240" height="240">'
+                    for x in (82, 83, 84)
+                ))
+            return "<div>" + "<br>".join(rows) + "</div>"
+        left, right = st.columns(2)
+        left.markdown(tr("الرادار", "Radar"))
+        left.markdown(mosaic(radar), unsafe_allow_html=True)
+        right.markdown(tr("القمر الصناعي", "Satellite"))
+        right.markdown(mosaic(sat), unsafe_allow_html=True)
+        st.caption(tr("صورتان ثابتتان لآخر مسح، بدقة أعلى وعلى الإمارات. الألوان على الرادار مطر، وعلى القمر سحب.", "Two still scans at higher detail over the UAE. Radar colors are rain, satellite colors are cloud."))
     except Exception:
-        st.info(tr("تعذر جلب صورة الرادار الآن.", "The latest radar image could not be loaded."))
+        st.info(tr("تعذر جلب الرادار أو القمر الآن.", "Radar or satellite could not be loaded."))
 
 with tab3:
     picked = st.select_slider(tr("الوقت", "Time"), options=timeline_str, key="heat_time")

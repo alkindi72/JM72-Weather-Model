@@ -524,15 +524,21 @@ if badge:
         f"<div style='position:fixed;top:18px;left:18px;z-index:9999;background:#DC2626;color:white;border-radius:999px;padding:8px 12px;font-weight:800;'>⚠ {badge}</div>",
         unsafe_allow_html=True,
     )
-    try:
+try:
+    state_path = "/tmp/71wm_alert_state.txt"
+    current_key = "\n".join(alerts)
+    previous = open(state_path, encoding="utf-8").read() if os.path.exists(state_path) else ""
+    if current_key != previous:
+        message = current_key or "انتهى التحذير. لا خطر قائم حالياً."
         requests.post(
             "https://ntfy.sh/71wm-alkindi-uae",
-            data="\n".join(alerts).encode("utf-8"),
-            headers={"Title": "تحذير 71WM | 71WM warning", "Priority": "high", "Tags": "warning"},
+            data=message.encode("utf-8"),
+            headers={"Title": "71WM warning", "Priority": "high", "Tags": "warning", "Content-Type": "text/plain; charset=utf-8"},
             timeout=8,
         )
-    except Exception:
-        pass
+        open(state_path, "w", encoding="utf-8").write(current_key)
+except Exception:
+    pass
 if alerts:
     st.markdown(
         "<div style='background:#7F1D1D;border:1px solid #FCA5A5;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'><b style='color:#FEE2E2;'>"
@@ -648,7 +654,9 @@ with tab2:
         "سحب الكوس: سحب منخفضة تأتي من بحر عمان مع رياح شرقية إلى جنوبية شرقية ورطوبة عالية، وغالباً تلامس جبال الفجيرة ورأس الخيمة. قد يصاحبها رذاذ صباحاً.",
         "Al-Kous: low cloud from the Gulf of Oman with easterly to southeasterly wind and high humidity, often against the Fujairah and Ras Al Khaimah mountains. Morning drizzle may follow.",
     ))
-    components.html('<iframe src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=satellite&lat=24.6&lon=54.8&zoom=6" width="100%" height="430" frameborder="0"></iframe>', height=450)
+    st.markdown(tr("#### الرادار اللحظي", "#### Live radar"))
+    components.html('<iframe src="https://www.rainviewer.com/map.html?loc=24.6,55.4,7&oFa=0&oC=0&oU=0&oCS=1&oF=0&oAP=1&c=1&o=83&lm=1&layer=radar&sm=1&sn=1" width="100%" height="460" frameborder="0"></iframe>', height=480)
+    components.html('<iframe src="https://embed.windy.com/embed.html?type=map&location=coordinates&overlay=radar&lat=24.6&lon=54.8&zoom=6" width="100%" height="430" frameborder="0"></iframe>', height=450)
 
 with tab3:
     picked = st.select_slider(tr("الوقت", "Time"), options=timeline_str, key="heat_time")

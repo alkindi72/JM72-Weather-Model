@@ -24,12 +24,12 @@ st.markdown(
     background:
       radial-gradient(900px 420px at 8% -10%, rgba(43,179,199,.22), transparent 55%),
       radial-gradient(700px 380px at 100% 0%, rgba(212,175,55,.2), transparent 50%),
-      #102033 !important;
-    color: #f4efe4;
+      #e7f2f4 !important;
+    color: #102033;
   }
   [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
   .block-container { padding: 1.1rem 1.4rem 2rem; max-width: 1380px; }
-  h1, h2, h3, h4, p, span, label, li, div { color: #f4efe4; }
+  h1, h2, h3, h4, p, span, label, li, div { color: #102033; }
   .hero {
     border: 1px solid rgba(212,175,55,.45);
     background: linear-gradient(120deg, rgba(16,42,67,.94), rgba(24,78,92,.82) 55%, rgba(92,68,28,.55));
@@ -52,15 +52,15 @@ st.markdown(
   .stApp, .stMarkdown p, label, [data-testid="stCaptionContainer"] { font-size: 18px !important; }
   div[data-testid="stTabs"] button p { font-size: 18px !important; }
   .kicker { letter-spacing: .22em; color: #d4af37 !important; font-size: 14px !important; font-weight: 800; }
-  .hero h1 { margin: 4px 0 2px; font-size: 40px !important; font-weight: 900; color: white !important; }
-  .sub { color: #cbd5e1 !important; font-size: 18px !important; }
+  .hero h1 { margin: 4px 0 2px; font-size: 40px !important; font-weight: 900; color: #f8fafc !important; }
+  .sub { color: #e7eef8 !important; font-size: 18px !important; }
   .pill {
     display: inline-block; margin: 8px 8px 0 0; padding: 8px 12px; border-radius: 999px;
     background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); font-size: 16px !important;
   }
   .card {
-    background: linear-gradient(180deg, rgba(28,48,68,.88), rgba(18,36,52,.8));
-    border: 1px solid rgba(212,175,55,.22);
+    background: linear-gradient(180deg, #ffffff, #f3efe4);
+    border: 1px solid rgba(16,42,67,.16);
     border-radius: 16px; padding: 14px 16px; min-height: 108px;
   }
   .daychip {
@@ -68,7 +68,7 @@ st.markdown(
     border: 1px solid rgba(212,175,55,.28); border-radius: 18px; padding: 12px; text-align: center;
   }
   .daychip b { font-size: 28px !important; }
-  .muted { color: #cbd5e1 !important; font-size: 16px !important; }
+  .muted { color: #475569 !important; font-size: 16px !important; }
   div[data-testid="stTabs"] [data-baseweb="tab-list"] {
     gap: 6px; overflow-x: auto; flex-wrap: nowrap;
   }

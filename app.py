@@ -457,7 +457,6 @@ alerts = []
 if not df.empty:
     checks = [
         ("Fog Probability", 50, "تحذير ضباب", "Fog warning", "يُتوقع تدني الرؤية", "reduced visibility is expected"),
-        ("Storm Probability", 80, "تحذير عواصف", "Storm warning", "مؤشرات عواصف مرتفعة وتحتاج تأكيد الرادار", "storm signals are high and need radar confirmation"),
         ("Shamal Index", 60, "تحذير غبار", "Dust warning", "يُتوقع غبار مثار مع رياح الشمال", "raised dust is expected with shamal winds"),
         ("Drizzle Prob", 60, "تحذير رذاذ", "Drizzle warning", "يُتوقع رذاذ الكوس", "Al-Kous drizzle is expected"),
     ]
@@ -658,26 +657,31 @@ with tab2:
         "سحب الكوس: سحب منخفضة تأتي من بحر عمان مع رياح شرقية إلى جنوبية شرقية ورطوبة عالية، وغالباً تلامس جبال الفجيرة ورأس الخيمة. قد يصاحبها رذاذ صباحاً.",
         "Al-Kous: low cloud from the Gulf of Oman with easterly to southeasterly wind and high humidity, often against the Fujairah and Ras Al Khaimah mountains. Morning drizzle may follow.",
     ))
-    st.markdown(tr("#### آخر مسح رادار وقمر صناعي", "#### Latest radar and satellite"))
+    st.markdown(tr("#### آخر مسح: رادار وقمر صناعي", "#### Latest radar and satellite"))
     try:
         info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=20).json()
         host = info["host"]
         radar = info["radar"]["past"][-1]["path"]
         sat = info["satellite"]["infrared"][-1]["path"]
-        def mosaic(path):
+        def mosaic(path, overlay=False):
             rows = []
             for y in (54, 55):
-                rows.append("".join(
-                    f'<img alt="scan" src="{host}{path}/512/7/{x}/{y}/2/1_1.png" width="240" height="240">'
-                    for x in (82, 83, 84)
-                ))
-            return "<div>" + "<br>".join(rows) + "</div>"
+                cells = []
+                for x in (82, 83, 84):
+                    base = f"https://tile.openstreetmap.org/7/{x}/{y}.png"
+                    top = f"{host}{path}/256/7/{x}/{y}/2/1_1.png" if overlay else f"{host}{path}/256/7/{x}/{y}/0/0_0.png"
+                    cells.append(
+                        f'<div style="position:relative;width:180px;height:180px">'
+                        f'<img src="{base}" width="180" height="180" style="display:block">'
+                        f'<img src="{top}" width="180" height="180" style="position:absolute;inset:0"></div>'
+                    )
+                rows.append('<div style="display:flex">' + "".join(cells) + "</div>")
+            return "".join(rows)
         left, right = st.columns(2)
-        left.markdown(tr("الرادار", "Radar"))
-        left.markdown(mosaic(radar), unsafe_allow_html=True)
+        left.markdown(tr("الرادار فوق الخريطة", "Radar on the map"))
+        left.markdown(mosaic(radar, True), unsafe_allow_html=True)
         right.markdown(tr("القمر الصناعي", "Satellite"))
-        right.markdown(mosaic(sat), unsafe_allow_html=True)
-        st.caption(tr("صورتان ثابتتان لآخر مسح، بدقة أعلى وعلى الإمارات. الألوان على الرادار مطر، وعلى القمر سحب.", "Two still scans at higher detail over the UAE. Radar colors are rain, satellite colors are cloud."))
+        right.markdown(mosaic(sat, False), unsafe_allow_html=True)
     except Exception:
         st.info(tr("تعذر جلب الرادار أو القمر الآن.", "Radar or satellite could not be loaded."))
 

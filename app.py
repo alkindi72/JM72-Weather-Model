@@ -576,11 +576,38 @@ if now_ok:
     else:
         alerts = [line for line in alerts if "عواصف" not in line and "Storm" not in line]
 badge = len(alerts)
+components.html(
+    """
+    <button id="allow" style="font-size:18px;padding:10px 14px;border:0;border-radius:12px;background:#0f766e;color:white;">تفعيل إشعار الموقع</button>
+    <script>
+      document.getElementById('allow').onclick = async () => {
+        if (!window.Notification) { document.getElementById('allow').innerText = 'المتصفح لا يدعم الإشعار'; return; }
+        const ok = await Notification.requestPermission();
+        document.getElementById('allow').innerText = ok === 'granted' ? 'تم التفعيل' : 'لم يُسمح';
+      };
+    </script>
+    """,
+    height=62,
+)
 if badge:
-    st.toast(tr(f"تحذير قائم: {badge}", f"Active warning: {badge}"))
+    popup = "<br>".join(alerts)
     st.markdown(
-        f"<div style='position:fixed;top:18px;left:18px;z-index:9999;background:#DC2626;color:white;border-radius:999px;padding:8px 12px;font-weight:800;'>⚠ {badge}</div>",
+        f"<div style='position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:18px;'>"
+        f"<div style='max-width:640px;background:#7F1D1D;color:#fff;border-radius:18px;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.35);'>"
+        f"<b style='font-size:22px;'>تحذير 71WM</b><p style='font-size:18px;line-height:1.7;'>{popup}</p>"
+        f"<div style='font-size:14px;opacity:.85;'>يظهر هذا الانبثاق داخل الموقع عند فتح الصفحة. إشعار الجوال يبقى عبر ntfy.</div></div></div>",
         unsafe_allow_html=True,
+    )
+    components.html(
+        f"""<script>
+        const text = {json.dumps(chr(10).join(alerts), ensure_ascii=False)};
+        if (window.Notification && Notification.permission === 'granted') {{
+          new Notification('تحذير 71WM', {{body: text}});
+        }} else if (window.Notification && Notification.permission !== 'denied') {{
+          Notification.requestPermission();
+        }}
+        </script>""",
+        height=0,
     )
 try:
     state_path = "/tmp/71wm_alert_state.txt"
@@ -598,6 +625,18 @@ try:
             headers=headers,
             timeout=8,
         )
+        alexa_token = os.getenv("ALEXA_TOKEN", "")
+        alexa_devices = [item.strip() for item in os.getenv("ALEXA_DEVICE", "").split(",") if item.strip()]
+        extra = os.getenv("ALEXA_DEVICE_2", "").strip()
+        if extra:
+            alexa_devices.append(extra)
+        for alexa_device in alexa_devices:
+            if alexa_token and alexa_device:
+                requests.post(
+                    "https://api-v3.voicemonkey.io/announce",
+                    json={"token": alexa_token, "device": alexa_device, "speech": message},
+                    timeout=8,
+                )
         open(state_path, "w", encoding="utf-8").write(current_key)
 except Exception:
     pass

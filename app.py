@@ -1287,31 +1287,68 @@ with tab5:
     ))
 
 with tab6:
+    st.markdown(tr("### النينيو والنينيا ببساطة", "### El Niño and La Niña, simply"))
+    st.write(tr(
+        "هذا ليس طقس الغد في الإمارات. هو درجة حرارة سطح المحيط الهادئ قرب خط الاستواء. إذا سخن الماء أكثر من المعتاد سميناه نينيو، وإذا برد سميناه نينيا. القياس من منطقة تُسمى نينيو 3.4.",
+        "This is not tomorrow's UAE weather. It is the sea-surface temperature of the equatorial Pacific. Warmer than usual is El Niño, cooler is La Niña. It is measured in a box called Niño 3.4.",
+    ))
     ok_oni, oni = fetch_oni()
     if not ok_oni:
-        st.error(tr(f"تعذر مؤشر ONI: {oni}", f"ONI fetch failed: {oni}"))
+        st.error(tr(f"تعذر مؤشر النينيو: {oni}", f"ENSO index fetch failed: {oni}"))
     else:
         latest = oni.iloc[-1]
         anom = float(latest["anom"])
-        phase = tr("نينيو", "El Niño") if anom >= 0.5 else (tr("نينيا", "La Niña") if anom <= -0.5 else tr("محايد", "Neutral"))
-        m1, m2, m3 = st.columns(3)
-        m1.metric(tr("آخر موسم", "Latest season"), f"{latest['season']} {int(latest['year'])}")
-        m2.metric("ONI", f"{anom:+.2f} °C")
-        m3.metric(tr("الحالة", "Phase"), phase)
+        if anom >= 0.5:
+            phase, color, meaning = (
+                tr("نينيو", "El Niño"),
+                "#b91c1c",
+                tr("المحيط أدفأ من المعتاد. إحصائياً يميل شتاء شبه الجزيرة إلى رطوبة أعلى، لكن هذا ليس وعداً بمطر على الإمارات.", "The ocean is warmer than usual. Statistically the peninsula winter leans wetter, but this is not a promise of UAE rain."),
+            )
+        elif anom <= -0.5:
+            phase, color, meaning = (
+                tr("نينيا", "La Niña"),
+                "#1d4ed8",
+                tr("المحيط أبرد من المعتاد. إحصائياً يميل الشتاء إلى جفاف أكثر، والحالات القوية المنفردة تبقى ممكنة.", "The ocean is cooler than usual. Statistically winter leans drier, though strong individual events remain possible."),
+            )
+        else:
+            phase, color, meaning = (
+                tr("محايد", "Neutral"),
+                "#64748b",
+                tr("لا نينيو ولا نينيا. طقس الإمارات يتحدد أكثر بالمنخفضات المحلية ودورة الخليج والحجر.", "Neither El Niño nor La Niña. UAE weather is driven more by local lows, the Gulf cycle and the Hajar."),
+            )
+        st.markdown(
+            f"<div class='card' style='border-right:6px solid {color};text-align:center;'>"
+            f"<div class='muted'>{tr('الحالة الآن', 'Current phase')}</div>"
+            f"<div style='font-size:2rem;font-weight:800;color:{color};'>{phase}</div>"
+            f"<div style='font-size:1.4rem;'>{anom:+.2f} °C</div>"
+            f"<p>{meaning}</p>"
+            f"<div class='muted'>{tr('آخر موسم محسوب', 'Latest season')}: {latest['season']} {int(latest['year'])}</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        c1, c2, c3 = st.columns(3)
+        c1.markdown(tr("**أحمر: نينيو**<br>أعلى من +0.5", "**Red: El Niño**<br>above +0.5"), unsafe_allow_html=True)
+        c2.markdown(tr("**رمادي: محايد**<br>بين -0.5 و +0.5", "**Grey: Neutral**<br>between -0.5 and +0.5"), unsafe_allow_html=True)
+        c3.markdown(tr("**أزرق: نينيا**<br>أدنى من -0.5", "**Blue: La Niña**<br>below -0.5"), unsafe_allow_html=True)
+        st.markdown(tr("#### أين يُقاس؟", "#### Where is it measured?"))
+        box = pd.DataFrame({"lat": [0, 0, 5, -5], "lon": [-170, -120, -145, -145], "name": ["غرب", "شرق", "شمال", "جنوب"]})
+        figm = px.scatter_mapbox(box, lat="lat", lon="lon", hover_name="name", zoom=1.4, center=dict(lat=5, lon=-145), mapbox_style="carto-positron", height=360)
+        figm.update_traces(marker=dict(size=14, color=color))
+        figm.update_layout(margin=dict(l=0, r=0, t=0, b=0), title=tr("مربع نينيو 3.4 في المحيط الهادئ", "Niño 3.4 box in the Pacific"))
+        st.plotly_chart(figm, use_container_width=True)
+        st.caption(tr("النقطة في وسط المحيط الهادئ، بعيداً عن الخليج. أثرها علينا غير مباشر ويظهر في اتجاه الموسم لا في طقس اليوم.", "The point is in the middle of the Pacific, far from the Gulf. Its effect on us is indirect and shows in the season, not in today's weather."))
         recent = oni.tail(36)
         fig = go.Figure()
-        fig.add_hrect(y0=0.5, y1=3, fillcolor="#7f1d1d", opacity=0.25, line_width=0)
-        fig.add_hrect(y0=-3, y1=-0.5, fillcolor="#1e3a8a", opacity=0.25, line_width=0)
-        fig.add_trace(go.Scatter(x=recent["label"], y=recent["anom"], mode="lines+markers", line=dict(color="#d4af37", width=3)))
-        fig.update_layout(height=380, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", title=tr("مؤشر النينيو 3.4 °C", "Niño 3.4 index °C"))
+        fig.add_hrect(y0=0.5, y1=3, fillcolor="#fecaca", opacity=0.7, line_width=0)
+        fig.add_hrect(y0=-3, y1=-0.5, fillcolor="#bfdbfe", opacity=0.7, line_width=0)
+        fig.add_trace(go.Scatter(x=recent["label"], y=recent["anom"], mode="lines+markers", line=dict(color="#b45309", width=3), name=tr("المؤشر", "Index")))
+        fig.update_layout(height=380, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", title=tr("مسار المؤشر آخر 3 سنوات", "Index path, last 3 years"), yaxis_title="°C", legend=dict(orientation="h"))
         st.plotly_chart(fig, use_container_width=True)
-        if anom >= 0.5:
-            st.info(tr("النينيو يميل إحصائياً إلى شتاء أرطب نسبياً على أجزاء من شبه الجزيرة. ليس ضماناً لموسم ماطر في الإمارات.", "El Niño statistically leans toward a relatively wetter winter on parts of the peninsula. It does not guarantee a wet UAE season."))
-        elif anom <= -0.5:
-            st.info(tr("النينيا تميل إحصائياً إلى شتاء أجف. الحالات القوية المنفردة تبقى ممكنة.", "La Niña statistically leans toward a drier winter. Strong individual events remain possible."))
-        else:
-            st.info(tr("الوضع المحايد يعني أن طقس الإمارات يتحدد أكثر بالمنخفضات المحلية ودورة الخليج.", "Neutral means UAE weather is driven more by local lows and the Gulf cycle."))
-        st.dataframe(oni.tail(8)[["label", "sst", "anom"]].iloc[::-1].rename(columns={"label": tr("الموسم", "Season"), "sst": tr("الحرارة °C", "SST °C"), "anom": tr("الشذوذ °C", "Anomaly °C")}), use_container_width=True, hide_index=True)
+        st.markdown(tr("#### ماذا يعني هذا للإمارات؟", "#### What does this mean for the UAE?"))
+        st.write(tr(
+            "لا تُقرأ الحالة كتنبؤ مطر لمدينة. هي خلفية للموسم. المطر عندنا يبقى مرتبطاً بمرور المنخفض، ورطوبة بحر عُمان، ورفع جبال الحجر. النينيو يرفع احتمال الشتاء الأرطب، ولا يحدد يوم المطر ولا مكانه.",
+            "Do not read the phase as a rain forecast for a city. It is background for the season. Rain here still depends on a passing low, Gulf of Oman moisture and Hajar lift. El Niño raises the chance of a wetter winter; it does not set the day or the place.",
+        ))
 
 
 @st.cache_data(ttl=3600, show_spinner=False)

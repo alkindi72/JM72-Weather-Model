@@ -1400,12 +1400,13 @@ def fetch_on_this_day(month: int, day: int) -> Tuple[bool, Any]:
 with tab7:
     st.markdown(tr("#### اتفاق النماذج ونماذج الذكاء الاصطناعي", "#### Model agreement and AI guidance"))
     st.caption(tr(
-        "71WM نموذج محلي للإمارات: يأخذ GFS ثم يعدّله حسب جبال الحجر، سهل العين وناهل، ساحل الخليج، ساحل عمان، وصحراء الظفرة. النسبة اتفاق هذا التعديل المحلي مع ECMWF وAIFS وGraphCast، لا دقة تاريخية مضمونة.",
-        "71WM is a UAE local model: it takes GFS and adjusts it for the Hajar, the Al Ain–Nahil plain, the Gulf coast, the Oman coast and the Al Dhafra desert. The percentage is agreement with ECMWF, AIFS and GraphCast, not guaranteed historical accuracy.",
+        "71WM نموذج محلي للإمارات: يأخذ GFS ثم يعدّله حسب جبال الحجر، سهل العين وناهل، ساحل الخليج، ساحل عمان، وصحراء الظفرة. النسبة اتفاق هذا التعديل المحلي مع ECMWF وICON وAIFS وGraphCast، لا دقة تاريخية مضمونة.",
+        "71WM is a UAE local model: it takes GFS and adjusts it for the Hajar, the Al Ain–Nahil plain, the Gulf coast, the Oman coast and the Al Dhafra desert. The percentage is agreement with ECMWF, ICON, AIFS and GraphCast, not guaranteed historical accuracy.",
     ))
     model_names = {
         "GFS": "gfs_seamless",
         "ECMWF": "ecmwf_ifs",
+        "ICON": "icon_seamless",
         "AIFS": "ecmwf_aifs025_single",
         "GraphCast": "gfs_graphcast025",
     }
@@ -1440,8 +1441,8 @@ with tab7:
         mean_agreement = int(round(sum(item["اتفاق %"] for item in scores) / len(scores)))
         st.metric(tr("اتفاق النماذج على الدولة", "National model agreement"), f"{mean_agreement}%")
         fig = go.Figure()
-        colors = {"71WM": "#22c55e", "GFS": "#f87171", "ECMWF": "#38bdf8", "AIFS": "#d4af37", "GraphCast": "#c4b5fd"}
-        offsets = {"71WM": -0.24, "GFS": -0.12, "ECMWF": 0, "AIFS": 0.12, "GraphCast": 0.24}
+        colors = {"71WM": "#22c55e", "GFS": "#f87171", "ECMWF": "#38bdf8", "ICON": "#fb923c", "AIFS": "#d4af37", "GraphCast": "#c4b5fd"}
+        offsets = {"71WM": -0.28, "GFS": -0.16, "ECMWF": -0.04, "ICON": 0.08, "AIFS": 0.18, "GraphCast": 0.28}
         for name in available:
             frame = pd.DataFrame(fetched[name])
             fig.add_trace(go.Scattermapbox(

@@ -2747,19 +2747,19 @@ with tab8:
     icon = icons.get(topic[0], "🌤️")
     img = pics[topic[0]]
     side = "rtl" if lang == "ar" else "ltr"
-    st.markdown(
+    components.html(
         f"""
-        <div style="position:relative;border-radius:18px;overflow:hidden;margin:8px 0 14px;">
-          <img src="data:image/jpeg;base64,{img}" style="width:100%;height:280px;object-fit:cover;display:block;filter:brightness(0.78);">
-          <div style="position:absolute;top:16px;left:0;right:0;text-align:center;direction:{side};">
-            <div style="display:inline-block;background:rgba(15,23,42,.55);border-radius:14px;padding:8px 18px;">
-              <div style="font-size:1.7rem;line-height:1;">{icon}</div>
-              <div style="font-size:1.8rem;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6);">{title}</div>
+        <div style="position:relative;border-radius:18px;overflow:hidden;height:520px;">
+          <img src="data:image/jpeg;base64,{img}" style="width:100%;height:520px;object-fit:cover;display:block;filter:brightness(0.78);">
+          <div style="position:absolute;top:18px;left:0;right:0;text-align:center;direction:{side};">
+            <div style="display:inline-block;background:rgba(15,23,42,.55);border-radius:14px;padding:10px 22px;">
+              <div style="font-size:1.8rem;line-height:1;">{icon}</div>
+              <div style="font-size:2rem;font-weight:800;color:#fff;">{title}</div>
             </div>
           </div>
         </div>
         """,
-        unsafe_allow_html=True,
+        height=530,
     )
     labels = ("ما هي؟", "أين تظهر عندنا؟", "ماذا نلاحظ؟") if lang == "ar" else ("What is it?", "Where do we see it?", "What do we notice?")
     paras = "".join(f"<p><b>{lab}</b><br>{txt.rstrip('،')}.</p>" for lab, txt in zip(labels, parts))

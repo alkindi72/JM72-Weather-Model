@@ -631,41 +631,6 @@ if now_ok:
             f"Occurrence alert: rain or thunder at {', '.join(wet)}.",
         ))
 badge = len(alerts)
-components.html(
-    """
-    <button id="allow" style="font-size:18px;padding:10px 14px;border:0;border-radius:12px;background:#0f766e;color:white;">تفعيل إشعار الموقع</button>
-    <script>
-      document.getElementById('allow').onclick = async () => {
-        if (!window.Notification) { document.getElementById('allow').innerText = 'المتصفح لا يدعم الإشعار'; return; }
-        const ok = await Notification.requestPermission();
-        document.getElementById('allow').innerText = ok === 'granted' ? 'تم التفعيل' : 'لم يُسمح';
-      };
-    </script>
-    """,
-    height=62,
-)
-if badge and not st.session_state.get("hide_alert"):
-    popup = "<br>".join(alerts)
-    st.markdown(
-        f"<div style='background:#7F1D1D;color:#fff;border-radius:18px;padding:22px;margin:12px 0;direction:rtl;text-align:right;'>"
-        f"<b style='font-size:22px;'>تحذير 71WM</b><p style='font-size:18px;line-height:1.7;'>{popup}</p>"
-        f"<div style='font-size:14px;opacity:.85;'>إشعار الجوال يبقى عبر ntfy.</div></div>",
-        unsafe_allow_html=True,
-    )
-    if st.button("إغلاق التحذير"):
-        st.session_state.hide_alert = True
-        st.rerun()
-    components.html(
-        f"""<script>
-        const text = {json.dumps(chr(10).join(alerts), ensure_ascii=False)};
-        if (window.Notification && Notification.permission === 'granted') {{
-          new Notification('تحذير 71WM', {{body: text}});
-        }} else if (window.Notification && Notification.permission !== 'denied') {{
-          Notification.requestPermission();
-        }}
-        </script>""",
-        height=0,
-    )
 try:
     state_path = "/tmp/71wm_alert_state.txt"
     current_key = "\n".join(alerts)

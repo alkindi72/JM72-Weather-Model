@@ -867,6 +867,7 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
         work, lat="Latitude", lon="Longitude", color=field, size=field,
         hover_name="Station", hover_data=hover.get(field, {field: ":.0f", "Sector": True}),
         color_continuous_scale=colors.get(scale if field != "Wave" else "Wave", "Viridis"), size_max=26, zoom=zoom,
+        range_color=[0, 100] if field != "Wave" else [0, 3],
         center=dict(lat=24.3, lon=54.8), mapbox_style="open-street-map", title=title,
     )
     if field == "Wind" and "Wind Dir" in work:
@@ -936,9 +937,15 @@ with tab2:
             st.session_state.forecast_time = nearest
             frame = df[df["Time"] == nearest] if not df.empty else pd.DataFrame()
             shown = f"{st.session_state.forecast_day} - {chosen_hour}"
+            frame = df[df["Time"] == shown] if not df.empty else pd.DataFrame()
+            if frame.empty:
+                frame = df[df["Time"] == nearest] if not df.empty else pd.DataFrame()
+            peak = 0 if frame.empty or field not in frame.columns else safe_max(frame[field])
             st.plotly_chart(
-                windy_map(frame, field, f"{layer_name} · {shown}", scale, zoom),
-                use_container_width=True, config={"displayModeBar": False, "scrollZoom": True},
+                windy_map(frame, field, f"{layer_name} · {shown} · {peak:.0f}", scale, zoom),
+                use_container_width=True,
+                key=f"map_{field}_{shown}",
+                config={"displayModeBar": False, "scrollZoom": True},
             )
     st.markdown(tr("#### شريط الأيام والوقت", "#### Day and time strip"))
     day_cols = st.columns(min(7, max(1, len(dates[:7]))))

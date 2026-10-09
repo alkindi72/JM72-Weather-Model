@@ -288,7 +288,7 @@ uae_now = datetime.utcnow() + timedelta(hours=4)
 cycle = gfs_cycle(datetime.utcnow())
 bulletin_day = (uae_now - timedelta(hours=5)).strftime("%Y-%m-%d")
 base = uae_now.replace(minute=0, second=0, microsecond=0)
-timeline = [base + timedelta(hours=i * 3) for i in range(40)]
+timeline = [base + timedelta(hours=i) for i in range(24 * 5)]
 timeline_str = [f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')} - {dt.strftime('%H:%M')}" for dt in timeline]
 dates = []
 for dt in timeline:
@@ -543,11 +543,11 @@ def rain_words(level: int) -> str:
 alerts = []
 if not df.empty:
     checks = [
-        ("Fog Probability", 50, 1, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
-        ("Storm Probability", 45, 1, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
-        ("Shamal Index", 50, 2, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
-        ("Wind", 40, 2, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
-        ("Drizzle Prob", 45, 2, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
+        ("Fog Probability", 50, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
+        ("Storm Probability", 45, 3, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
+        ("Shamal Index", 50, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
+        ("Wind", 40, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
+        ("Drizzle Prob", 45, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
     ]
     for column, threshold, lead, title_ar, title_en, verb_ar, verb_en in checks:
         found_areas = []
@@ -783,6 +783,57 @@ with tab1:
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_wave_points() -> pd.DataFrame:
+    points = {
+        "أبوظبي قرب الساحل": (24.50, 54.35), "عمق الخليج": (25.20, 53.40),
+        "دبي البحرية": (25.20, 55.05), "رأس الخيمة": (25.90, 55.90),
+        "الفجيرة قرب الساحل": (25.15, 56.45), "عمق بحر عُمان": (25.00, 57.20),
+        "خورفكان": (25.35, 56.45), "كلباء": (25.00, 56.45),
+    }
+    try:
+        response = requests.get(
+            "https://marine-api.open-meteo.com/v1/marine",
+            params={
+                "latitude": ",".join(str(v[0]) for v in points.values()),
+                "longitude": ",".join(str(v[1]) for v in points.values()),
+                "hourly": "wave_height",
+                "forecast_days": 2,
+                "timezone": "Asia/Dubai",
+            },
+            timeout=25,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        rows = payload if isinstance(payload, list) else [payload]
+    except Exception:
+        return pd.DataFrame()
+    out = []
+    for (name, (lat, lon)), row in zip(points.items(), rows):
+        heights = (row.get("hourly") or {}).get("wave_height") or []
+        peak = max((safe_num(h, 0) for h in heights[:24]), default=0)
+        out.append({"Station": name, "Latitude": lat, "Longitude": lon, "Wave": max(peak, 0.2), "الارتفاع": f"{peak:.1f} م · {peak * 3.28084:.0f} قدم"})
+    return pd.DataFrame(out)
+
+
+def layer_map(kind: str, radar_url: str = "") -> str:
+    overlay = ""
+    if kind == "Radar" and radar_url:
+        overlay = "L.tileLayer(" + json.dumps(radar_url) + ", {opacity: 0.7}).addTo(map);"
+    if kind == "Satellite":
+        overlay = "L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/2026-10-08/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg', {opacity: 0.85, maxZoom: 9}).addTo(map);"
+    return """
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <div id="uaemap" style="height:640px;border-radius:16px"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      var map = L.map('uaemap').setView([24.4, 54.6], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18}).addTo(map);
+      """ + overlay + """
+    </script>
+    """
+
+
 def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: float = 6.2):
     places = [
         ("أبوظبي", 24.45, 54.38, 5), ("دبي", 25.20, 55.27, 5), ("الشارقة", 25.35, 55.40, 5),
@@ -798,14 +849,24 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
         fig.update_layout(title=title, height=640, mapbox_style="open-street-map", mapbox_center=dict(lat=24.4, lon=54.6), mapbox_zoom=zoom)
         return fig
     work = frame.copy()
+    names = ["شمالية", "شمالية شرقية", "شرقية", "جنوبية شرقية", "جنوبية", "جنوبية غربية", "غربية", "شمالية غربية"]
     if field == "Sea":
-        work["Sea"] = work.apply(lambda r: 70 if r["Longitude"] >= 56 else (55 if r["Longitude"] <= 54.8 else 15), axis=1)
-        work = work[work["Sea"] > 15]
-    colors = {"Rain": "Blues", "Storm Probability": "Reds", "Wind": "YlGn", "Shamal Index": "Oranges", "Fog Probability": "Blues", "Sea": "Teal"}
+        sea = fetch_wave_points()
+        if sea.empty:
+            fig = go.Figure()
+            fig.update_layout(title=title, height=640, mapbox_style="open-street-map", mapbox_center=dict(lat=24.4, lon=54.6), mapbox_zoom=zoom)
+            return fig
+        work = sea
+        field = "Wave"
+    if field == "Wind":
+        work["اتجاه"] = work["Wind Dir"].map(lambda d: names[int((float(d) + 22.5) // 45) % 8])
+        work["الرياح"] = work.apply(lambda r: f"{r['Wind']:.0f} كم/س · {r['اتجاه']}", axis=1)
+    colors = {"Rain": "Blues", "Storm Probability": "Reds", "Wind": "YlGn", "Shamal Index": "Oranges", "Fog Probability": "Blues", "Wave": "Teal"}
+    hover = {"Wave": ["الارتفاع"], "Wind": ["الرياح"]}
     fig = px.scatter_mapbox(
         work, lat="Latitude", lon="Longitude", color=field, size=field,
-        hover_name="Station", hover_data={field: ":.0f", "Sector": True},
-        color_continuous_scale=colors.get(scale, "Viridis"), size_max=26, zoom=zoom,
+        hover_name="Station", hover_data=hover.get(field, {field: ":.0f", "Sector": True}),
+        color_continuous_scale=colors.get(scale if field != "Wave" else "Wave", "Viridis"), size_max=26, zoom=zoom,
         center=dict(lat=24.3, lon=54.8), mapbox_style="open-street-map", title=title,
     )
     if field == "Wind" and "Wind Dir" in work:
@@ -814,7 +875,12 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
             rad = math.radians(float(row["Wind Dir"]))
             tips_lat += [row["Latitude"], row["Latitude"] + 0.16 * math.cos(rad), None]
             tips_lon += [row["Longitude"], row["Longitude"] + 0.16 * math.sin(rad), None]
-        fig.add_trace(go.Scattermapbox(lat=tips_lat, lon=tips_lon, mode="lines", line=dict(width=2, color="#1e3a8a"), hoverinfo="skip", name="اتجاه"))
+        fig.add_trace(go.Scattermapbox(lat=tips_lat, lon=tips_lon, mode="lines", line=dict(width=3, color="#1e3a8a"), hoverinfo="skip", name="اتجاه"))
+        fig.add_trace(go.Scattermapbox(
+            lat=work["Latitude"], lon=work["Longitude"], mode="text",
+            text=work["الرياح"], textposition="top center", textfont=dict(size=11, color="#111827"),
+            hoverinfo="skip", name="السرعة",
+        ))
     shown = [p for p in places if zoom + 0.2 >= p[3]]
     if shown:
         fig.add_trace(go.Scattermapbox(
@@ -842,7 +908,6 @@ with tab2:
         st.markdown("<div style='background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:10px'>", unsafe_allow_html=True)
         layer_name = st.radio(tr("الطبقات", "Layers"), list(layers), label_visibility="collapsed")
         zoom = st.slider(tr("تقريب", "Zoom"), 5.0, 8.5, 6.2, 0.1)
-        st.caption(tr("كلما زاد التقريب ظهرت أسماء أكثر.", "More place names appear as you zoom in."))
         st.markdown("</div>", unsafe_allow_html=True)
     field, scale = layers[layer_name]
     if "forecast_day" not in st.session_state:
@@ -856,30 +921,25 @@ with tab2:
             unsafe_allow_html=True,
         )
         if field in ("Radar", "Satellite"):
-            if field == "Satellite":
-                st.image("https://eumetview.eumetsat.int/static-images/latestImages/EUMETSAT_MSGIODC_RGBNatColour_Lowres.jpg", caption=tr("آخر صورة متاحة لبحر العرب والخليج", "Latest available Indian Ocean and Gulf image"))
-            else:
+            radar_url = ""
+            if field == "Radar":
                 try:
                     info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=20).json()
-                    host = info["host"]
-                    path = info["radar"]["past"][-1]["path"]
-                    st.image(f"{host}{path}/512/6/24.4/54.5/2/1_1.png", caption=tr("آخر مسح رادار", "Latest radar scan"))
+                    radar_url = f"{info['host']}{info['radar']['past'][-1]['path']}/256/{{z}}/{{x}}/{{y}}/2/1_1.png"
                 except Exception as exc:
                     st.info(tr(f"تعذر جلب الرادار: {exc}", f"Radar could not be loaded: {exc}"))
+            components.html(layer_map(field, radar_url), height=660)
         else:
             day_slots = [slot for slot in timeline_str if slot.startswith(st.session_state.forecast_day)] or timeline_str
-            if st.session_state.forecast_time not in day_slots:
-                st.session_state.forecast_time = day_slots[0]
-            frame = df[df["Time"] == st.session_state.forecast_time] if not df.empty else pd.DataFrame()
-            unit = "كم/س" if field == "Wind" and lang == "ar" else ("km/h" if field == "Wind" else "%")
+            chosen_hour = st.session_state.get("forecast_hour") or (day_slots[0].split(" - ")[-1] if day_slots else "00:00")
+            nearest = min(day_slots, key=lambda slot: abs(int(slot.split(" - ")[-1][:2]) - int(chosen_hour[:2])))
+            st.session_state.forecast_time = nearest
+            frame = df[df["Time"] == nearest] if not df.empty else pd.DataFrame()
+            shown = f"{st.session_state.forecast_day} - {chosen_hour}"
             st.plotly_chart(
-                windy_map(frame, field, f"{layer_name} · {st.session_state.forecast_time}", scale, zoom),
+                windy_map(frame, field, f"{layer_name} · {shown}", scale, zoom),
                 use_container_width=True, config={"displayModeBar": False, "scrollZoom": True},
             )
-            st.caption(tr(
-                f"خريطة فاتحة. أسماء المناطق تزداد مع التقريب. المقياس: {layer_name} ({unit}).",
-                f"Light map. More place names appear as you zoom. Scale: {layer_name} ({unit}).",
-            ))
     st.markdown(tr("#### شريط الأيام والوقت", "#### Day and time strip"))
     day_cols = st.columns(min(7, max(1, len(dates[:7]))))
     for col, date in zip(day_cols, dates[:7]):
@@ -891,18 +951,17 @@ with tab2:
             slots = [slot for slot in timeline_str if slot.startswith(date)]
             st.session_state.forecast_time = slots[0] if slots else st.session_state.forecast_time
             st.rerun()
-    slots = [slot for slot in timeline_str if slot.startswith(st.session_state.forecast_day)] or timeline_str[:8]
     hours = [f"{hour:02d}:00" for hour in range(24)]
-    st.caption(tr("كل ساعة. النموذج يُحدَّث كل 3 ساعات، والساعة تُربط بأقرب تحديث.", "Every hour. The model steps are 3 hours; each hour uses the nearest step."))
     for row in (hours[:12], hours[12:]):
         time_cols = st.columns(12)
         for col, hour in zip(time_cols, row):
-            nearest = min(slots, key=lambda slot: abs(int(slot.split(" - ")[-1][:2]) - int(hour[:2])))
-            chosen = st.session_state.forecast_time == nearest and st.session_state.get("forecast_hour") == hour
+            match = next((slot for slot in timeline_str if slot.startswith(st.session_state.forecast_day) and slot.endswith(hour)), None)
+            chosen = st.session_state.get("forecast_hour") == hour
             mark = "● " if chosen else ""
             if col.button(f"{mark}{hour}", key=f"time_{st.session_state.forecast_day}_{hour}", use_container_width=True):
                 st.session_state.forecast_hour = hour
-                st.session_state.forecast_time = nearest
+                if match:
+                    st.session_state.forecast_time = match
                 st.rerun()
 
 with tab3:

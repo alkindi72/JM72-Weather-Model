@@ -715,6 +715,39 @@ def density(frame: pd.DataFrame, z: str, lat=24.4, lon=54.6, zoom=5.5, title="")
     return fig
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_wave_points() -> pd.DataFrame:
+    points = {
+        "أبوظبي قرب الساحل": (24.50, 54.35), "عمق الخليج": (25.20, 53.40),
+        "دبي البحرية": (25.20, 55.05), "رأس الخيمة": (25.90, 55.90),
+        "الفجيرة قرب الساحل": (25.15, 56.45), "عمق بحر عُمان": (25.00, 57.20),
+        "خورفكان": (25.35, 56.45), "كلباء": (25.00, 56.45),
+    }
+    try:
+        response = requests.get(
+            "https://marine-api.open-meteo.com/v1/marine",
+            params={
+                "latitude": ",".join(str(v[0]) for v in points.values()),
+                "longitude": ",".join(str(v[1]) for v in points.values()),
+                "hourly": "wave_height",
+                "forecast_days": 2,
+                "timezone": "Asia/Dubai",
+            },
+            timeout=25,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        rows = payload if isinstance(payload, list) else [payload]
+    except Exception:
+        return pd.DataFrame()
+    out = []
+    for (name, (lat, lon)), row in zip(points.items(), rows):
+        heights = (row.get("hourly") or {}).get("wave_height") or []
+        peak = max((safe_num(h, 0) for h in heights[:24]), default=0)
+        out.append({"Station": name, "Latitude": lat, "Longitude": lon, "Wave": max(peak, 0.2), "الارتفاع": f"{peak:.1f} م · {peak * 3.28084:.0f} قدم"})
+    return pd.DataFrame(out)
+
+
 with tab1:
     if alerts:
         st.markdown(
@@ -779,39 +812,6 @@ with tab1:
         st.markdown("<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px'>" + "".join(cards) + "</div>", unsafe_allow_html=True)
         if wind_note:
             st.caption(wind_note)
-
-@st.cache_data(ttl=3600, show_spinner=False)
-def fetch_wave_points() -> pd.DataFrame:
-    points = {
-        "أبوظبي قرب الساحل": (24.50, 54.35), "عمق الخليج": (25.20, 53.40),
-        "دبي البحرية": (25.20, 55.05), "رأس الخيمة": (25.90, 55.90),
-        "الفجيرة قرب الساحل": (25.15, 56.45), "عمق بحر عُمان": (25.00, 57.20),
-        "خورفكان": (25.35, 56.45), "كلباء": (25.00, 56.45),
-    }
-    try:
-        response = requests.get(
-            "https://marine-api.open-meteo.com/v1/marine",
-            params={
-                "latitude": ",".join(str(v[0]) for v in points.values()),
-                "longitude": ",".join(str(v[1]) for v in points.values()),
-                "hourly": "wave_height",
-                "forecast_days": 2,
-                "timezone": "Asia/Dubai",
-            },
-            timeout=25,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        rows = payload if isinstance(payload, list) else [payload]
-    except Exception:
-        return pd.DataFrame()
-    out = []
-    for (name, (lat, lon)), row in zip(points.items(), rows):
-        heights = (row.get("hourly") or {}).get("wave_height") or []
-        peak = max((safe_num(h, 0) for h in heights[:24]), default=0)
-        out.append({"Station": name, "Latitude": lat, "Longitude": lon, "Wave": max(peak, 0.2), "الارتفاع": f"{peak:.1f} م · {peak * 3.28084:.0f} قدم"})
-    return pd.DataFrame(out)
-
 
 def layer_map(kind: str, radar_url: str = "") -> str:
     overlay = ""

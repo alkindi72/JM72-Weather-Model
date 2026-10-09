@@ -93,6 +93,13 @@ st.markdown(
 )
 
 DAYS_EN = {"Monday": "Mon", "Tuesday": "Tue", "Wednesday": "Wed", "Thursday": "Thu", "Friday": "Fri", "Saturday": "Sat", "Sunday": "Sun"}
+DAYS_AR = {"Mon": "الإثنين", "Tue": "الثلاثاء", "Wed": "الأربعاء", "Thu": "الخميس", "Fri": "الجمعة", "Sat": "السبت", "Sun": "الأحد"}
+SEA_EN = {
+    "أبوظبي قرب الساحل": "Abu Dhabi nearshore",
+    "عمق الخليج": "Arabian Gulf offshore",
+    "الفجيرة قرب الساحل": "Fujairah nearshore",
+    "عمق بحر عُمان": "Gulf of Oman offshore",
+}
 ELEVATION = {
     "Jabal Jais": 1934, "Jabal Al Rahba": 1543, "Hatta": 330, "Al Tawiyen": 450,
     "Al Heben": 700, "AlQor": 520, "Fujairah Port": 5, "Khor Fakkan Port": 8,
@@ -744,7 +751,7 @@ def fetch_wave_points() -> pd.DataFrame:
     for (name, (lat, lon)), row in zip(points.items(), rows):
         heights = (row.get("hourly") or {}).get("wave_height") or []
         peak = max((safe_num(h, 0) for h in heights[:24]), default=0)
-        out.append({"Station": name, "Latitude": lat, "Longitude": lon, "Wave": max(peak, 0.2), "الارتفاع": f"{peak:.1f} م · {peak * 3.28084:.0f} قدم"})
+        out.append({"Station": name, "Latitude": lat, "Longitude": lon, "Wave": max(peak, 0.2), "الارتفاع": f"{peak:.1f} m · {peak * 3.28084:.0f} ft", "الارتفاع_عربي": f"{peak:.1f} م · {peak * 3.28084:.0f} قدم"})
     return pd.DataFrame(out)
 
 
@@ -792,7 +799,9 @@ with tab1:
             hit = sea[sea["Station"] == name]
             if hit.empty:
                 continue
-            cards.append(f"<div class='card'><div class='muted'>{name}</div><b>{hit.iloc[0]['الارتفاع']}</b></div>")
+            label = SEA_EN.get(name, name) if lang == "en" else name
+            height = hit.iloc[0]["الارتفاع"] if lang == "en" else hit.iloc[0]["الارتفاع_عربي"]
+            cards.append(f"<div class='card'><div class='muted'>{label}</div><b>{height}</b></div>")
         wind_note = ""
         if not now_df.empty and "Wind Dir" in now_df:
             coast = now_df[now_df["Longitude"] < 55.2]
@@ -982,7 +991,8 @@ with tab2:
         day = df[df["DateOnly"] == date] if not df.empty else pd.DataFrame()
         icon = "🌫️" if not day.empty and safe_max(day["Fog Probability"]) >= 50 else ("⛈️" if not day.empty and safe_max(day["Storm Probability"]) >= 45 else ("💨" if not day.empty and safe_max(day["Shamal Index"]) >= 45 else "🌤️"))
         mark = "● " if date == st.session_state.forecast_day else ""
-        if col.button(f"{mark}{icon} {date}", key=f"day_{date}", use_container_width=True):
+        shown_day = date if lang == "en" else f"{DAYS_AR.get(date.split()[0], date.split()[0])} {date.split()[-1]}"
+        if col.button(f"{mark}{icon} {shown_day}", key=f"day_{date}", use_container_width=True):
             st.session_state.forecast_day = date
             slots = [slot for slot in timeline_str if slot.startswith(date)]
             st.session_state.forecast_time = slots[0] if slots else st.session_state.forecast_time

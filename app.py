@@ -479,7 +479,7 @@ cards = [
 for col, (title, value, unit) in zip((c1, c2, c3, c4, c5), cards):
     col.markdown(f"<div class='card'><div class='muted'>{title}</div><b>{value:.0f} {unit}</b></div>", unsafe_allow_html=True)
 
-def hazard_window(frame: pd.DataFrame, column: str, threshold: float, sector: str):
+def hazard_window(frame: pd.DataFrame, column: str, threshold: float, sector: str, lead_slots: int):
     part = frame[frame["Sector"] == sector] if not frame.empty else frame
     if part.empty or column not in part:
         return None
@@ -490,12 +490,11 @@ def hazard_window(frame: pd.DataFrame, column: str, threshold: float, sector: st
             active_times.append(slot)
     if not active_times:
         return None
-    now_index = 0
     start_index = timeline_str.index(active_times[0])
-    if start_index > now_index + 1:
+    if start_index > lead_slots:
         return None
     run = [active_times[0]]
-    previous = timeline_str.index(active_times[0])
+    previous = start_index
     for slot in active_times[1:]:
         current = timeline_str.index(slot)
         if current == previous + 1:
@@ -509,35 +508,93 @@ def hazard_window(frame: pd.DataFrame, column: str, threshold: float, sector: st
     if not stations:
         return None
     joiner = "، " if st.session_state.get("lang") != "en" else ", "
-    return run[0], run[-1], int(safe_max(peak_df[column])), joiner.join(stations)
+    direction = int(safe_max(peak_df["Wind Dir"])) if "Wind Dir" in peak_df else 0
+    speed = safe_max(peak_df["Wind"]) if "Wind" in peak_df else 0
+    return run[0], run[-1], int(safe_max(peak_df[column])), joiner.join(stations), start_index == 0, direction, speed
+
+
+def rain_words(level: int) -> str:
+    if level >= 75:
+        return tr("غزيرة", "heavy")
+    if level >= 60:
+        return tr("متوسطة", "moderate")
+    return tr("خفيفة", "light")
 
 
 alerts = []
 if not df.empty:
     checks = [
-        ("Fog Probability", 50, "تحذير ضباب", "Fog warning", "يُتوقع تدني الرؤية", "reduced visibility is expected"),
-        ("Shamal Index", 60, "تحذير غبار", "Dust warning", "يُتوقع غبار مثار مع رياح الشمال", "raised dust is expected with shamal winds"),
-        ("Drizzle Prob", 60, "تحذير رذاذ", "Drizzle warning", "يُتوقع رذاذ الكوس", "Al-Kous drizzle is expected"),
+        ("Fog Probability", 50, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
+        ("Storm Probability", 45, 3, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
+        ("Shamal Index", 50, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
+        ("Wind", 40, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
+        ("Drizzle Prob", 45, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
     ]
-    for column, threshold, title_ar, title_en, verb_ar, verb_en in checks:
+    for column, threshold, lead, title_ar, title_en, verb_ar, verb_en in checks:
         found_areas = []
         starts, ends = [], []
+        occurring = False
+        extra = ""
         for sector in SECTOR_MAP:
-            found = hazard_window(df, column, threshold, sector)
+            found = hazard_window(df, column, threshold, sector, lead)
             if not found:
                 continue
-            start, end, level, stations = found
+            start, end, level, stations, is_now, direction, speed = found
             place = SECTOR_EN.get(sector, sector) if lang == "en" else sector
             found_areas.append(f"{place} ({level}%)")
             starts.append(start)
             ends.append(end)
+            occurring = occurring or is_now
+            if column in ("Shamal Index", "Wind"):
+                names = ["شمالية", "شمالية شرقية", "شرقية", "جنوبية شرقية", "جنوبية", "جنوبية غربية", "غربية", "شمالية غربية"]
+                extra = tr(f" الاتجاه {names[int((direction + 22.5) // 45) % 8]}، والسرعة {speed:.0f} كم/س.", f" Direction {direction:.0f}°, speed {speed:.0f} km/h.")
+            if column == "Drizzle Prob":
+                extra = tr(f" الشدة {rain_words(level)}.", f" Intensity {rain_words(level)}.")
         if not found_areas:
             continue
         joiner = "، " if lang == "ar" else ", "
+        phase = tr("حدوث الآن", "occurring now") if occurring else tr(f"تحذير مسبق قبل {lead} ساعات", f"advance warning, {lead}h lead")
         alerts.append(tr(
-            f"{title_ar}: {verb_ar} على {joiner.join(found_areas)}. الفترة المتوقعة من {min(starts)} إلى {max(ends)}.",
-            f"{title_en}: {verb_en} over {joiner.join(found_areas)}. Expected from {min(starts)} until {max(ends)}.",
+            f"{title_ar} — {phase}: {verb_ar} على {joiner.join(found_areas)}. من {min(starts)} إلى {max(ends)}.{extra}",
+            f"{title_en} — {phase}: {verb_en} over {joiner.join(found_areas)}. From {min(starts)} until {max(ends)}.{extra}",
         ))
+
+def sea_alerts():
+    points = {"الخليج قرب أبوظبي": (24.50, 54.35), "عمق الخليج": (25.20, 53.40), "بحر عُمان قرب الفجيرة": (25.15, 56.45), "عمق بحر عُمان": (25.00, 57.20)}
+    try:
+        response = requests.get(
+            "https://marine-api.open-meteo.com/v1/marine",
+            params={
+                "latitude": ",".join(str(v[0]) for v in points.values()),
+                "longitude": ",".join(str(v[1]) for v in points.values()),
+                "hourly": "wave_height",
+                "forecast_days": 2,
+                "timezone": "Asia/Dubai",
+            },
+            timeout=25,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        rows = payload if isinstance(payload, list) else [payload]
+    except Exception:
+        return []
+    lines = []
+    for (name, _), row in zip(points.items(), rows):
+        hourly = row.get("hourly") or {}
+        heights = hourly.get("wave_height") or []
+        upcoming = [safe_num(h, 0) for h in heights[:7]]
+        if not upcoming or max(upcoming) < 1.0:
+            continue
+        peak = max(upcoming)
+        feet = peak * 3.28084
+        when = "الآن" if upcoming[0] >= 1.0 else "خلال 6 ساعات"
+        lines.append(tr(
+            f"تحذير اضطراب بحر — {when}: {name}، ارتفاع الموج {feet:.0f} قدم ({peak:.1f} م).",
+            f"Sea warning — {when}: {name}, waves {feet:.0f} ft ({peak:.1f} m).",
+        ))
+    return lines
+
+alerts.extend(sea_alerts())
 
 @st.cache_data(ttl=600, show_spinner=False)
 def fetch_nowcast() -> Tuple[bool, Any]:
@@ -570,11 +627,9 @@ if now_ok:
             wet.append(f"{name} ({rain:.1f} مم)")
     if wet:
         alerts.insert(0, tr(
-            f"رصد آني: مطر أو سحب رعدية على {'، '.join(wet)}.",
-            f"Nowcast: rain or thunder at {', '.join(wet)}.",
+            f"تنبيه حدوث: مطر أو سحب رعدية على {'، '.join(wet)}.",
+            f"Occurrence alert: rain or thunder at {', '.join(wet)}.",
         ))
-    else:
-        alerts = [line for line in alerts if "عواصف" not in line and "Storm" not in line]
 badge = len(alerts)
 components.html(
     """
@@ -650,7 +705,7 @@ if alerts:
         unsafe_allow_html=True,
     )
 else:
-    st.info(tr("لا تحذيرات قائمة خلال الساعات الثلاث القادمة.", "No warnings are in force for the next three hours."))
+    st.info(tr("لا تحذيرات ضمن مهلة النشر: 6 ساعات للغبار والرياح والمطر والبحر، و3 ساعات للعواصف والضباب.", "No warnings inside the lead window: 6 hours for dust, wind, rain and sea, 3 hours for storms and fog."))
 
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     tr("لوحة التحكم", "Control"),
@@ -1012,6 +1067,11 @@ with tab5:
         "تُقفل النشرة اليومية عند 05:00 بعد نافذة التحليل 04:00. الخرائط الحية تتحدث مع دورات GFS 00 و06 و12 و18 بالتوقيت العالمي بعد جاهزية الحقول.",
         "The daily bulletin locks at 05:00 UAE after the 04:00 analysis window. Live charts refresh on the GFS 00, 06, 12 and 18 UTC cycles once fields are available.",
     ))
+    video_path = "naskra_imagine.mp4"
+    if os.path.exists(video_path):
+        st.video(video_path)
+    else:
+        st.info(tr("فيديو النشرة غير مرفوع بعد.", "The bulletin video is not uploaded yet."))
     marine_ok, marine = fetch_marine()
     if not marine_ok:
         st.warning(tr(f"تعذر جلب حالة البحر: {marine}", f"Sea state unavailable: {marine}"))

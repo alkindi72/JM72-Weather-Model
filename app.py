@@ -856,25 +856,16 @@ with tab2:
             unsafe_allow_html=True,
         )
         if field in ("Radar", "Satellite"):
-            try:
-                info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=20).json()
-                host = info["host"]
-                path = info["radar"]["past"][-1]["path"] if field == "Radar" else info["satellite"]["infrared"][-1]["path"]
-                rows = []
-                for y in (54, 55):
-                    cells = []
-                    for x in (82, 83, 84):
-                        base = f"https://tile.openstreetmap.org/7/{x}/{y}.png"
-                        top = f"{host}{path}/256/7/{x}/{y}/2/1_1.png"
-                        cells.append(
-                            f'<div style="position:relative;width:210px;height:210px">'
-                            f'<img src="{base}" width="210" height="210" style="display:block">'
-                            f'<img src="{top}" width="210" height="210" style="position:absolute;inset:0"></div>'
-                        )
-                    rows.append('<div style="display:flex">' + "".join(cells) + "</div>")
-                st.markdown("".join(rows), unsafe_allow_html=True)
-            except Exception:
-                st.info(tr("تعذر جلب صورة الرادار أو القمر.", "Radar or satellite image could not be loaded."))
+            if field == "Satellite":
+                st.image("https://eumetview.eumetsat.int/static-images/latestImages/EUMETSAT_MSGIODC_RGBNatColour_Lowres.jpg", caption=tr("آخر صورة متاحة لبحر العرب والخليج", "Latest available Indian Ocean and Gulf image"))
+            else:
+                try:
+                    info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=20).json()
+                    host = info["host"]
+                    path = info["radar"]["past"][-1]["path"]
+                    st.image(f"{host}{path}/512/6/24.4/54.5/2/1_1.png", caption=tr("آخر مسح رادار", "Latest radar scan"))
+                except Exception as exc:
+                    st.info(tr(f"تعذر جلب الرادار: {exc}", f"Radar could not be loaded: {exc}"))
         else:
             day_slots = [slot for slot in timeline_str if slot.startswith(st.session_state.forecast_day)] or timeline_str
             if st.session_state.forecast_time not in day_slots:
@@ -901,13 +892,18 @@ with tab2:
             st.session_state.forecast_time = slots[0] if slots else st.session_state.forecast_time
             st.rerun()
     slots = [slot for slot in timeline_str if slot.startswith(st.session_state.forecast_day)] or timeline_str[:8]
-    time_cols = st.columns(len(slots))
-    for col, slot in zip(time_cols, slots):
-        hour = slot.split(" - ")[-1]
-        mark = "● " if slot == st.session_state.forecast_time else ""
-        if col.button(f"{mark}{hour}", key=f"time_{slot}", use_container_width=True):
-            st.session_state.forecast_time = slot
-            st.rerun()
+    hours = [f"{hour:02d}:00" for hour in range(24)]
+    st.caption(tr("كل ساعة. النموذج يُحدَّث كل 3 ساعات، والساعة تُربط بأقرب تحديث.", "Every hour. The model steps are 3 hours; each hour uses the nearest step."))
+    for row in (hours[:12], hours[12:]):
+        time_cols = st.columns(12)
+        for col, hour in zip(time_cols, row):
+            nearest = min(slots, key=lambda slot: abs(int(slot.split(" - ")[-1][:2]) - int(hour[:2])))
+            chosen = st.session_state.forecast_time == nearest and st.session_state.get("forecast_hour") == hour
+            mark = "● " if chosen else ""
+            if col.button(f"{mark}{hour}", key=f"time_{st.session_state.forecast_day}_{hour}", use_container_width=True):
+                st.session_state.forecast_hour = hour
+                st.session_state.forecast_time = nearest
+                st.rerun()
 
 with tab3:
     picked = st.select_slider(tr("الوقت", "Time"), options=timeline_str, key="heat_time")

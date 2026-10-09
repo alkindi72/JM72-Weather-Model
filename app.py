@@ -783,30 +783,46 @@ with tab1:
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str):
-    fig = go.Figure()
-    if frame.empty or field not in frame:
-        fig.update_layout(title=title, height=640, mapbox_style="carto-darkmatter", mapbox_center=dict(lat=24.4, lon=54.6), mapbox_zoom=6)
+def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: float = 6.2):
+    places = [
+        ("أبوظبي", 24.45, 54.38, 5), ("دبي", 25.20, 55.27, 5), ("الشارقة", 25.35, 55.40, 5),
+        ("عجمان", 25.40, 55.48, 6), ("أم القيوين", 25.56, 55.55, 6), ("رأس الخيمة", 25.79, 55.94, 5),
+        ("الفجيرة", 25.12, 56.33, 5), ("العين", 24.21, 55.74, 5), ("الظفرة", 23.70, 53.70, 5),
+        ("خورفكان", 25.33, 56.35, 6.5), ("حتا", 24.80, 56.12, 6.5), ("مدينة زايد", 23.65, 53.70, 6.5),
+        ("ليوا", 23.13, 53.77, 6.5), ("دلما", 24.50, 52.30, 6.5), ("المدام", 24.95, 55.78, 6.5),
+        ("كلباء", 25.05, 56.35, 7.2), ("مسافي", 25.30, 56.16, 7.2), ("سويحان", 24.46, 55.35, 7.2),
+        ("الذيد", 25.24, 55.82, 7.2), ("غياثي", 23.84, 52.81, 7.2), ("الرويس", 24.11, 52.73, 7.2),
+    ]
+    if frame.empty or (field not in frame and field != "Sea"):
+        fig = go.Figure()
+        fig.update_layout(title=title, height=640, mapbox_style="open-street-map", mapbox_center=dict(lat=24.4, lon=54.6), mapbox_zoom=zoom)
         return fig
     work = frame.copy()
     if field == "Sea":
         work["Sea"] = work.apply(lambda r: 70 if r["Longitude"] >= 56 else (55 if r["Longitude"] <= 54.8 else 15), axis=1)
         work = work[work["Sea"] > 15]
-    colors = {"Rain": "Blues", "Storm Probability": "Reds", "Wind": "YlGn", "Shamal Index": "Oranges", "Fog Probability": "Greys", "Sea": "Teal"}
+    colors = {"Rain": "Blues", "Storm Probability": "Reds", "Wind": "YlGn", "Shamal Index": "Oranges", "Fog Probability": "Blues", "Sea": "Teal"}
     fig = px.scatter_mapbox(
         work, lat="Latitude", lon="Longitude", color=field, size=field,
-        hover_name="Station", hover_data={field: True, "Sector": True},
-        color_continuous_scale=colors.get(scale, "Viridis"), size_max=28, zoom=6,
-        center=dict(lat=24.3, lon=54.8), mapbox_style="carto-darkmatter", title=title,
+        hover_name="Station", hover_data={field: ":.0f", "Sector": True},
+        color_continuous_scale=colors.get(scale, "Viridis"), size_max=26, zoom=zoom,
+        center=dict(lat=24.3, lon=54.8), mapbox_style="open-street-map", title=title,
     )
     if field == "Wind" and "Wind Dir" in work:
         tips_lat, tips_lon = [], []
         for _, row in work.iterrows():
             rad = math.radians(float(row["Wind Dir"]))
-            tips_lat += [row["Latitude"], row["Latitude"] + 0.18 * math.cos(rad), None]
-            tips_lon += [row["Longitude"], row["Longitude"] + 0.18 * math.sin(rad), None]
-        fig.add_trace(go.Scattermapbox(lat=tips_lat, lon=tips_lon, mode="lines", line=dict(width=2, color="#e7eef8"), hoverinfo="skip", name="اتجاه"))
-    fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), height=680, paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#e7eef8", size=14))
+            tips_lat += [row["Latitude"], row["Latitude"] + 0.16 * math.cos(rad), None]
+            tips_lon += [row["Longitude"], row["Longitude"] + 0.16 * math.sin(rad), None]
+        fig.add_trace(go.Scattermapbox(lat=tips_lat, lon=tips_lon, mode="lines", line=dict(width=2, color="#1e3a8a"), hoverinfo="skip", name="اتجاه"))
+    shown = [p for p in places if zoom + 0.2 >= p[3]]
+    if shown:
+        fig.add_trace(go.Scattermapbox(
+            lat=[p[1] for p in shown], lon=[p[2] for p in shown], mode="text",
+            text=[p[0] for p in shown], textfont=dict(size=13, color="#111827"),
+            hoverinfo="skip", name="المناطق",
+        ))
+    fig.update_layout(margin=dict(l=0, r=0, t=36, b=0), height=680, paper_bgcolor="#f8fafc", font=dict(color="#111827", size=14))
     return fig
 
 
@@ -818,62 +834,80 @@ with tab2:
         tr("الغبار", "Dust"): ("Shamal Index", "Shamal Index"),
         tr("الضباب", "Fog"): ("Fog Probability", "Fog Probability"),
         tr("البحر", "Sea"): ("Sea", "Sea"),
+        tr("الرادار", "Radar"): ("Radar", "Radar"),
+        tr("القمر الصناعي", "Satellite"): ("Satellite", "Satellite"),
     }
     stage, menu = st.columns([5, 1])
     with menu:
-        st.markdown("<div style='background:#0f172a;border-radius:16px;padding:10px;min-height:640px'>", unsafe_allow_html=True)
+        st.markdown("<div style='background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:10px'>", unsafe_allow_html=True)
         layer_name = st.radio(tr("الطبقات", "Layers"), list(layers), label_visibility="collapsed")
+        zoom = st.slider(tr("تقريب", "Zoom"), 5.0, 8.5, 6.2, 0.1)
+        st.caption(tr("كلما زاد التقريب ظهرت أسماء أكثر.", "More place names appear as you zoom in."))
         st.markdown("</div>", unsafe_allow_html=True)
     field, scale = layers[layer_name]
     if "forecast_day" not in st.session_state:
         st.session_state.forecast_day = dates[0] if dates else ""
+    if "forecast_time" not in st.session_state:
+        st.session_state.forecast_time = timeline_str[0] if timeline_str else ""
     with stage:
         st.markdown(
             "<div style='display:flex;justify-content:center;margin-bottom:6px'>"
-            "<div style='background:#111827;color:#D4AF37;border:1px solid #D4AF37;border-radius:999px;padding:6px 16px;font-weight:700'>71WM</div></div>",
+            "<div style='background:#fff;color:#0f766e;border:1px solid #0f766e;border-radius:999px;padding:6px 16px;font-weight:700'>71WM</div></div>",
             unsafe_allow_html=True,
         )
-        day_slots = [slot for slot in timeline_str if slot.startswith(st.session_state.forecast_day)]
-        picked = st.select_slider(tr("الوقت", "Time"), options=day_slots or timeline_str, key="risk_time")
-        frame = df[df["Time"] == picked] if not df.empty else pd.DataFrame()
-        unit = "كم/س" if field == "Wind" and lang == "ar" else ("km/h" if field == "Wind" else "%")
-        st.plotly_chart(windy_map(frame, field, f"{layer_name} · {picked}", scale), use_container_width=True, config={"displayModeBar": False})
-        st.caption(tr(f"المقياس: {layer_name} ({unit}). البحر يبرز سواحل الخليج وبحر عُمان.", f"Scale: {layer_name} ({unit}). Sea highlights the Gulf and Gulf of Oman coasts."))
+        if field in ("Radar", "Satellite"):
+            try:
+                info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=20).json()
+                host = info["host"]
+                path = info["radar"]["past"][-1]["path"] if field == "Radar" else info["satellite"]["infrared"][-1]["path"]
+                rows = []
+                for y in (54, 55):
+                    cells = []
+                    for x in (82, 83, 84):
+                        base = f"https://tile.openstreetmap.org/7/{x}/{y}.png"
+                        top = f"{host}{path}/256/7/{x}/{y}/2/1_1.png"
+                        cells.append(
+                            f'<div style="position:relative;width:210px;height:210px">'
+                            f'<img src="{base}" width="210" height="210" style="display:block">'
+                            f'<img src="{top}" width="210" height="210" style="position:absolute;inset:0"></div>'
+                        )
+                    rows.append('<div style="display:flex">' + "".join(cells) + "</div>")
+                st.markdown("".join(rows), unsafe_allow_html=True)
+            except Exception:
+                st.info(tr("تعذر جلب صورة الرادار أو القمر.", "Radar or satellite image could not be loaded."))
+        else:
+            day_slots = [slot for slot in timeline_str if slot.startswith(st.session_state.forecast_day)] or timeline_str
+            if st.session_state.forecast_time not in day_slots:
+                st.session_state.forecast_time = day_slots[0]
+            frame = df[df["Time"] == st.session_state.forecast_time] if not df.empty else pd.DataFrame()
+            unit = "كم/س" if field == "Wind" and lang == "ar" else ("km/h" if field == "Wind" else "%")
+            st.plotly_chart(
+                windy_map(frame, field, f"{layer_name} · {st.session_state.forecast_time}", scale, zoom),
+                use_container_width=True, config={"displayModeBar": False, "scrollZoom": True},
+            )
+            st.caption(tr(
+                f"خريطة فاتحة. أسماء المناطق تزداد مع التقريب. المقياس: {layer_name} ({unit}).",
+                f"Light map. More place names appear as you zoom. Scale: {layer_name} ({unit}).",
+            ))
+    st.markdown(tr("#### شريط الأيام والوقت", "#### Day and time strip"))
     day_cols = st.columns(min(7, max(1, len(dates[:7]))))
     for col, date in zip(day_cols, dates[:7]):
         day = df[df["DateOnly"] == date] if not df.empty else pd.DataFrame()
         icon = "🌫️" if not day.empty and safe_max(day["Fog Probability"]) >= 50 else ("⛈️" if not day.empty and safe_max(day["Storm Probability"]) >= 45 else ("💨" if not day.empty and safe_max(day["Shamal Index"]) >= 45 else "🌤️"))
-        label = f"{icon} {date}"
-        if col.button(label, key=f"day_{date}", use_container_width=True):
+        mark = "● " if date == st.session_state.forecast_day else ""
+        if col.button(f"{mark}{icon} {date}", key=f"day_{date}", use_container_width=True):
             st.session_state.forecast_day = date
+            slots = [slot for slot in timeline_str if slot.startswith(date)]
+            st.session_state.forecast_time = slots[0] if slots else st.session_state.forecast_time
             st.rerun()
-    st.markdown(tr("#### آخر مسح: رادار وقمر صناعي", "#### Latest radar and satellite"))
-    try:
-        info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=20).json()
-        host = info["host"]
-        radar = info["radar"]["past"][-1]["path"]
-        sat = info["satellite"]["infrared"][-1]["path"]
-        def mosaic(path, overlay=False):
-            rows = []
-            for y in (54, 55):
-                cells = []
-                for x in (82, 83, 84):
-                    base = f"https://tile.openstreetmap.org/7/{x}/{y}.png"
-                    top = f"{host}{path}/256/7/{x}/{y}/2/1_1.png" if overlay else f"{host}{path}/256/7/{x}/{y}/0/0_0.png"
-                    cells.append(
-                        f'<div style="position:relative;width:180px;height:180px">'
-                        f'<img src="{base}" width="180" height="180" style="display:block">'
-                        f'<img src="{top}" width="180" height="180" style="position:absolute;inset:0"></div>'
-                    )
-                rows.append('<div style="display:flex">' + "".join(cells) + "</div>")
-            return "".join(rows)
-        left, right = st.columns(2)
-        left.markdown(tr("الرادار فوق الخريطة", "Radar on the map"))
-        left.markdown(mosaic(radar, True), unsafe_allow_html=True)
-        right.markdown(tr("القمر الصناعي", "Satellite"))
-        right.markdown(mosaic(sat, False), unsafe_allow_html=True)
-    except Exception:
-        st.info(tr("تعذر جلب الرادار أو القمر الآن.", "Radar or satellite could not be loaded."))
+    slots = [slot for slot in timeline_str if slot.startswith(st.session_state.forecast_day)] or timeline_str[:8]
+    time_cols = st.columns(len(slots))
+    for col, slot in zip(time_cols, slots):
+        hour = slot.split(" - ")[-1]
+        mark = "● " if slot == st.session_state.forecast_time else ""
+        if col.button(f"{mark}{hour}", key=f"time_{slot}", use_container_width=True):
+            st.session_state.forecast_time = slot
+            st.rerun()
 
 with tab3:
     picked = st.select_slider(tr("الوقت", "Time"), options=timeline_str, key="heat_time")

@@ -2765,7 +2765,7 @@ with tab8:
     paras = "".join(f"<p><b>{lab}</b><br>{txt.rstrip('،')}.</p>" for lab, txt in zip(labels, parts))
     season_html = f"<div class='muted' style='text-align:center'>{season}</div>" if season else ""
     st.markdown(
-        f"<div class='card' dir='{side}'>{season_html}<h2 style='text-align:center;color:#b45309;margin:4px 0 12px;'>{title}</h2>{paras}</div>",
+        f"<div class='card' dir='{side}'>{season_html}{paras}</div>",
         unsafe_allow_html=True,
     )
     suhail = datetime(uae_now.year, 8, 14).date()

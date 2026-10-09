@@ -867,17 +867,25 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
     if field == "Wind":
         work["اتجاه"] = work["Wind Dir"].map(lambda d: names[int((float(d) + 22.5) // 45) % 8])
         work["الرياح"] = work.apply(lambda r: f"{r['Wind']:.0f} كم/س · {r['اتجاه']}", axis=1)
-    colors = {"Rain": "Blues", "Storm Probability": "Reds", "Wind": "YlGn", "Shamal Index": "Oranges", "Fog Probability": "Blues", "Wave": "Teal", "Temperature": "YlOrRd"}
+    colors = {"Rain": "Blues", "Storm Probability": "Hot", "Wind": "YlOrRd", "Shamal Index": "Oranges", "Fog Probability": "Blues", "Wave": "Teal", "Temperature": "Jet"}
     if field == "Temperature":
         work["الحرارة"] = work["Temperature"].map(lambda v: f"{v:.0f} °C")
     hover = {"Wave": ["الارتفاع"], "Wind": ["الرياح"], "Temperature": ["الحرارة"]}
-    fig = px.scatter_mapbox(
-        work, lat="Latitude", lon="Longitude", color=field, size=field,
-        hover_name="Station", hover_data=hover.get(field, {field: ":.0f", "Sector": True}),
-        color_continuous_scale=colors.get(scale if field != "Wave" else "Wave", "Viridis"), size_max=26, zoom=zoom,
-        range_color=(None if field == "Temperature" else ([0, 3] if field == "Wave" else [0, 100])),
-        center=dict(lat=24.3, lon=54.8), mapbox_style="open-street-map", title=title,
+    zmin, zmax = (None, None) if field == "Temperature" else ((0, 3) if field == "Wave" else (0, 100))
+    fig = px.density_mapbox(
+        work, lat="Latitude", lon="Longitude", z=field, radius=28,
+        color_continuous_scale=colors.get(scale if field != "Wave" else "Wave", "Hot"),
+        range_color=(zmin, zmax), zoom=zoom, center=dict(lat=24.3, lon=54.8),
+        mapbox_style="carto-positron", title=title, hover_name="Station",
     )
+    unit = {"Temperature": "°", "Wave": " م", "Wind": ""}.get(field, "%")
+    fig.add_trace(go.Scattermapbox(
+        lat=work["Latitude"], lon=work["Longitude"], mode="markers+text",
+        marker=dict(size=8, color="white", opacity=0.8),
+        text=work[field].map(lambda v: f"{v:.0f}{unit}"),
+        textposition="top center", textfont=dict(size=12, color="#111827"),
+        hoverinfo="skip", name="القيمة",
+    ))
     if field == "Wind" and "Wind Dir" in work:
         tips_lat, tips_lon = [], []
         for _, row in work.iterrows():
@@ -897,7 +905,7 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
             text=[p[0] for p in shown], textfont=dict(size=13, color="#111827"),
             hoverinfo="skip", name="المناطق",
         ))
-    fig.update_layout(margin=dict(l=0, r=0, t=36, b=0), height=680, paper_bgcolor="#f8fafc", font=dict(color="#111827", size=14), mapbox=dict(style="open-street-map", center=dict(lat=24.3, lon=54.8), zoom=zoom), uirevision=str(zoom))
+    fig.update_layout(margin=dict(l=0, r=0, t=36, b=0), height=680, paper_bgcolor="#f8fafc", font=dict(color="#111827", size=14), mapbox=dict(style="carto-positron", center=dict(lat=24.3, lon=54.8), zoom=zoom), uirevision=str(zoom))
     return fig
 
 

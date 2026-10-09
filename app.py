@@ -2730,16 +2730,24 @@ with tab8:
         while len(bits) < 3:
             bits.append(bits[-1] if bits else raw_body)
         parts = tuple(bits[:3])
-    caption = parts[0].split(".")[0].strip()
+    icons = {
+        "FOG": "🌫️",
+        "SHAMAL": "💨",
+        "KOUS": "☁️",
+        "STORM": "⛈️",
+    }
+    icon = icons.get(topic[0], "🌤️")
     img = pics[topic[0]]
     side = "rtl" if lang == "ar" else "ltr"
     st.markdown(
         f"""
         <div style="position:relative;border-radius:18px;overflow:hidden;margin:8px 0 14px;">
-          <img src="data:image/jpeg;base64,{img}" style="width:100%;height:320px;object-fit:cover;display:block;filter:brightness(0.72);">
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;direction:{side};">
-            <div style="font-size:2rem;font-weight:800;color:#f8fafc;text-shadow:0 2px 12px rgba(0,0,0,.65);line-height:1.3;">{title}</div>
-            <div style="margin-top:10px;max-width:680px;font-size:1.05rem;color:#fef3c7;text-shadow:0 1px 8px rgba(0,0,0,.7);">{caption}</div>
+          <img src="data:image/jpeg;base64,{img}" style="width:100%;height:280px;object-fit:cover;display:block;filter:brightness(0.78);">
+          <div style="position:absolute;top:16px;left:0;right:0;text-align:center;direction:{side};">
+            <div style="display:inline-block;background:rgba(15,23,42,.55);border-radius:14px;padding:8px 18px;">
+              <div style="font-size:1.7rem;line-height:1;">{icon}</div>
+              <div style="font-size:1.8rem;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6);">{title}</div>
+            </div>
           </div>
         </div>
         """,

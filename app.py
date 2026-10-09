@@ -644,15 +644,17 @@ components.html(
     """,
     height=62,
 )
-if badge:
+if badge and not st.session_state.get("hide_alert"):
     popup = "<br>".join(alerts)
     st.markdown(
-        f"<div style='position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:18px;'>"
-        f"<div style='max-width:640px;background:#7F1D1D;color:#fff;border-radius:18px;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.35);'>"
+        f"<div style='background:#7F1D1D;color:#fff;border-radius:18px;padding:22px;margin:12px 0;direction:rtl;text-align:right;'>"
         f"<b style='font-size:22px;'>تحذير 71WM</b><p style='font-size:18px;line-height:1.7;'>{popup}</p>"
-        f"<div style='font-size:14px;opacity:.85;'>يظهر هذا الانبثاق داخل الموقع عند فتح الصفحة. إشعار الجوال يبقى عبر ntfy.</div></div></div>",
+        f"<div style='font-size:14px;opacity:.85;'>إشعار الجوال يبقى عبر ntfy.</div></div>",
         unsafe_allow_html=True,
     )
+    if st.button("إغلاق التحذير"):
+        st.session_state.hide_alert = True
+        st.rerun()
     components.html(
         f"""<script>
         const text = {json.dumps(chr(10).join(alerts), ensure_ascii=False)};

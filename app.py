@@ -2,6 +2,7 @@
 
 import base64
 import json
+import math
 import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -782,32 +783,70 @@ with tab1:
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
+def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str):
+    fig = go.Figure()
+    if frame.empty or field not in frame:
+        fig.update_layout(title=title, height=640, mapbox_style="carto-darkmatter", mapbox_center=dict(lat=24.4, lon=54.6), mapbox_zoom=6)
+        return fig
+    work = frame.copy()
+    if field == "Sea":
+        work["Sea"] = work.apply(lambda r: 70 if r["Longitude"] >= 56 else (55 if r["Longitude"] <= 54.8 else 15), axis=1)
+        work = work[work["Sea"] > 15]
+    colors = {"Rain": "Blues", "Storm Probability": "Reds", "Wind": "YlGn", "Shamal Index": "Oranges", "Fog Probability": "Greys", "Sea": "Teal"}
+    fig = px.scatter_mapbox(
+        work, lat="Latitude", lon="Longitude", color=field, size=field,
+        hover_name="Station", hover_data={field: True, "Sector": True},
+        color_continuous_scale=colors.get(scale, "Viridis"), size_max=28, zoom=6,
+        center=dict(lat=24.3, lon=54.8), mapbox_style="carto-darkmatter", title=title,
+    )
+    if field == "Wind" and "Wind Dir" in work:
+        tips_lat, tips_lon = [], []
+        for _, row in work.iterrows():
+            rad = math.radians(float(row["Wind Dir"]))
+            tips_lat += [row["Latitude"], row["Latitude"] + 0.18 * math.cos(rad), None]
+            tips_lon += [row["Longitude"], row["Longitude"] + 0.18 * math.sin(rad), None]
+        fig.add_trace(go.Scattermapbox(lat=tips_lat, lon=tips_lon, mode="lines", line=dict(width=2, color="#e7eef8"), hoverinfo="skip", name="اتجاه"))
+    fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), height=680, paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#e7eef8", size=14))
+    return fig
+
+
 with tab2:
-    st.markdown(tr("#### التنبؤ لخمسة أيام", "#### Five-day forecast"))
-    if not df.empty:
-        chips = st.columns(5)
-        for col, date in zip(chips, dates[:5]):
-            day = df[df["DateOnly"] == date]
-            if day.empty:
-                continue
-            icon = "🌫️" if safe_max(day["Fog Probability"]) >= 50 else ("⛈️" if safe_max(day["Storm Probability"]) >= 45 else ("💨" if safe_max(day["Shamal Index"]) >= 45 else ("☁️" if safe_max(day["AlKous Prob"]) >= 40 else "🌤️")))
-            col.markdown(
-                f"<div class='daychip'><div>{date}</div><b>{icon}</b><div>{day['Temperature'].min():.0f}–{safe_max(day['Temperature']):.0f} °C</div></div>",
-                unsafe_allow_html=True,
-            )
-    picked = st.select_slider(tr("اختر الوقت للخريطة", "Choose map time"), options=timeline_str, key="risk_time")
-    frame = df[df["Time"] == picked] if not df.empty else pd.DataFrame()
-    a, b = st.columns(2)
-    a.plotly_chart(density(frame, "Storm Probability", title=tr("احتمال العواصف %", "Storm probability %")), use_container_width=True)
-    b.plotly_chart(density(frame, "Fog Probability", title=tr("احتمال الضباب %", "Fog probability %")), use_container_width=True)
-    c, d = st.columns(2)
-    east = frame[frame["Longitude"] >= 55.8] if not frame.empty else frame
-    c.plotly_chart(density(east, "AlKous Prob", 25.2, 56.2, 7.2, tr("سحب الكوس %", "Al-Kous cloud %")), use_container_width=True)
-    d.plotly_chart(density(east, "Drizzle Prob", 25.2, 56.2, 7.2, tr("رذاذ الكوس %", "Al-Kous drizzle %")), use_container_width=True)
-    st.info(tr(
-        "سحب الكوس: سحب منخفضة تأتي من بحر عمان مع رياح شرقية إلى جنوبية شرقية ورطوبة عالية، وغالباً تلامس جبال الفجيرة ورأس الخيمة. قد يصاحبها رذاذ صباحاً.",
-        "Al-Kous: low cloud from the Gulf of Oman with easterly to southeasterly wind and high humidity, often against the Fujairah and Ras Al Khaimah mountains. Morning drizzle may follow.",
-    ))
+    layers = {
+        tr("الأمطار", "Rain"): ("Drizzle Prob", "Rain"),
+        tr("العواصف الرعدية", "Thunderstorms"): ("Storm Probability", "Storm Probability"),
+        tr("الرياح", "Wind"): ("Wind", "Wind"),
+        tr("الغبار", "Dust"): ("Shamal Index", "Shamal Index"),
+        tr("الضباب", "Fog"): ("Fog Probability", "Fog Probability"),
+        tr("البحر", "Sea"): ("Sea", "Sea"),
+    }
+    stage, menu = st.columns([5, 1])
+    with menu:
+        st.markdown("<div style='background:#0f172a;border-radius:16px;padding:10px;min-height:640px'>", unsafe_allow_html=True)
+        layer_name = st.radio(tr("الطبقات", "Layers"), list(layers), label_visibility="collapsed")
+        st.markdown("</div>", unsafe_allow_html=True)
+    field, scale = layers[layer_name]
+    if "forecast_day" not in st.session_state:
+        st.session_state.forecast_day = dates[0] if dates else ""
+    with stage:
+        st.markdown(
+            "<div style='display:flex;justify-content:center;margin-bottom:6px'>"
+            "<div style='background:#111827;color:#D4AF37;border:1px solid #D4AF37;border-radius:999px;padding:6px 16px;font-weight:700'>71WM</div></div>",
+            unsafe_allow_html=True,
+        )
+        day_slots = [slot for slot in timeline_str if slot.startswith(st.session_state.forecast_day)]
+        picked = st.select_slider(tr("الوقت", "Time"), options=day_slots or timeline_str, key="risk_time")
+        frame = df[df["Time"] == picked] if not df.empty else pd.DataFrame()
+        unit = "كم/س" if field == "Wind" and lang == "ar" else ("km/h" if field == "Wind" else "%")
+        st.plotly_chart(windy_map(frame, field, f"{layer_name} · {picked}", scale), use_container_width=True, config={"displayModeBar": False})
+        st.caption(tr(f"المقياس: {layer_name} ({unit}). البحر يبرز سواحل الخليج وبحر عُمان.", f"Scale: {layer_name} ({unit}). Sea highlights the Gulf and Gulf of Oman coasts."))
+    day_cols = st.columns(min(7, max(1, len(dates[:7]))))
+    for col, date in zip(day_cols, dates[:7]):
+        day = df[df["DateOnly"] == date] if not df.empty else pd.DataFrame()
+        icon = "🌫️" if not day.empty and safe_max(day["Fog Probability"]) >= 50 else ("⛈️" if not day.empty and safe_max(day["Storm Probability"]) >= 45 else ("💨" if not day.empty and safe_max(day["Shamal Index"]) >= 45 else "🌤️"))
+        label = f"{icon} {date}"
+        if col.button(label, key=f"day_{date}", use_container_width=True):
+            st.session_state.forecast_day = date
+            st.rerun()
     st.markdown(tr("#### آخر مسح: رادار وقمر صناعي", "#### Latest radar and satellite"))
     try:
         info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=20).json()

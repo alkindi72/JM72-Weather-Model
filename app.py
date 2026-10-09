@@ -889,7 +889,7 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
             text=[p[0] for p in shown], textfont=dict(size=13, color="#111827"),
             hoverinfo="skip", name="المناطق",
         ))
-    fig.update_layout(margin=dict(l=0, r=0, t=36, b=0), height=680, paper_bgcolor="#f8fafc", font=dict(color="#111827", size=14))
+    fig.update_layout(margin=dict(l=0, r=0, t=36, b=0), height=680, paper_bgcolor="#f8fafc", font=dict(color="#111827", size=14), mapbox=dict(style="open-street-map", center=dict(lat=24.3, lon=54.8), zoom=zoom), uirevision=str(zoom))
     return fig
 
 
@@ -908,7 +908,6 @@ with tab2:
     with menu:
         st.markdown("<div style='background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:10px'>", unsafe_allow_html=True)
         layer_name = st.radio(tr("الطبقات", "Layers"), list(layers), label_visibility="collapsed")
-        zoom = st.slider(tr("تقريب", "Zoom"), 5.0, 8.5, 6.2, 0.1)
         st.markdown("</div>", unsafe_allow_html=True)
     field, scale = layers[layer_name]
     if "forecast_day" not in st.session_state:
@@ -942,7 +941,7 @@ with tab2:
                 frame = df[df["Time"] == nearest] if not df.empty else pd.DataFrame()
             peak = 0 if frame.empty or field not in frame.columns else safe_max(frame[field])
             st.plotly_chart(
-                windy_map(frame, field, f"{layer_name} · {shown} · {peak:.0f}", scale, zoom),
+                windy_map(frame, field, f"{layer_name} · {shown} · {peak:.0f}", scale, 6.2),
                 use_container_width=True,
                 key=f"map_{field}_{shown}",
                 config={"displayModeBar": False, "scrollZoom": True},

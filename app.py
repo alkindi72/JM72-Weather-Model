@@ -65,8 +65,8 @@ st.markdown(
     border-radius: 16px; padding: 14px 16px; min-height: 108px;
   }
   .daychip {
-    background: linear-gradient(180deg, rgba(15,23,42,.9), rgba(8,47,73,.72));
-    border: 1px solid rgba(212,175,55,.28); border-radius: 18px; padding: 12px; text-align: center;
+    background: #ffffff;
+    border: 1px solid rgba(16,42,67,.16); border-radius: 18px; padding: 12px; text-align: center;
   }
   .daychip b { font-size: 28px !important; }
   .muted { color: #475569 !important; font-size: 16px !important; }
@@ -80,13 +80,17 @@ st.markdown(
     .card b { font-size: 26px !important; }
   }
   div[data-testid="stMetric"] {
-    background: rgba(15,23,42,.72); border: 1px solid rgba(148,163,184,.18); border-radius: 16px; padding: 8px 12px;
+    background: #ffffff !important; border: 1px solid rgba(16,42,67,.16); border-radius: 16px; padding: 8px 12px;
+    color: #102033 !important;
+  }
+  div[data-testid="stMetric"] label, div[data-testid="stMetric"] div, div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+    color: #102033 !important;
   }
   [data-baseweb="select"] > div, [data-baseweb="popover"] li {
-    background: #0f172a !important; color: #f8fafc !important; font-size: 18px !important;
+    background: #ffffff !important; color: #102033 !important; font-size: 18px !important;
   }
-  [data-baseweb="select"] span, [data-baseweb="popover"] { color: #f8fafc !important; }
-  input, textarea { color: #f8fafc !important; background: #0f172a !important; }
+  [data-baseweb="select"] span, [data-baseweb="popover"] { color: #102033 !important; }
+  input, textarea { color: #102033 !important; background: #ffffff !important; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -1417,14 +1421,15 @@ with tab6:
             d1.metric(tr("اقتراب منخفض", "Approaching low"), tr("محتمل", "Possible") if low_score >= 2 else tr("غير واضح", "Not clear"), f"{low_score:.1f} hPa")
             d2.metric(tr("رطوبة بحر عُمان", "Gulf of Oman humidity"), f"{oman_h:.0f}%", tr("مرتفعة", "High") if oman_h >= 70 else tr("معتدلة", "Moderate"))
             d3.metric(tr("رفع الحجر", "Hajar lift"), f"{hajar_cape:.0f}", f"{hajar_rain:.0f}%")
+            chart = drivers.groupby("place")[["humidity", "rain"]].mean().reset_index()
+            chart = chart.rename(columns={"humidity": tr("الرطوبة", "Humidity"), "rain": tr("احتمال المطر", "Rain chance")})
             figd = px.bar(
-                drivers.groupby("place")[["humidity", "rain"]].mean().reset_index(),
-                x="place", y=["humidity", "rain"], barmode="group",
+                chart, x="place", y=[tr("الرطوبة", "Humidity"), tr("احتمال المطر", "Rain chance")], barmode="group",
                 labels={"value": "%", "place": "", "variable": ""},
                 color_discrete_sequence=["#38bdf8", "#f87171"],
                 title=tr("الرطوبة واحتمال المطر خلال 3 أيام", "Humidity and rain chance, next 3 days"),
             )
-            figd.update_layout(height=340, paper_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="h"))
+            figd.update_layout(height=340, paper_bgcolor="#f8fafc", plot_bgcolor="#ffffff", font=dict(color="#102033"), legend=dict(orientation="h"))
             st.plotly_chart(figd, use_container_width=True)
             note = []
             if low_score >= 2:

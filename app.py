@@ -1286,6 +1286,52 @@ with tab5:
         "The bulletin is written from wind and wave data. Wave height is in feet near Abu Dhabi and Fujairah ports and offshore.",
     ))
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_uae_drivers() -> pd.DataFrame:
+    points = {
+        "بحر عُمان": (25.00, 57.20),
+        "جبال الحجر": (25.30, 56.16),
+        "أبوظبي": (24.45, 54.38),
+        "العين": (24.21, 55.74),
+    }
+    rows = []
+    for model in ("ecmwf_ifs", "icon_seamless", "gfs_seamless"):
+        try:
+            response = requests.get(
+                "https://api.open-meteo.com/v1/forecast",
+                params={
+                    "latitude": ",".join(str(v[0]) for v in points.values()),
+                    "longitude": ",".join(str(v[1]) for v in points.values()),
+                    "hourly": "surface_pressure,relative_humidity_2m,cape,precipitation_probability",
+                    "forecast_days": 3,
+                    "models": model,
+                    "timezone": "Asia/Dubai",
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            blocks = payload if isinstance(payload, list) else [payload]
+            for name, block in zip(points, blocks):
+                hourly = block.get("hourly") or {}
+                pressure = hourly.get("surface_pressure") or []
+                humid = hourly.get("relative_humidity_2m") or []
+                cape = hourly.get("cape") or []
+                rain = hourly.get("precipitation_probability") or []
+                rows.append({
+                    "model": model,
+                    "place": name,
+                    "pressure": min(pressure[:48]) if pressure else None,
+                    "drop": (pressure[0] - min(pressure[:48])) if len(pressure) > 6 else 0,
+                    "humidity": max(humid[:48]) if humid else None,
+                    "cape": max(cape[:48]) if cape else None,
+                    "rain": max(rain[:48]) if rain else None,
+                })
+        except Exception:
+            continue
+    return pd.DataFrame(rows)
+
+
 with tab6:
     st.markdown(tr("### النينيو والنينيا ببساطة", "### El Niño and La Niña, simply"))
     st.write(tr(
@@ -1349,6 +1395,47 @@ with tab6:
             "لا تُقرأ الحالة كتنبؤ مطر لمدينة. هي خلفية للموسم. المطر عندنا يبقى مرتبطاً بمرور المنخفض، ورطوبة بحر عُمان، ورفع جبال الحجر. النينيو يرفع احتمال الشتاء الأرطب، ولا يحدد يوم المطر ولا مكانه.",
             "Do not read the phase as a rain forecast for a city. It is background for the season. Rain here still depends on a passing low, Gulf of Oman moisture and Hajar lift. El Niño raises the chance of a wetter winter; it does not set the day or the place.",
         ))
+        st.markdown(tr("#### ما الذي قد يؤثر على الدولة خلال 3 أيام؟", "#### What may affect the country in the next 3 days?"))
+        st.caption(tr(
+            "نجمع ECMWF وICON وGFS. الاتفاق بين الثلاثة أوضح من رقم نموذج واحد. هذا مراقبة لا تحذير.",
+            "We blend ECMWF, ICON and GFS. Agreement among the three is clearer than one model. This is monitoring, not a warning.",
+        ))
+        drivers = fetch_uae_drivers()
+        if drivers.empty:
+            st.info(tr("تعذر جلب مراقبة المنخفض والرطوبة الآن.", "Could not load the low and moisture monitor now."))
+        else:
+            def avg(place, col):
+                hit = drivers[drivers["place"] == place][col].dropna()
+                return float(hit.mean()) if not hit.empty else 0
+            oman_h = avg("بحر عُمان", "humidity")
+            hajar_cape = avg("جبال الحجر", "cape")
+            hajar_rain = avg("جبال الحجر", "rain")
+            abu_drop = avg("أبوظبي", "drop")
+            ain_drop = avg("العين", "drop")
+            low_score = max(abu_drop, ain_drop)
+            d1, d2, d3 = st.columns(3)
+            d1.metric(tr("اقتراب منخفض", "Approaching low"), tr("محتمل", "Possible") if low_score >= 2 else tr("غير واضح", "Not clear"), f"{low_score:.1f} hPa")
+            d2.metric(tr("رطوبة بحر عُمان", "Gulf of Oman humidity"), f"{oman_h:.0f}%", tr("مرتفعة", "High") if oman_h >= 70 else tr("معتدلة", "Moderate"))
+            d3.metric(tr("رفع الحجر", "Hajar lift"), f"{hajar_cape:.0f}", f"{hajar_rain:.0f}%")
+            figd = px.bar(
+                drivers.groupby("place")[["humidity", "rain"]].mean().reset_index(),
+                x="place", y=["humidity", "rain"], barmode="group",
+                labels={"value": "%", "place": "", "variable": ""},
+                color_discrete_sequence=["#38bdf8", "#f87171"],
+                title=tr("الرطوبة واحتمال المطر خلال 3 أيام", "Humidity and rain chance, next 3 days"),
+            )
+            figd.update_layout(height=340, paper_bgcolor="rgba(0,0,0,0)", legend=dict(orientation="h"))
+            st.plotly_chart(figd, use_container_width=True)
+            note = []
+            if low_score >= 2:
+                note.append(tr("الضغط ينخفض على أبوظبي أو العين، فهناك منخفض قد يقترب.", "Pressure is falling over Abu Dhabi or Al Ain, so a low may be approaching."))
+            if oman_h >= 70:
+                note.append(tr("رطوبة بحر عُمان مرتفعة، وهذا يغذي الكوس والساحل الشرقي إذا جاءت ريح شرقية.", "Gulf of Oman humidity is high, which can feed Al-Kous and the east coast if an easterly arrives."))
+            if hajar_cape >= 400 or hajar_rain >= 30:
+                note.append(tr("رفع الحجر ظاهر. راقب مسافي والذيد وحتا بعد الظهر، ولا تعمّم الزخة على كل الدولة.", "Hajar lift is showing. Watch Masafi, Al Dhaid and Hatta in the afternoon, and do not generalise the shower to the whole country."))
+            if not note:
+                note.append(tr("لا إشارة قوية الآن. النينيو يبقى خلفية الموسم، والطقس القريب هادئ في هذه العناصر الثلاثة.", "No strong signal now. ENSO remains the seasonal background, and the near-term drivers are quiet."))
+            st.info(" ".join(note))
 
 
 @st.cache_data(ttl=3600, show_spinner=False)

@@ -1276,8 +1276,9 @@ with tab5:
             f"الطقس {sky} بوجه عام، والحرارة من {tmin:.0f} إلى {tmax:.0f} درجة. الرياح {wname}، {wforce} على البحر، وقد تنشط بعد الظهر.{event} الخليج العربي {sea_words(max(gc1, go1))} {afternoon}، وارتفاع الموج قرب ميناء أبوظبي من {feet_phrase(gc0)} إلى {feet_phrase(gc1)}، وفي العمق إلى {feet_phrase(go1)}. بحر عمان {sea_words(max(oc1, oo1))}، وارتفاع الموج قرب ميناء الفجيرة {feet_phrase(oc1)}، وفي العمق من {feet_phrase(oo0)} إلى {feet_phrase(oo1)}.",
             f"{sky.capitalize()} overall, {tmin:.0f} to {tmax:.0f} °C. Wind {wname}, {wforce} over the sea, freshening in the afternoon.{event} Arabian Gulf {sea_words(max(gc1, go1))}, {afternoon}. Waves near Abu Dhabi port {feet_phrase(gc0)} to {feet_phrase(gc1)}, offshore {feet_phrase(go1)}. Gulf of Oman {sea_words(max(oc1, oo1))}: near Fujairah port {feet_phrase(oc1)}, offshore {feet_phrase(oo0)} to {feet_phrase(oo1)}.",
         )
-        cards.append(f"<div class='card'><div class='kicker'>{date}</div><p>{text}</p></div>")
-    bulletin_path = f"/tmp/71wm_bulletin_{bulletin_day}.json"
+        shown_day = date if lang == "en" else f"{DAYS_AR.get(date.split()[0], date.split()[0])} {date.split()[-1]}"
+        cards.append(f"<div class='card'><div class='kicker'>{shown_day}</div><p>{text}</p></div>")
+    bulletin_path = f"/tmp/71wm_bulletin_{bulletin_day}_{lang}.json"
     if os.path.exists(bulletin_path):
         cards = json.loads(open(bulletin_path, encoding="utf-8").read())
         st.caption(tr("هذه نشرة الخامسة صباحاً المحفوظة، ولا تتبدل مع تحديث النموذج.", "This is the saved 05:00 bulletin and does not change with later model runs."))

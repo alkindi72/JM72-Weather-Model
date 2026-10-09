@@ -685,22 +685,10 @@ try:
         open(state_path, "w", encoding="utf-8").write(current_key)
 except Exception:
     pass
-if alerts:
-    st.markdown(
-        "<div style='background:#7F1D1D;border:1px solid #FCA5A5;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'><b style='color:#FEE2E2;'>"
-        + tr("التحذيرات", "Warnings")
-        + "</b>"
-        + "".join(f"<p style='color:#FEE2E2;margin:8px 0;font-size:18px;'>{line}</p>" for line in alerts)
-        + "</div>",
-        unsafe_allow_html=True,
-    )
-else:
-    st.info(tr("لا تحذيرات ضمن مهلة النشر: 6 ساعات للغبار والرياح والمطر والبحر، و3 ساعات للعواصف والضباب.", "No warnings inside the lead window: 6 hours for dust, wind, rain and sea, 3 hours for storms and fog."))
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+tab1, tab2, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     tr("لوحة التحكم", "Control"),
     tr("التنبؤ", "Forecast"),
-    tr("الحرارة والرياح", "Heat & wind"),
     tr("المحطات", "Stations"),
     tr("النشرة الجوية", "Bulletin"),
     tr("النينيو", "ENSO"),
@@ -728,6 +716,17 @@ def density(frame: pd.DataFrame, z: str, lat=24.4, lon=54.6, zoom=5.5, title="")
 
 
 with tab1:
+    if alerts:
+        st.markdown(
+            "<div style='background:#7F1D1D;border:1px solid #FCA5A5;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'><b style='color:#FEE2E2;'>"
+            + tr("التحذيرات", "Warnings")
+            + "</b>"
+            + "".join(f"<p style='color:#FEE2E2;margin:8px 0;font-size:18px;'>{line}</p>" for line in alerts)
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.info(tr("لا تحذيرات ضمن مهلة النشر: 6 ساعات للغبار والرياح والمطر والبحر، و3 ساعات للعواصف والضباب.", "No warnings inside the lead window: 6 hours for dust, wind, rain and sea, 3 hours for storms and fog."))
     st.markdown(tr("#### الوضع الآن على الدولة", "#### Country status now"))
     if now_df.empty:
         st.warning(tr("لا توجد قراءة حالية.", "No current reading."))
@@ -752,36 +751,34 @@ with tab1:
             f"أبرز نقطة الآن: {hot['Station']} في {place}. الإحساس {hot['Apparent Temp']:.0f} °C، والرياح {hot['Wind']:.0f} كم/س. هذا أعلى خطر محسوب حالياً، لا تحذير إلا إذا أكده الرصد.",
             f"Lead point now: {hot['Station']} in {place}. Feels like {hot['Apparent Temp']:.0f} °C, wind {hot['Wind']:.0f} km/h. This is the highest calculated risk, not a warning unless observations confirm it.",
         ))
-    if not df.empty:
-        peak = df.groupby("Time")[["Storm Probability", "Fog Probability", "Shamal Index", "Drizzle Prob", "AlKous Prob"]].max().reset_index()
-        fig = go.Figure()
-        names = {
-            "Storm Probability": tr("عواصف", "Storms"),
-            "Fog Probability": tr("ضباب", "Fog"),
-            "Shamal Index": tr("شمال وغبار", "Shamal dust"),
-            "Drizzle Prob": tr("رذاذ", "Drizzle"),
-            "AlKous Prob": tr("سحب الكوس", "Al-Kous cloud"),
-        }
-        colors = {
-            "Storm Probability": "#f87171",
-            "Fog Probability": "#93c5fd",
-            "Shamal Index": "#fbbf24",
-            "Drizzle Prob": "#38bdf8",
-            "AlKous Prob": "#c4b5fd",
-        }
-        for col in names:
-            fig.add_trace(go.Scatter(x=peak["Time"], y=peak[col], name=names[col], line=dict(color=colors[col], width=3)))
-        fig.update_layout(
-            title=tr("ذروة كل خطر خلال 5 أيام", "Peak hazard over 5 days"),
-            height=460,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(16,32,51,.35)",
-            font=dict(size=15, color="#f4efe4"),
-            legend=dict(orientation="h", y=-0.28, x=0, font=dict(size=16, color="#f8fafc")),
-            margin=dict(l=8, r=8, t=50, b=110),
-            yaxis=dict(title=tr("الاحتمال %", "Probability %"), range=[0, 100]),
-        )
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    sea = fetch_wave_points()
+    if not sea.empty:
+        st.markdown(tr("#### البحر الآن", "#### Sea now"))
+        cards = []
+        for name in ("أبوظبي قرب الساحل", "عمق الخليج", "الفجيرة قرب الساحل", "عمق بحر عُمان"):
+            hit = sea[sea["Station"] == name]
+            if hit.empty:
+                continue
+            cards.append(f"<div class='card'><div class='muted'>{name}</div><b>{hit.iloc[0]['الارتفاع']}</b></div>")
+        wind_note = ""
+        if not now_df.empty and "Wind Dir" in now_df:
+            coast = now_df[now_df["Longitude"] < 55.2]
+            oman = now_df[now_df["Longitude"] >= 56.1]
+            if not coast.empty:
+                dirs = ["شمالية", "شمالية شرقية", "شرقية", "جنوبية شرقية", "جنوبية", "جنوبية غربية", "غربية", "شمالية غربية"]
+                dirs_en = ["northerly", "northeasterly", "easterly", "southeasterly", "southerly", "southwesterly", "westerly", "northwesterly"]
+                idx = int((float(coast["Wind Dir"].mean()) + 22.5) // 45) % 8
+                wname = dirs[idx] if lang == "ar" else dirs_en[idx]
+                wind_note += tr(f"رياح الخليج {wname} {coast['Wind'].mean():.0f} كم/س. ", f"Gulf wind {wname} {coast['Wind'].mean():.0f} km/h. ")
+            if not oman.empty:
+                dirs = ["شمالية", "شمالية شرقية", "شرقية", "جنوبية شرقية", "جنوبية", "جنوبية غربية", "غربية", "شمالية غربية"]
+                dirs_en = ["northerly", "northeasterly", "easterly", "southeasterly", "southerly", "southwesterly", "westerly", "northwesterly"]
+                idx = int((float(oman["Wind Dir"].mean()) + 22.5) // 45) % 8
+                wname = dirs[idx] if lang == "ar" else dirs_en[idx]
+                wind_note += tr(f"رياح بحر عُمان {wname} {oman['Wind'].mean():.0f} كم/س.", f"Gulf of Oman wind {wname} {oman['Wind'].mean():.0f} km/h.")
+        st.markdown("<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px'>" + "".join(cards) + "</div>", unsafe_allow_html=True)
+        if wind_note:
+            st.caption(wind_note)
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_wave_points() -> pd.DataFrame:
@@ -861,13 +858,15 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
     if field == "Wind":
         work["اتجاه"] = work["Wind Dir"].map(lambda d: names[int((float(d) + 22.5) // 45) % 8])
         work["الرياح"] = work.apply(lambda r: f"{r['Wind']:.0f} كم/س · {r['اتجاه']}", axis=1)
-    colors = {"Rain": "Blues", "Storm Probability": "Reds", "Wind": "YlGn", "Shamal Index": "Oranges", "Fog Probability": "Blues", "Wave": "Teal"}
-    hover = {"Wave": ["الارتفاع"], "Wind": ["الرياح"]}
+    colors = {"Rain": "Blues", "Storm Probability": "Reds", "Wind": "YlGn", "Shamal Index": "Oranges", "Fog Probability": "Blues", "Wave": "Teal", "Temperature": "YlOrRd"}
+    if field == "Temperature":
+        work["الحرارة"] = work["Temperature"].map(lambda v: f"{v:.0f} °C")
+    hover = {"Wave": ["الارتفاع"], "Wind": ["الرياح"], "Temperature": ["الحرارة"]}
     fig = px.scatter_mapbox(
         work, lat="Latitude", lon="Longitude", color=field, size=field,
         hover_name="Station", hover_data=hover.get(field, {field: ":.0f", "Sector": True}),
         color_continuous_scale=colors.get(scale if field != "Wave" else "Wave", "Viridis"), size_max=26, zoom=zoom,
-        range_color=[0, 100] if field != "Wave" else [0, 3],
+        range_color=(None if field == "Temperature" else ([0, 3] if field == "Wave" else [0, 100])),
         center=dict(lat=24.3, lon=54.8), mapbox_style="open-street-map", title=title,
     )
     if field == "Wind" and "Wind Dir" in work:
@@ -894,10 +893,41 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
 
 
 with tab2:
+    if not df.empty:
+        peak = df.groupby("Time")[["Storm Probability", "Fog Probability", "Shamal Index", "Drizzle Prob", "AlKous Prob"]].max().reset_index()
+        fig = go.Figure()
+        names = {
+            "Storm Probability": tr("عواصف", "Storms"),
+            "Fog Probability": tr("ضباب", "Fog"),
+            "Shamal Index": tr("شمال وغبار", "Shamal dust"),
+            "Drizzle Prob": tr("رذاذ", "Drizzle"),
+            "AlKous Prob": tr("سحب الكوس", "Al-Kous cloud"),
+        }
+        colors = {
+            "Storm Probability": "#f87171",
+            "Fog Probability": "#93c5fd",
+            "Shamal Index": "#fbbf24",
+            "Drizzle Prob": "#38bdf8",
+            "AlKous Prob": "#c4b5fd",
+        }
+        for col in names:
+            fig.add_trace(go.Scatter(x=peak["Time"], y=peak[col], name=names[col], line=dict(color=colors[col], width=3)))
+        fig.update_layout(
+            title=tr("ذروة كل خطر خلال 5 أيام", "Peak hazard over 5 days"),
+            height=360,
+            paper_bgcolor="#f8fafc",
+            plot_bgcolor="#ffffff",
+            font=dict(size=15, color="#111827"),
+            legend=dict(orientation="h", y=-0.28, x=0, font=dict(size=14, color="#111827")),
+            margin=dict(l=8, r=8, t=50, b=90),
+            yaxis=dict(title=tr("الاحتمال %", "Probability %"), range=[0, 100]),
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
     layers = {
         tr("الأمطار", "Rain"): ("Drizzle Prob", "Rain"),
         tr("العواصف الرعدية", "Thunderstorms"): ("Storm Probability", "Storm Probability"),
         tr("الرياح", "Wind"): ("Wind", "Wind"),
+        tr("الحرارة", "Temperature"): ("Temperature", "Temperature"),
         tr("الغبار", "Dust"): ("Shamal Index", "Shamal Index"),
         tr("الضباب", "Fog"): ("Fog Probability", "Fog Probability"),
         tr("البحر", "Sea"): ("Sea", "Sea"),
@@ -969,30 +999,6 @@ with tab2:
                 if match:
                     st.session_state.forecast_time = match
                 st.rerun()
-
-with tab3:
-    picked = st.select_slider(tr("الوقت", "Time"), options=timeline_str, key="heat_time")
-    frame = df[df["Time"] == picked] if not df.empty else pd.DataFrame()
-    a, b = st.columns(2)
-    a.plotly_chart(density(frame, "Shamal Index", title=tr("غبار الشمال %", "Shamal dust %")), use_container_width=True)
-    if not frame.empty:
-        heat = frame.sort_values("Apparent Temp", ascending=False)[["Station", "Sector", "Temperature", "Apparent Temp", "Humidity", "Wind"]].head(8).copy()
-        wind_unit = "كم/س" if lang == "ar" else "km/h"
-        heat["temp"] = heat["Temperature"].map(lambda v: f"{v:.1f} °C")
-        heat["feel"] = heat["Apparent Temp"].map(lambda v: f"{v:.1f} °C")
-        heat["rh"] = heat["Humidity"].map(lambda v: f"{v:.0f}%")
-        heat["wind"] = heat["Wind"].map(lambda v: f"{v:.0f} {wind_unit}")
-        heat["band"] = heat["Apparent Temp"].map(heat_band)
-        heat["sector"] = heat["Sector"].map(lambda s: s if lang == "ar" else SECTOR_EN.get(s, s))
-        b.dataframe(heat[["Station", "sector", "temp", "feel", "rh", "wind", "band"]].rename(columns={
-            "Station": tr("المحطة", "Station"), "sector": tr("القطاع", "Sector"),
-            "temp": tr("الحرارة", "Temperature"), "feel": tr("الإحساس", "Feels-like"),
-            "rh": tr("الرطوبة", "Humidity"), "wind": tr("الرياح", "Wind"), "band": tr("الإجهاد", "Stress"),
-        }), use_container_width=True, hide_index=True)
-        st.caption(tr(
-            "الشمال رياح شمالية غربية. فوق 20 كم/س قد تثير الغبار. الإجهاد: 35 حار، 40 مرتفع، 45 شديد.",
-            "Shamal is a northwesterly wind. Above 20 km/h it may raise dust. Heat stress: 35 hot, 40 high, 45 extreme.",
-        ))
 
 AIRPORTS = {
     "OMAA": "مطار زايد الدولي",
@@ -1471,7 +1477,7 @@ with tab8:
         side = "rtl" if lang == "ar" else "ltr"
         items = "".join(f"<li style='margin:8px 0;'>{line}</li>" for line in lines)
         st.markdown(
-            f"<div dir='{side}' style='direction:{side};text-align:{align};background:#0f172a;border-radius:14px;padding:14px 18px;'><b>{tr('السجل الوطني من 2003 إلى 2025', 'National record, 2003 to 2025')}</b><ul style='direction:{side};text-align:{align};padding-inline-start:1.2rem;'>{items}</ul></div>",
+            f"<div dir='{side}' style='direction:{side};text-align:{align};background:#f8fafc;color:#111827;border:1px solid #e5e7eb;border-radius:14px;padding:14px 18px;'><b>{tr('السجل الوطني من 2003 إلى 2025', 'National record, 2003 to 2025')}</b><ul style='direction:{side};text-align:{align};padding-inline-start:1.2rem;'>{items}</ul></div>",
             unsafe_allow_html=True,
         )
     lessons = [

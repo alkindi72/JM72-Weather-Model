@@ -508,9 +508,27 @@ def hazard_window(frame: pd.DataFrame, column: str, threshold: float, sector: st
     if not stations:
         return None
     joiner = "، " if st.session_state.get("lang") != "en" else ", "
+    window = part[part["Time"].isin(run)]
     direction = int(safe_max(peak_df["Wind Dir"])) if "Wind Dir" in peak_df else 0
-    speed = safe_max(peak_df["Wind"]) if "Wind" in peak_df else 0
-    return run[0], run[-1], int(safe_max(peak_df[column])), joiner.join(stations), start_index == 0, direction, speed
+    wind_min = float(window["Wind"].min()) if "Wind" in window else 0
+    wind_max = float(window["Wind"].max()) if "Wind" in window else 0
+    fog = safe_max(window["Fog Probability"]) if "Fog Probability" in window else 0
+    dust = safe_max(window["Shamal Index"]) if "Shamal Index" in window else 0
+    rain = safe_max(window["Drizzle Prob"]) if "Drizzle Prob" in window else 0
+    storm = safe_max(window["Storm Probability"]) if "Storm Probability" in window else 0
+    if fog >= 70:
+        vis = 200
+    elif fog >= 50:
+        vis = 800
+    elif storm >= 60:
+        vis = 1500
+    elif dust >= 60:
+        vis = 2000
+    elif rain >= 60:
+        vis = 3000
+    else:
+        vis = 8000
+    return run[0], run[-1], int(safe_max(peak_df[column])), joiner.join(stations), start_index == 0, direction, wind_min, wind_max, vis
 
 
 def rain_words(level: int) -> str:
@@ -524,11 +542,11 @@ def rain_words(level: int) -> str:
 alerts = []
 if not df.empty:
     checks = [
-        ("Fog Probability", 50, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
-        ("Storm Probability", 45, 3, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
-        ("Shamal Index", 50, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
-        ("Wind", 40, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
-        ("Drizzle Prob", 45, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
+        ("Fog Probability", 50, 1, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
+        ("Storm Probability", 45, 1, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
+        ("Shamal Index", 50, 2, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
+        ("Wind", 40, 2, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
+        ("Drizzle Prob", 45, 2, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
     ]
     for column, threshold, lead, title_ar, title_en, verb_ar, verb_en in checks:
         found_areas = []
@@ -539,24 +557,28 @@ if not df.empty:
             found = hazard_window(df, column, threshold, sector, lead)
             if not found:
                 continue
-            start, end, level, stations, is_now, direction, speed = found
+            start, end, level, stations, is_now, direction, wind_min, wind_max, vis = found
             place = SECTOR_EN.get(sector, sector) if lang == "en" else sector
             found_areas.append(f"{place} ({level}%)")
             starts.append(start)
             ends.append(end)
             occurring = occurring or is_now
-            if column in ("Shamal Index", "Wind"):
-                names = ["شمالية", "شمالية شرقية", "شرقية", "جنوبية شرقية", "جنوبية", "جنوبية غربية", "غربية", "شمالية غربية"]
-                extra = tr(f" الاتجاه {names[int((direction + 22.5) // 45) % 8]}، والسرعة {speed:.0f} كم/س.", f" Direction {direction:.0f}°, speed {speed:.0f} km/h.")
+            names = ["شمالية", "شمالية شرقية", "شرقية", "جنوبية شرقية", "جنوبية", "جنوبية غربية", "غربية", "شمالية غربية"]
+            wind_bit = tr(
+                f" الرياح {names[int((direction + 22.5) // 45) % 8]} تتراوح بين {wind_min:.0f} و {wind_max:.0f} كم/س.",
+                f" Wind {direction:.0f}° ranging {wind_min:.0f} to {wind_max:.0f} km/h.",
+            )
+            vis_bit = tr(f" أدنى رؤية متوقعة {vis:.0f} م.", f" Lowest expected visibility {vis:.0f} m.")
+            extra = wind_bit + vis_bit
             if column == "Drizzle Prob":
-                extra = tr(f" الشدة {rain_words(level)}.", f" Intensity {rain_words(level)}.")
+                extra += tr(f" الشدة {rain_words(level)}.", f" Intensity {rain_words(level)}.")
         if not found_areas:
             continue
         joiner = "، " if lang == "ar" else ", "
-        phase = tr("حدوث الآن", "occurring now") if occurring else tr(f"تحذير مسبق قبل {lead} ساعات", f"advance warning, {lead}h lead")
+        phase = tr("حدوث الآن: ", "Occurring now: ") if occurring else ""
         alerts.append(tr(
-            f"{title_ar} — {phase}: {verb_ar} على {joiner.join(found_areas)}. من {min(starts)} إلى {max(ends)}.{extra}",
-            f"{title_en} — {phase}: {verb_en} over {joiner.join(found_areas)}. From {min(starts)} until {max(ends)}.{extra}",
+            f"{title_ar}: {phase}{verb_ar} على {joiner.join(found_areas)}. من {min(starts)} إلى {max(ends)}.{extra}",
+            f"{title_en}: {phase}{verb_en} over {joiner.join(found_areas)}. From {min(starts)} until {max(ends)}.{extra}",
         ))
 
 def sea_alerts():

@@ -185,12 +185,12 @@ STATIONS: Dict[str, Dict[str, Any]] = {
 }
 SECTOR_MAP = {
     "الساحل الشرقي": ["Fujairah Port", "Fujairah Int'l Airport", "Kalba", "Khor Fakkan Port", "Dibba"],
-    "الجبال الشرقية": ["Hatta", "Jabal Jais", "Jabal Al Rahba", "Masafi", "Jebel Hafeet", "Shaam", "AlQor", "Al Heben", "Al Tawiyen", "Wadi Wurayah", "Al Bithnah", "Al Siji", "Wadi Al Bih", "Masafi Valley", "Al Ghail"],
+    "الجبال الشرقية": ["Hatta", "Jabal Al Rahba", "Masafi", "Jebel Hafeet", "AlQor", "Al Heben", "Al Tawiyen", "Wadi Wurayah", "Al Bithnah", "Al Siji", "Masafi Valley", "Al Ghail"],
+    "الشمال": ["Jabal Jais", "Shaam", "Wadi Al Bih", "Ras Al khaimah", "Ras Al Khaimah Int'l Airport", "Umm Al Quwain"],
     "المنطقة الوسطى": ["Al Dhaid", "Al Malaiha", "Madam", "Falaj Al Mualla", "Digdaga", "Al Yahar", "Al Hayer", "Al Khaznah"],
     "العين": ["Al Ain Int'l Airport", "Al Aamerah", "Nahil", "Al Faqa", "Al Ajban", "Sweihan", "Shwaib", "Al Quaa", "Al Wagan", "Remah", "Al Shiweb"],
     "دبي": ["Burj Khalifah", "Dubai Int'l Airport", "Al Maktoum Int'l Airport", "Jebel Ali"],
-    "الشارقة وعجمان وأم القيوين": ["Sharjah University", "Sharjah Int'l Airport", "Ajman", "Umm Al Quwain"],
-    "رأس الخيمة": ["Ras Al khaimah", "Ras Al Khaimah Int'l Airport"],
+    "الشارقة وعجمان": ["Sharjah University", "Sharjah Int'l Airport", "Ajman"],
     "أبوظبي": ["Abu Dhabi", "ADNOC HQ", "Al Wathbah", "Zayed Int'l Airport", "Al Bateen Executive Airport", "Sir Bu Nair", "Yas Island"],
     "الظفرة": ["Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Madinat Zayed", "Mukhariz", "Owtaid", "Liwa", "Ghayathi", "Sila", "Liwa Oasis", "Qasr Al Sarab", "Baynunah", "Al Mirfa", "Tarif"],
 }
@@ -204,11 +204,11 @@ def tr(ar: str, en: str) -> str:
 SECTOR_EN = {
     "الساحل الشرقي": "East coast",
     "الجبال الشرقية": "Eastern mountains",
+    "الشمال": "North (Ras Al Khaimah, Jebel Jais, Umm Al Quwain)",
     "المنطقة الوسطى": "Central region",
     "العين": "Al Ain",
     "دبي": "Dubai",
-    "الشارقة وعجمان وأم القيوين": "Sharjah, Ajman and Umm Al Quwain",
-    "رأس الخيمة": "Ras Al Khaimah",
+    "الشارقة وعجمان": "Sharjah and Ajman",
     "أبوظبي": "Abu Dhabi",
     "الظفرة": "Al Dhafra",
     "متفرقة": "Other",
@@ -300,7 +300,46 @@ def om_get(url: str, params: Dict[str, Any], timeout: int = 20):
     return requests.get(url, params=params, timeout=timeout)
 
 
-def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
+def fetch_abu_dhabi_sounding() -> dict:
+    """Fetch latest available Abu Dhabi (41217) radiosonde indices from Wyoming. Returns empty dict on failure."""
+    from datetime import datetime, timedelta
+    now = datetime.utcnow()
+    for hours_back in range(0, 72, 12):
+        t = (now - timedelta(hours=hours_back)).replace(minute=0, second=0, microsecond=0)
+        if t.hour not in (0, 12):
+            continue
+        dt_str = t.strftime("%Y-%m-%d %H:%M:%S")
+        url = f"https://weather.uwyo.edu/wsgi/sounding?datetime={dt_str.replace(' ', '%20')}&id=41217&type=TEXT:LIST"
+        try:
+            r = requests.get(url, timeout=15)
+            if r.status_code != 200 or "Precipitable water" not in r.text:
+                continue
+            text = r.text
+            indices = {}
+            for line in text.splitlines():
+                if "Precipitable water" in line and "[mm]" in line:
+                    try:
+                        indices["pw"] = float(line.split()[-1])
+                    except Exception:
+                        pass
+                if "Convective Available Potential Energy" in line or "CAPE" in line:
+                    try:
+                        val = float(line.split()[-1])
+                        if val > 0:
+                            indices["cape"] = val
+                    except Exception:
+                        pass
+                if "Showalter index" in line:
+                    try:
+                        indices["showalter"] = float(line.split()[-1])
+                    except Exception:
+                        pass
+            if indices:
+                indices["time"] = dt_str
+                return indices
+        except Exception:
+            continue
+    return {}
     cache_path = "/tmp/71wm_live.json"
     models = ("gfs_seamless", "ecmwf_ifs", "icon_seamless")
     results = {}
@@ -501,6 +540,23 @@ if ok and isinstance(live, dict):
             })
 
 df = pd.DataFrame(rows)
+
+# Support from Abu Dhabi radiosonde: adjust storm probability based on observed stability
+sounding = fetch_abu_dhabi_sounding()
+if sounding and not df.empty:
+    factor = 1.0
+    if "cape" in sounding:
+        if sounding["cape"] < 200:
+            factor *= 0.6
+        elif sounding["cape"] > 1500:
+            factor *= 1.2
+    if "showalter" in sounding and sounding["showalter"] > 2:
+        factor *= 0.7
+    if "pw" in sounding and sounding["pw"] < 15:
+        factor *= 0.75
+    if factor != 1.0:
+        df["Storm Probability"] = (df["Storm Probability"] * factor).clip(0, 100).round()
+        df["SoundingSupport"] = f"Abu Dhabi {sounding.get('time','')} CAPE={sounding.get('cape','—')} PW={sounding.get('pw','—')} mm"
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def ai_sector_bias() -> dict:
@@ -867,6 +923,8 @@ def fetch_wave_points() -> pd.DataFrame:
 
 
 with tab1:
+    if "SoundingSupport" in df.columns and not df.empty:
+        st.caption(tr(f"دعم راديو ساوند أبوظبي: {df['SoundingSupport'].iloc[0]}", f"Abu Dhabi radiosonde support: {df['SoundingSupport'].iloc[0]}"))
     if alerts:
         st.markdown(
             "<div style='background:#7F1D1D;border:1px solid #FCA5A5;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'><b style='color:#FEE2E2;'>"

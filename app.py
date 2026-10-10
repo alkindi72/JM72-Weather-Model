@@ -540,43 +540,26 @@ def compute_probs(hourly, api_times, name, coords, dt):
 
 rows: List[Dict[str, Any]] = []
 if ok and isinstance(live, dict):
-    model_names = list(live.keys())
-    n_models = len(model_names)
-    for idx, (name, coords) in enumerate(STATIONS.items()):
+    for name, coords in STATIONS.items():
         zone = "Inland" if coords["type"] in ("Inland", "Desert") else coords["type"]
+        station_data = live.get(name) or {}
+        hourly = (station_data.get("hourly") or {})
+        times = hourly.get("time") or []
+        if not times:
+            continue
+        api_times = [datetime.fromisoformat(t).replace(tzinfo=None) for t in times]
         for dt_str, dt in zip(timeline_str, timeline):
-            model_probs = []
-            temps = []
-            for mname in model_names:
-                mdata = live[mname]
-                if idx >= len(mdata):
-                    continue
-                hourly = (mdata[idx] or {}).get("hourly") or {}
-                times = hourly.get("time") or []
-                if not times:
-                    continue
-                api_times = [datetime.fromisoformat(t).replace(tzinfo=None) for t in times]
-                p = compute_probs(hourly, api_times, name, coords, dt)
-                model_probs.append(p)
-                temps.append(p["temp"])
-            if not model_probs:
-                continue
-            avg = lambda k: sum(p[k] for p in model_probs) / len(model_probs)
-            agree_storm = sum(1 for p in model_probs if p["storm"] >= 65)
-            agree_fog = sum(1 for p in model_probs if p["fog"] >= 75)
-            agree_shamal = sum(1 for p in model_probs if p["shamal"] >= 60)
-            agree_drizzle = sum(1 for p in model_probs if p["drizzle"] >= 55)
-            agreement = max(agree_storm, agree_fog, agree_shamal, agree_drizzle)
+            p = compute_probs(hourly, api_times, name, coords, dt)
             rows.append({
                 "Time": dt_str, "DateOnly": f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')}",
                 "Station": name, "Sector": sector_of(name), "Zone": zone,
                 "Latitude": coords["lat"], "Longitude": coords["lon"],
-                "Storm Probability": round(avg("storm")), "Fog Probability": round(avg("fog")),
-                "AlKous Prob": round(avg("alkous")), "Drizzle Prob": round(avg("drizzle")),
-                "Shamal Index": round(avg("shamal")), "Temperature": round(avg("temp"), 1),
-                "Apparent Temp": round(avg("app"), 1), "Humidity": round(avg("rh")),
-                "Wind": round(avg("wind"), 1), "Gust": round(avg("gust"), 1), "Wind Dir": round(avg("wind_dir")),
-                "Agreement": agreement, "ModelsUsed": n_models,
+                "Storm Probability": round(p["storm"]), "Fog Probability": round(p["fog"]),
+                "AlKous Prob": round(p["alkous"]), "Drizzle Prob": round(p["drizzle"]),
+                "Shamal Index": round(p["shamal"]), "Temperature": round(p["temp"], 1),
+                "Apparent Temp": round(p["app"], 1), "Humidity": round(p["rh"]),
+                "Wind": round(p["wind"], 1), "Gust": round(p["gust"], 1), "Wind Dir": round(p["wind_dir"]),
+                "Agreement": 1, "ModelsUsed": 1,
             })
 
 df = pd.DataFrame(rows)

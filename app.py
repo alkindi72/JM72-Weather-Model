@@ -4,6 +4,7 @@ import base64
 import json
 import math
 import os
+import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -253,27 +254,42 @@ def gfs_cycle(now_utc: datetime) -> str:
     return ready.strftime("%Y-%m-%d") + f" {hour:02d}Z"
 
 
-@st.cache_data(ttl=6 * 3600, show_spinner=False)
 def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
-    try:
-        params = {
-            "latitude": ",".join(str(s["lat"]) for s in stations.values()),
-            "longitude": ",".join(str(s["lon"]) for s in stations.values()),
-            "current": "precipitation,weather_code",
-            "hourly": "temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low",
-            "models": "gfs_seamless",
-            "timezone": "auto",
-        }
-        response = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-        if isinstance(data, dict) and data.get("error"):
-            return False, data.get("reason", "API error")
-        if isinstance(data, dict):
-            data = [data]
-        return (True, data) if data else (False, "Empty response")
-    except Exception as exc:
-        return False, str(exc)
+    cache_path = "/tmp/71wm_live.json"
+    params = {
+        "latitude": ",".join(str(s["lat"]) for s in stations.values()),
+        "longitude": ",".join(str(s["lon"]) for s in stations.values()),
+        "current": "precipitation,weather_code",
+        "hourly": "temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low",
+        "models": "gfs_seamless",
+        "timezone": "auto",
+    }
+    last_error = "unknown"
+    for _ in range(3):
+        try:
+            response = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=20)
+            response.raise_for_status()
+            data = response.json()
+            if isinstance(data, dict) and data.get("error"):
+                last_error = data.get("reason", "API error")
+                continue
+            if isinstance(data, dict):
+                data = [data]
+            if data:
+                with open(cache_path, "w", encoding="utf-8") as handle:
+                    json.dump(data, handle)
+                return True, data
+            last_error = "Empty response"
+        except Exception as exc:
+            last_error = str(exc)
+            time.sleep(2)
+    if os.path.exists(cache_path):
+        try:
+            with open(cache_path, encoding="utf-8") as handle:
+                return True, json.load(handle)
+        except Exception:
+            pass
+    return False, last_error
 
 
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
@@ -478,7 +494,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 if not ok:
-    st.error(tr(f"تعذر جلب Open-Meteo: {live}", f"Open-Meteo fetch failed: {live}"))
+    st.warning(tr(
+        "تعذر الاتصال بمصدر البيانات الآن. إن وُجدت قراءة محفوظة ستُعرض، وإلا أعد فتح الصفحة بعد دقائق.",
+        "The data source did not answer. A saved reading will be shown if one exists; otherwise reopen the page in a few minutes.",
+    ))
 
 c1, c2, c3, c4, c5 = st.columns(5)
 cards = [
@@ -1214,15 +1233,6 @@ with tab5:
         f"#### نشرة خمسة أيام — أُصدرت 05:00 بتوقيت الإمارات بعد مراجعة دورة {cycle}",
         f"#### Five-day bulletin — issued 05:00 UAE after review of cycle {cycle}",
     ))
-    st.caption(tr(
-        "تُقفل النشرة اليومية عند 05:00 بعد نافذة التحليل 04:00. الخرائط الحية تتحدث مع دورات GFS 00 و06 و12 و18 بالتوقيت العالمي بعد جاهزية الحقول.",
-        "The daily bulletin locks at 05:00 UAE after the 04:00 analysis window. Live charts refresh on the GFS 00, 06, 12 and 18 UTC cycles once fields are available.",
-    ))
-    video_path = "naskra_imagine.mp4"
-    if os.path.exists(video_path):
-        st.video(video_path)
-    else:
-        st.info(tr("فيديو النشرة غير مرفوع بعد.", "The bulletin video is not uploaded yet."))
     marine_ok, marine = fetch_marine()
     if not marine_ok:
         st.warning(tr(f"تعذر جلب حالة البحر: {marine}", f"Sea state unavailable: {marine}"))
@@ -1281,7 +1291,6 @@ with tab5:
     bulletin_path = f"/tmp/71wm_bulletin_{bulletin_day}_{lang}.json"
     if os.path.exists(bulletin_path):
         cards = json.loads(open(bulletin_path, encoding="utf-8").read())
-        st.caption(tr("هذه نشرة الخامسة صباحاً المحفوظة، ولا تتبدل مع تحديث النموذج.", "This is the saved 05:00 bulletin and does not change with later model runs."))
     elif cards:
         open(bulletin_path, "w", encoding="utf-8").write(json.dumps(cards, ensure_ascii=False))
     for card in cards:

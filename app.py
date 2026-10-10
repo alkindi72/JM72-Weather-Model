@@ -969,8 +969,8 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
 
 with tab2:
     if not df.empty:
-        peak = df.groupby("Time")[["Storm Probability", "Fog Probability", "Shamal Index", "Drizzle Prob", "AlKous Prob"]].max().reset_index()
-        fig = go.Figure()
+        daily = df.groupby("DateOnly")[["Storm Probability", "Fog Probability", "Shamal Index", "Drizzle Prob", "AlKous Prob"]].max().reset_index()
+        daily["day"] = daily["DateOnly"].map(lambda v: f"{DAYS_AR.get(v.split()[0], v.split()[0])} {v.split()[-1]}" if lang == "ar" else v)
         names = {
             "Storm Probability": tr("عواصف", "Storms"),
             "Fog Probability": tr("ضباب", "Fog"),
@@ -978,24 +978,21 @@ with tab2:
             "Drizzle Prob": tr("رذاذ", "Drizzle"),
             "AlKous Prob": tr("سحب الكوس", "Al-Kous cloud"),
         }
-        colors = {
-            "Storm Probability": "#f87171",
-            "Fog Probability": "#93c5fd",
-            "Shamal Index": "#fbbf24",
-            "Drizzle Prob": "#38bdf8",
-            "AlKous Prob": "#c4b5fd",
-        }
-        for col in names:
-            fig.add_trace(go.Scatter(x=peak["Time"], y=peak[col], name=names[col], line=dict(color=colors[col], width=3)))
+        colors = ["#f87171", "#93c5fd", "#fbbf24", "#38bdf8", "#c4b5fd"]
+        fig = go.Figure()
+        for col, color in zip(names, colors):
+            fig.add_trace(go.Bar(x=daily["day"], y=daily[col], name=names[col], marker_color=color))
         fig.update_layout(
             title=tr("ذروة كل خطر خلال 5 أيام", "Peak hazard over 5 days"),
-            height=360,
+            barmode="group",
+            height=380,
             paper_bgcolor="#f8fafc",
             plot_bgcolor="#ffffff",
-            font=dict(size=15, color="#111827"),
-            legend=dict(orientation="h", y=-0.28, x=0, font=dict(size=14, color="#111827")),
-            margin=dict(l=8, r=8, t=50, b=90),
-            yaxis=dict(title=tr("الاحتمال %", "Probability %"), range=[0, 100]),
+            font=dict(size=16, color="#111827"),
+            legend=dict(orientation="h", y=-0.22, x=0, font=dict(size=15, color="#111827")),
+            margin=dict(l=8, r=8, t=50, b=70),
+            yaxis=dict(title=tr("الاحتمال %", "Probability %"), range=[0, 100], gridcolor="#e5e7eb"),
+            xaxis=dict(title=""),
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
     layers = {

@@ -254,35 +254,67 @@ def gfs_cycle(now_utc: datetime) -> str:
     return ready.strftime("%Y-%m-%d") + f" {hour:02d}Z"
 
 
+OM_KEY = os.environ.get("OPEN_METEO_API_KEY", "").strip()
+
+
+def om_url(kind: str = "forecast") -> str:
+    paid = {
+        "forecast": "https://customer-api.open-meteo.com/v1/forecast",
+        "marine": "https://customer-marine-api.open-meteo.com/v1/marine",
+        "air": "https://customer-air-quality-api.open-meteo.com/v1/air-quality",
+        "archive": "https://customer-archive-api.open-meteo.com/v1/archive",
+    }
+    free = {
+        "forecast": "https://api.open-meteo.com/v1/forecast",
+        "marine": "https://marine-api.open-meteo.com/v1/marine",
+        "air": "https://air-quality-api.open-meteo.com/v1/air-quality",
+        "archive": "https://archive-api.open-meteo.com/v1/archive",
+    }
+    return paid[kind] if OM_KEY else free[kind]
+
+
+def om_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    ready = dict(params)
+    if OM_KEY:
+        ready["apikey"] = OM_KEY
+    return ready
+
+
+def om_get(url: str, params: Dict[str, Any], timeout: int = 20):
+    return requests.get(url, params=om_params(params), timeout=timeout)
+    return requests.get(url, params=params, timeout=timeout)
+
+
 def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
     cache_path = "/tmp/71wm_live.json"
-    params = {
-        "latitude": ",".join(str(s["lat"]) for s in stations.values()),
-        "longitude": ",".join(str(s["lon"]) for s in stations.values()),
-        "current": "precipitation,weather_code",
-        "hourly": "temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low",
-        "models": "gfs_seamless",
-        "timezone": "auto",
-    }
     last_error = "unknown"
-    for _ in range(3):
-        try:
-            response = requests.get("https://api.open-meteo.com/v1/forecast", params=params, timeout=20)
-            response.raise_for_status()
-            data = response.json()
-            if isinstance(data, dict) and data.get("error"):
-                last_error = data.get("reason", "API error")
-                continue
-            if isinstance(data, dict):
-                data = [data]
-            if data:
-                with open(cache_path, "w", encoding="utf-8") as handle:
-                    json.dump(data, handle)
-                return True, data
-            last_error = "Empty response"
-        except Exception as exc:
-            last_error = str(exc)
-            time.sleep(2)
+    for model in ("ecmwf_ifs", "gfs_seamless"):
+        params = {
+            "latitude": ",".join(str(s["lat"]) for s in stations.values()),
+            "longitude": ",".join(str(s["lon"]) for s in stations.values()),
+            "current": "precipitation,weather_code",
+            "hourly": "temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low",
+            "models": model,
+            "timezone": "auto",
+        }
+        for _ in range(2):
+            try:
+                response = om_get(om_url("forecast"), params=params, timeout=20)
+                response.raise_for_status()
+                data = response.json()
+                if isinstance(data, dict) and data.get("error"):
+                    last_error = data.get("reason", "API error")
+                    break
+                if isinstance(data, dict):
+                    data = [data]
+                if data:
+                    with open(cache_path, "w", encoding="utf-8") as handle:
+                        json.dump(data, handle)
+                    return True, data
+                last_error = "Empty response"
+            except Exception as exc:
+                last_error = str(exc)
+                time.sleep(2)
     if os.path.exists(cache_path):
         try:
             with open(cache_path, encoding="utf-8") as handle:
@@ -427,7 +459,7 @@ def ai_sector_bias() -> dict:
         for model in ("ecmwf_ifs", "ecmwf_aifs025_single"):
             try:
                 response = requests.get(
-                    "https://api.open-meteo.com/v1/forecast",
+                    om_url("forecast"),
                     params={"latitude": lat, "longitude": lon, "hourly": "precipitation", "models": model, "forecast_days": 2, "timezone": "Asia/Dubai"},
                     timeout=20,
                 )
@@ -487,7 +519,7 @@ st.markdown(
   <div class="sub">{tr(f"قراءة موحّدة للعواصف، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Storms, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
   <span class="pill">{tr("مباشر", "Live")} <span class="pulse"></span> {uae_now.strftime('%H:%M')}</span>
   <span class="pill" style="background:{risk_color};color:#fff;">{tr("التحذيرات", "Warnings")} {risk}% · {status}</span>
-  <span class="pill">{tr("دورة النموذج", "Model cycle")} {cycle}</span>
+  <span class="pill">{tr("دورة النموذج", "Model cycle")} ECMWF {cycle}</span>
   <span class="pill">{tr("نشرة الخمسة أيام", "Five-day bulletin")} {bulletin_day} · 05:00</span>
 </div>
 """,
@@ -616,7 +648,7 @@ def sea_alerts():
     points = {"الخليج قرب أبوظبي": (24.50, 54.35), "عمق الخليج": (25.20, 53.40), "بحر عُمان قرب الفجيرة": (25.15, 56.45), "عمق بحر عُمان": (25.00, 57.20)}
     try:
         response = requests.get(
-            "https://marine-api.open-meteo.com/v1/marine",
+            om_url("marine"),
             params={
                 "latitude": ",".join(str(v[0]) for v in points.values()),
                 "longitude": ",".join(str(v[1]) for v in points.values()),
@@ -654,7 +686,7 @@ def fetch_nowcast() -> Tuple[bool, Any]:
     points = {"ناهل": (24.616, 55.575), "الفقع": (24.716, 55.620), "العجبان": (24.600, 55.300), "سويحان": (24.466, 55.330), "الشويب": (24.780, 55.800), "مسافي": (25.310, 56.160), "العين": (24.220, 55.760)}
     try:
         response = requests.get(
-            "https://api.open-meteo.com/v1/forecast",
+            om_url("forecast"),
             params={
                 "latitude": ",".join(str(v[0]) for v in points.values()),
                 "longitude": ",".join(str(v[1]) for v in points.values()),
@@ -755,7 +787,7 @@ def fetch_wave_points() -> pd.DataFrame:
     }
     try:
         response = requests.get(
-            "https://marine-api.open-meteo.com/v1/marine",
+            om_url("marine"),
             params={
                 "latitude": ",".join(str(v[0]) for v in points.values()),
                 "longitude": ",".join(str(v[1]) for v in points.values()),
@@ -1183,7 +1215,7 @@ def fetch_marine() -> Tuple[bool, Any]:
             "timezone": "Asia/Dubai",
             "forecast_days": 5,
         }
-        response = requests.get("https://marine-api.open-meteo.com/v1/marine", params=params, timeout=30)
+        response = om_get(om_url("marine"), params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
         if isinstance(data, dict):
@@ -1312,7 +1344,7 @@ def fetch_uae_drivers() -> pd.DataFrame:
     for model in ("ecmwf_ifs", "icon_seamless", "gfs_seamless"):
         try:
             response = requests.get(
-                "https://api.open-meteo.com/v1/forecast",
+                om_url("forecast"),
                 params={
                     "latitude": ",".join(str(v[0]) for v in points.values()),
                     "longitude": ",".join(str(v[1]) for v in points.values()),
@@ -1462,7 +1494,7 @@ def fetch_model_rain(model: str) -> Tuple[bool, Any]:
     }
     try:
         response = requests.get(
-            "https://api.open-meteo.com/v1/forecast",
+            om_url("forecast"),
             params={
                 "latitude": ",".join(str(v[0]) for v in points.values()),
                 "longitude": ",".join(str(v[1]) for v in points.values()),
@@ -1490,7 +1522,7 @@ def fetch_dust() -> Tuple[bool, Any]:
     points = {"الساحل الشرقي": (25.12, 56.33), "جبل جيس": (25.95, 56.17), "أبوظبي": (24.45, 54.38), "العين": (24.26, 55.61)}
     try:
         response = requests.get(
-            "https://air-quality-api.open-meteo.com/v1/air-quality",
+            om_url("air"),
             params={
                 "latitude": ",".join(str(v[0]) for v in points.values()),
                 "longitude": ",".join(str(v[1]) for v in points.values()),
@@ -1517,7 +1549,7 @@ def fetch_on_this_day(month: int, day: int) -> Tuple[bool, Any]:
     names = list(spots)
     try:
         response = requests.get(
-            "https://archive-api.open-meteo.com/v1/archive",
+            om_url("archive"),
             params={
                 "latitude": ",".join(str(v[0]) for v in spots.values()),
                 "longitude": ",".join(str(v[1]) for v in spots.values()),

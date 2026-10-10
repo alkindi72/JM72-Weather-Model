@@ -321,7 +321,7 @@ def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
         }
         r = om_get(om_url("forecast"), params, timeout=45)
         if r.status_code != 200:
-            return False, f"API error {r.status_code}"
+            return False, f"API error {r.status_code}: {r.text[:200]}"
         data = r.json()
         # Normalize single vs multi location response
         if isinstance(data, dict) and "hourly" in data:
@@ -333,7 +333,7 @@ def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
         result = {}
         names = list(stations.keys())
         for i, name in enumerate(names):
-            if i < len(data):
+            if i < len(data) and isinstance(data[i], dict):
                 result[name] = data[i]
         return True, result
     except Exception as e:
@@ -1480,19 +1480,17 @@ def fetch_uae_drivers() -> pd.DataFrame:
     rows = []
     for model in ("ecmwf_ifs", "icon_seamless", "gfs_seamless"):
         try:
-            response = requests.get(
-                om_url("forecast"),
-                params={
-                    "latitude": ",".join(str(v[0]) for v in points.values()),
-                    "longitude": ",".join(str(v[1]) for v in points.values()),
-                    "hourly": "surface_pressure,relative_humidity_2m,cape,precipitation_probability",
-                    "forecast_days": 3,
-                    "models": model,
-                    "timezone": "Asia/Dubai",
-                },
-                timeout=30,
-            )
-            response.raise_for_status()
+            params = {
+                "latitude": ",".join(str(v[0]) for v in points.values()),
+                "longitude": ",".join(str(v[1]) for v in points.values()),
+                "hourly": "surface_pressure,relative_humidity_2m,cape,precipitation_probability",
+                "forecast_days": 3,
+                "models": model,
+                "timezone": "Asia/Dubai",
+            }
+            response = om_get(om_url("forecast"), params, timeout=30)
+            if response.status_code != 200:
+                continue
             payload = response.json()
             blocks = payload if isinstance(payload, list) else [payload]
             for name, block in zip(points, blocks):
@@ -1630,19 +1628,17 @@ def fetch_model_rain(model: str) -> Tuple[bool, Any]:
         "ناهل": (24.62, 55.58), "ليوا": (23.13, 53.77), "جبل جيس": (25.95, 56.17),
     }
     try:
-        response = requests.get(
-            om_url("forecast"),
-            params={
-                "latitude": ",".join(str(v[0]) for v in points.values()),
-                "longitude": ",".join(str(v[1]) for v in points.values()),
-                "hourly": "precipitation",
-                "models": model,
-                "forecast_days": 3,
-                "timezone": "Asia/Dubai",
-            },
-            timeout=30,
-        )
-        response.raise_for_status()
+        params = {
+            "latitude": ",".join(str(v[0]) for v in points.values()),
+            "longitude": ",".join(str(v[1]) for v in points.values()),
+            "hourly": "precipitation",
+            "models": model,
+            "forecast_days": 3,
+            "timezone": "Asia/Dubai",
+        }
+        response = om_get(om_url("forecast"), params, timeout=30)
+        if response.status_code != 200:
+            return False, f"HTTP {response.status_code}"
         data = response.json()
         blocks = data if isinstance(data, list) else [data]
         rows = []
@@ -1658,18 +1654,16 @@ def fetch_model_rain(model: str) -> Tuple[bool, Any]:
 def fetch_dust() -> Tuple[bool, Any]:
     points = {"الساحل الشرقي": (25.12, 56.33), "جبل جيس": (25.95, 56.17), "أبوظبي": (24.45, 54.38), "العين": (24.26, 55.61)}
     try:
-        response = requests.get(
-            om_url("air"),
-            params={
-                "latitude": ",".join(str(v[0]) for v in points.values()),
-                "longitude": ",".join(str(v[1]) for v in points.values()),
-                "hourly": "pm10,dust",
-                "forecast_days": 3,
-                "timezone": "Asia/Dubai",
-            },
-            timeout=30,
-        )
-        response.raise_for_status()
+        params = {
+            "latitude": ",".join(str(v[0]) for v in points.values()),
+            "longitude": ",".join(str(v[1]) for v in points.values()),
+            "hourly": "pm10,dust",
+            "forecast_days": 3,
+            "timezone": "Asia/Dubai",
+        }
+        response = om_get(om_url("air"), params, timeout=30)
+        if response.status_code != 200:
+            return False, f"HTTP {response.status_code}"
         data = response.json()
         return True, dict(zip(points, data if isinstance(data, list) else [data]))
     except Exception as exc:
@@ -3057,13 +3051,18 @@ with tab8:
     side = "rtl" if lang == "ar" else "ltr"
     components.html(
         f"""
-        <div style="position:relative;border-radius:18px;overflow:hidden;height:520px;">
-          <img src="data:image/jpeg;base64,{img}" style="width:100%;height:520px;object-fit:cover;display:block;filter:brightness(0.78);">
-          <div style="position:absolute;top:18px;left:0;right:0;text-align:center;direction:{side};">
-            <div style="display:inline-block;background:rgba(15,23,42,.55);border-radius:14px;padding:10px 22px;">
-              <div style="font-size:1.8rem;line-height:1;">{icon}</div>
-              <div style="font-size:2rem;font-weight:800;color:#fff;">{title}</div>
+        <div style="position:relative;border-radius:18px;overflow:hidden;height:420px;">
+          <img src="data:image/jpeg;base64,{img}" style="width:100%;height:420px;object-fit:cover;display:block;filter:brightness(0.85);">
+          <div style="position:absolute;top:12px;left:0;right:0;text-align:center;direction:{side};pointer-events:none;">
+            <div style="display:inline-block;background:rgba(15,23,42,.7);border-radius:12px;padding:8px 18px;max-width:90%;">
+              <div style="font-size:1.4rem;line-height:1;">{icon}</div>
+              <div style="font-size:1.5rem;font-weight:800;color:#fff;line-height:1.2;">{title}</div>
             </div>
+          </div>
+        </div>
+        """,
+        height=440,
+    )
           </div>
         </div>
         """,

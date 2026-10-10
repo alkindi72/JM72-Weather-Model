@@ -970,6 +970,9 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
 with tab2:
     if not df.empty:
         daily = df.groupby("DateOnly")[["Storm Probability", "Fog Probability", "Shamal Index", "Drizzle Prob", "AlKous Prob"]].max().reset_index()
+        order = {name: i for i, name in enumerate(dates)}
+        daily["ord"] = daily["DateOnly"].map(lambda v: order.get(v, 99))
+        daily = daily.sort_values("ord")
         daily["day"] = daily["DateOnly"].map(lambda v: f"{DAYS_AR.get(v.split()[0], v.split()[0])} {v.split()[-1]}" if lang == "ar" else v)
         names = {
             "Storm Probability": tr("عواصف", "Storms"),
@@ -992,7 +995,7 @@ with tab2:
             legend=dict(orientation="h", y=-0.22, x=0, font=dict(size=15, color="#111827")),
             margin=dict(l=8, r=8, t=50, b=70),
             yaxis=dict(title=tr("الاحتمال %", "Probability %"), range=[0, 100], gridcolor="#e5e7eb"),
-            xaxis=dict(title=""),
+            xaxis=dict(title="", categoryorder="array", categoryarray=daily["day"].tolist()),
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
     layers = {

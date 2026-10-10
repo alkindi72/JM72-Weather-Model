@@ -287,11 +287,15 @@ def om_get(url: str, params: Dict[str, Any], timeout: int = 20):
 
 def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
     cache_path = "/tmp/71wm_live.json"
+    models = ("gfs_seamless", "ecmwf_ifs", "icon_seamless")
+    results = {}
     last_error = "unknown"
-    for model in ("gfs_seamless", "ecmwf_ifs"):
+    lats = ",".join(str(s["lat"]) for s in stations.values())
+    lons = ",".join(str(s["lon"]) for s in stations.values())
+    for model in models:
         params = {
-            "latitude": ",".join(str(s["lat"]) for s in stations.values()),
-            "longitude": ",".join(str(s["lon"]) for s in stations.values()),
+            "latitude": lats,
+            "longitude": lons,
             "current": "precipitation,weather_code",
             "hourly": "temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low",
             "models": model,
@@ -299,7 +303,7 @@ def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
         }
         for _ in range(2):
             try:
-                response = om_get(om_url("forecast"), params=params, timeout=20)
+                response = om_get(om_url("forecast"), params=params, timeout=25)
                 response.raise_for_status()
                 data = response.json()
                 if isinstance(data, dict) and data.get("error"):
@@ -308,13 +312,15 @@ def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
                 if isinstance(data, dict):
                     data = [data]
                 if data:
-                    with open(cache_path, "w", encoding="utf-8") as handle:
-                        json.dump(data, handle)
-                    return True, data
-                last_error = "Empty response"
+                    results[model] = data
+                    break
             except Exception as exc:
                 last_error = str(exc)
                 time.sleep(2)
+    if len(results) >= 2:
+        with open(cache_path, "w", encoding="utf-8") as handle:
+            json.dump(results, handle)
+        return True, results
     if os.path.exists(cache_path):
         try:
             with open(cache_path, encoding="utf-8") as handle:
@@ -358,100 +364,125 @@ for dt in timeline:
 with st.spinner("يجمع 71wm القراءات حسب آخر دورة نموذج..."):
     ok, live = fetch_live(STATIONS, cycle)
 
+def compute_probs(hourly, api_times, name, coords, dt):
+    temp = app = 35.0
+    rh = 50.0
+    cloud = wind_dir = wind = gust = storm = fog = alkous = drizzle = shamal = 0.0
+    try:
+        i = int(np.argmin([abs((t - dt).total_seconds()) for t in api_times]))
+        temp = safe_num((hourly.get("temperature_2m") or [None])[i], 35)
+        app = safe_num((hourly.get("apparent_temperature") or [temp])[i], temp)
+        rh = safe_num((hourly.get("relative_humidity_2m") or [50])[i], 50)
+        cloud = safe_num((hourly.get("cloudcover_low") or [0])[i], 0)
+        wind_dir = safe_num((hourly.get("winddirection_10m") or [0])[i], 0)
+        wind = safe_num((hourly.get("windspeed_10m") or [0])[i], 0)
+        gust = safe_num((hourly.get("windgusts_10m") or [wind])[i], wind)
+        cape = safe_num((hourly.get("cape") or [0])[i], 0)
+        rh850 = safe_num((hourly.get("relative_humidity_850hPa") or [50])[i], 50)
+        rh700 = safe_num((hourly.get("relative_humidity_700hPa") or [50])[i], 50)
+        rh500 = safe_num((hourly.get("relative_humidity_500hPa") or [50])[i], 50)
+        t850 = safe_num((hourly.get("temperature_850hPa") or [20])[i], 20)
+        t500 = safe_num((hourly.get("temperature_500hPa") or [-10])[i], -10)
+        prob = max(0, (cape - 400) / 25.0)
+        moisture = rh850 * 0.4 + rh700 * 0.4 + rh500 * 0.2
+        lapse = t850 - t500
+        if moisture < 50 or lapse < 22:
+            prob *= 0.2
+        elif moisture > 70 and lapse > 28:
+            prob *= 1.15
+        if wind < 12 and gust < 25:
+            prob *= 0.4
+        storm = float(np.clip(prob, 0, 85))
+        if dt.hour < 12 or dt.hour > 19:
+            storm *= 0.35
+        elev = ELEVATION.get(name, 0)
+        east_hajar = coords["lon"] >= 55.9 and (coords["type"] == "Mountains" or elev >= 400)
+        ain_plain = 24.1 <= coords["lat"] <= 24.9 and 55.2 <= coords["lon"] <= 55.9
+        gulf_coast = coords["type"] == "Coast" and coords["lon"] < 55.6
+        oman_coast = coords["lon"] >= 56.15
+        empty_quarter = coords["type"] == "Desert" and coords["lat"] < 23.8
+        if east_hajar and 120 <= wind_dir <= 160 and cape >= 800 and moisture >= 55:
+            storm = min(85, storm * 1.15 + 4)
+            alkous = max(alkous, 40 if rh >= 70 else 20)
+        if ain_plain and 12 <= dt.hour <= 19 and rh850 >= 60 and cape >= 500 and moisture >= 55:
+            storm = max(storm, min(70, 25 + cape / 40))
+        if gulf_coast:
+            storm *= 0.45
+        if oman_coast and 40 <= wind_dir <= 170 and rh >= 75:
+            alkous = max(alkous, float(np.clip((rh - 75) * 2.5, 0, 70)))
+            storm *= 0.7
+        if empty_quarter:
+            storm *= 0.3
+            if wind >= 28 and (wind_dir >= 300 or wind_dir <= 40):
+                shamal = max(shamal, float(np.clip((wind - 26) * 3.5, 0, 90)))
+        night = dt.hour >= 18 or dt.hour <= 9
+        western = coords["type"] == "Desert" or (coords["type"] == "Coast" and coords["lon"] < 54.6)
+        if night and wind < 12 and not east_hajar:
+            if western and rh >= 90:
+                fog = float(np.clip((rh - 90) * 8 + (12 - wind) * 2, 0, 90))
+            elif rh >= 95 and wind < 6:
+                fog = float(np.clip((rh - 95) * 6, 0, 75))
+        if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 75 and cloud >= 40:
+            base_k = (rh - 75) * 2 + cloud * 0.4
+            alkous = float(np.clip(base_k * (1.15 if temp >= 35 else 1), 0, 85))
+        if elev >= 800 and 45 <= wind_dir <= 160 and rh >= 70 and cloud >= 50:
+            alkous = max(alkous, 35)
+            drizzle = max(drizzle, 10)
+        if coords["lon"] >= 55.8 and 3 <= dt.hour <= 9 and 45 <= wind_dir <= 160 and rh >= 88 and cloud >= 80:
+            drizzle = float(np.clip((rh - 88) * 3.5 + (cloud - 80) * 1.5, 0, 80))
+        nw = wind_dir >= 300 or wind_dir <= 30
+        southern = 140 <= wind_dir <= 200
+        central_inland = 24.0 <= coords["lat"] <= 25.0 and 54.5 <= coords["lon"] <= 55.6 and coords["type"] != "Coast"
+        if shamal == 0 and wind >= 28 and nw and coords["type"] in ("Desert", "Coast"):
+            shamal = float(np.clip((wind - 26) * 3.5 + 8, 0, 90))
+        if wind >= 25 and southern and (central_inland or coords["type"] == "Desert"):
+            shamal = max(shamal, float(np.clip((wind - 23) * 3.2 + (10 if central_inland else 4), 0, 90)))
+    except Exception:
+        pass
+    return {
+        "storm": storm, "fog": fog, "alkous": alkous, "drizzle": drizzle, "shamal": shamal,
+        "temp": temp, "app": app, "rh": rh, "wind": wind, "gust": gust, "wind_dir": wind_dir
+    }
+
 rows: List[Dict[str, Any]] = []
-if ok and isinstance(live, list):
-    for idx, (name, coords) in enumerate(list(STATIONS.items())[: len(live)]):
-        hourly = (live[idx] or {}).get("hourly") or {}
-        times = hourly.get("time") or []
-        if not times:
-            continue
-        api_times = [datetime.fromisoformat(t).replace(tzinfo=None) for t in times]
+if ok and isinstance(live, dict):
+    model_names = list(live.keys())
+    n_models = len(model_names)
+    for idx, (name, coords) in enumerate(STATIONS.items()):
         zone = "Inland" if coords["type"] in ("Inland", "Desert") else coords["type"]
         for dt_str, dt in zip(timeline_str, timeline):
-            temp = app = 35.0
-            rh = 50.0
-            cloud = wind_dir = wind = gust = storm = fog = alkous = drizzle = shamal = 0.0
-            try:
-                i = int(np.argmin([abs((t - dt).total_seconds()) for t in api_times]))
-                temp = safe_num((hourly.get("temperature_2m") or [None])[i], 35)
-                app = safe_num((hourly.get("apparent_temperature") or [temp])[i], temp)
-                rh = safe_num((hourly.get("relative_humidity_2m") or [50])[i], 50)
-                cloud = safe_num((hourly.get("cloudcover_low") or [0])[i], 0)
-                wind_dir = safe_num((hourly.get("winddirection_10m") or [0])[i], 0)
-                wind = safe_num((hourly.get("windspeed_10m") or [0])[i], 0)
-                gust = safe_num((hourly.get("windgusts_10m") or [wind])[i], wind)
-                cape = safe_num((hourly.get("cape") or [0])[i], 0)
-                rh850 = safe_num((hourly.get("relative_humidity_850hPa") or [50])[i], 50)
-                rh700 = safe_num((hourly.get("relative_humidity_700hPa") or [50])[i], 50)
-                rh500 = safe_num((hourly.get("relative_humidity_500hPa") or [50])[i], 50)
-                t850 = safe_num((hourly.get("temperature_850hPa") or [20])[i], 20)
-                t500 = safe_num((hourly.get("temperature_500hPa") or [-10])[i], -10)
-                prob = max(0, (cape - 400) / 25.0)
-                moisture = rh850 * 0.4 + rh700 * 0.4 + rh500 * 0.2
-                lapse = t850 - t500
-                if moisture < 50 or lapse < 22:
-                    prob *= 0.2
-                elif moisture > 70 and lapse > 28:
-                    prob *= 1.15
-                if wind < 12 and gust < 25:
-                    prob *= 0.4
-                storm = float(np.clip(prob, 0, 85))
-                if dt.hour < 12 or dt.hour > 19:
-                    storm *= 0.35
-                elev = ELEVATION.get(name, 0)
-                east_hajar = coords["lon"] >= 55.9 and (coords["type"] == "Mountains" or elev >= 400)
-                ain_plain = 24.1 <= coords["lat"] <= 24.9 and 55.2 <= coords["lon"] <= 55.9
-                gulf_coast = coords["type"] == "Coast" and coords["lon"] < 55.6
-                oman_coast = coords["lon"] >= 56.15
-                empty_quarter = coords["type"] == "Desert" and coords["lat"] < 23.8
-                if east_hajar and 120 <= wind_dir <= 160 and cape >= 800 and moisture >= 55:
-                    storm = min(85, storm * 1.15 + 4)
-                    alkous = max(alkous, 40 if rh >= 70 else 20)
-                if ain_plain and 12 <= dt.hour <= 19 and rh850 >= 60 and cape >= 500 and moisture >= 55:
-                    storm = max(storm, min(70, 25 + cape / 40))
-                if gulf_coast:
-                    storm *= 0.45
-                if oman_coast and 40 <= wind_dir <= 170 and rh >= 75:
-                    alkous = max(alkous, float(np.clip((rh - 75) * 2.5, 0, 70)))
-                    storm *= 0.7
-                if empty_quarter:
-                    storm *= 0.3
-                    if wind >= 28 and (wind_dir >= 300 or wind_dir <= 40):
-                        shamal = max(shamal, float(np.clip((wind - 26) * 3.5, 0, 90)))
-                night = dt.hour >= 18 or dt.hour <= 9
-                western = coords["type"] == "Desert" or (coords["type"] == "Coast" and coords["lon"] < 54.6)
-                if night and wind < 12 and not east_hajar:
-                    if western and rh >= 90:
-                        fog = float(np.clip((rh - 90) * 8 + (12 - wind) * 2, 0, 90))
-                    elif rh >= 95 and wind < 6:
-                        fog = float(np.clip((rh - 95) * 6, 0, 75))
-                if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 75 and cloud >= 40:
-                    base_k = (rh - 75) * 2 + cloud * 0.4
-                    alkous = float(np.clip(base_k * (1.15 if temp >= 35 else 1), 0, 85))
-                elev = ELEVATION.get(name, 0)
-                if elev >= 800 and 45 <= wind_dir <= 160 and rh >= 70 and cloud >= 50:
-                    alkous = max(alkous, 35)
-                    drizzle = max(drizzle, 10)
-                if coords["lon"] >= 55.8 and 3 <= dt.hour <= 9 and 45 <= wind_dir <= 160 and rh >= 88 and cloud >= 80:
-                    drizzle = float(np.clip((rh - 88) * 3.5 + (cloud - 80) * 1.5, 0, 80))
-                nw = wind_dir >= 300 or wind_dir <= 30
-                southern = 140 <= wind_dir <= 200
-                central_inland = 24.0 <= coords["lat"] <= 25.0 and 54.5 <= coords["lon"] <= 55.6 and coords["type"] != "Coast"
-                if shamal == 0 and wind >= 28 and nw and coords["type"] in ("Desert", "Coast"):
-                    shamal = float(np.clip((wind - 26) * 3.5 + 8, 0, 90))
-                if wind >= 25 and southern and (central_inland or coords["type"] == "Desert"):
-                    shamal = max(shamal, float(np.clip((wind - 23) * 3.2 + (10 if central_inland else 4), 0, 90)))
-            except Exception:
-                pass
+            model_probs = []
+            temps = []
+            for mname in model_names:
+                mdata = live[mname]
+                if idx >= len(mdata):
+                    continue
+                hourly = (mdata[idx] or {}).get("hourly") or {}
+                times = hourly.get("time") or []
+                if not times:
+                    continue
+                api_times = [datetime.fromisoformat(t).replace(tzinfo=None) for t in times]
+                p = compute_probs(hourly, api_times, name, coords, dt)
+                model_probs.append(p)
+                temps.append(p["temp"])
+            if not model_probs:
+                continue
+            avg = lambda k: sum(p[k] for p in model_probs) / len(model_probs)
+            agree_storm = sum(1 for p in model_probs if p["storm"] >= 65)
+            agree_fog = sum(1 for p in model_probs if p["fog"] >= 75)
+            agree_shamal = sum(1 for p in model_probs if p["shamal"] >= 60)
+            agree_drizzle = sum(1 for p in model_probs if p["drizzle"] >= 55)
+            agreement = max(agree_storm, agree_fog, agree_shamal, agree_drizzle)
             rows.append({
                 "Time": dt_str, "DateOnly": f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')}",
                 "Station": name, "Sector": sector_of(name), "Zone": zone,
                 "Latitude": coords["lat"], "Longitude": coords["lon"],
-                "Storm Probability": round(storm), "Fog Probability": round(fog),
-                "AlKous Prob": round(alkous), "Drizzle Prob": round(drizzle),
-                "Shamal Index": round(shamal), "Temperature": round(temp, 1),
-                "Apparent Temp": round(app, 1), "Humidity": round(rh),
-                "Wind": round(wind, 1), "Gust": round(gust, 1), "Wind Dir": round(wind_dir),
+                "Storm Probability": round(avg("storm")), "Fog Probability": round(avg("fog")),
+                "AlKous Prob": round(avg("alkous")), "Drizzle Prob": round(avg("drizzle")),
+                "Shamal Index": round(avg("shamal")), "Temperature": round(avg("temp"), 1),
+                "Apparent Temp": round(avg("app"), 1), "Humidity": round(avg("rh")),
+                "Wind": round(avg("wind"), 1), "Gust": round(avg("gust"), 1), "Wind Dir": round(avg("wind_dir")),
+                "Agreement": agreement, "ModelsUsed": n_models,
             })
 
 df = pd.DataFrame(rows)
@@ -625,8 +656,9 @@ if not df.empty:
         starts, ends = [], []
         occurring = False
         extra = ""
+        agree_frame = df[df["Agreement"] >= 2] if "Agreement" in df.columns else df
         for sector in SECTOR_MAP:
-            found = hazard_window(df, column, threshold, sector, lead)
+            found = hazard_window(agree_frame, column, threshold, sector, lead)
             if not found:
                 continue
             start, end, level, stations, is_now, direction, wind_min, wind_max, vis = found

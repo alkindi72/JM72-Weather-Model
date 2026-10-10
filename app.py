@@ -3063,11 +3063,6 @@ with tab8:
         """,
         height=440,
     )
-          </div>
-        </div>
-        """,
-        height=530,
-    )
     labels = ("ما هي؟", "أين تظهر عندنا؟", "ماذا نلاحظ؟") if lang == "ar" else ("What is it?", "Where do we see it?", "What do we notice?")
     paras = "".join(f"<p><b>{lab}</b><br>{txt.rstrip('،')}.</p>" for lab, txt in zip(labels, parts))
     season_html = f"<div class='muted' style='text-align:center'>{season}</div>" if season else ""

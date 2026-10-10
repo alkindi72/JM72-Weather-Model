@@ -409,8 +409,6 @@ if ok and isinstance(live, list):
                     storm = max(storm, 30 + min(40, cape / 25))
                 if gulf_coast:
                     storm *= 0.55
-                    if dt.hour <= 9 and rh >= 78 and wind < 16:
-                        fog = max(fog, float(np.clip((rh - 76) * 3.5, 0, 90)))
                 if oman_coast and 40 <= wind_dir <= 170:
                     alkous = max(alkous, float(np.clip((rh - 60) * 2, 0, 85)))
                     storm *= 0.8
@@ -418,8 +416,13 @@ if ok and isinstance(live, list):
                     storm *= 0.35
                     if wind >= 18 and (wind_dir >= 300 or wind_dir <= 40):
                         shamal = max(shamal, float(np.clip((wind - 16) * 3.5, 0, 100)))
-                if (dt.hour < 8 or dt.hour > 22) and rh > 80 and wind < 15 and not east_hajar:
-                    fog = float(np.clip((rh - 80) * 4 + (15 - wind) * 3, 0, 100))
+                night = dt.hour >= 21 or dt.hour <= 9
+                western = coords["type"] == "Desert" or (coords["type"] == "Coast" and coords["lon"] < 54.6)
+                if night and wind < 14 and not east_hajar:
+                    if western and rh >= 88:
+                        fog = float(np.clip((rh - 88) * 8 + (14 - wind) * 2, 0, 95))
+                    elif rh >= 93 and wind < 8:
+                        fog = float(np.clip((rh - 93) * 7 + (8 - wind) * 2, 0, 90))
                 if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 65:
                     base_k = (rh - 65) * 2 + cloud * 0.5
                     alkous = float(np.clip(base_k * (1.2 if temp >= 35 else 1), 0, 100))
@@ -605,7 +608,7 @@ def rain_words(level: int) -> str:
 alerts = []
 if not df.empty:
     checks = [
-        ("Fog Probability", 50, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
+        ("Fog Probability", 70, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
         ("Storm Probability", 45, 3, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
         ("Shamal Index", 50, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
         ("Wind", 40, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),

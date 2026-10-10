@@ -297,7 +297,47 @@ def om_params(params: Dict[str, Any]) -> Dict[str, Any]:
 
 def om_get(url: str, params: Dict[str, Any], timeout: int = 20):
     return requests.get(url, params=om_params(params), timeout=timeout)
-    return requests.get(url, params=params, timeout=timeout)
+
+
+def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
+    """Fetch multi-model hourly data (ECMWF, GFS, ICON) for all stations."""
+    models = ["ecmwf_ifs", "gfs_seamless", "icon_seamless"]
+    hourly_vars = [
+        "temperature_2m", "apparent_temperature", "relative_humidity_2m",
+        "precipitation_probability", "cloudcover_low", "cloudcover_mid", "cloudcover_high",
+        "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m",
+        "cape", "visibility", "dew_point_2m"
+    ]
+    try:
+        lats = [s["lat"] for s in stations.values()]
+        lons = [s["lon"] for s in stations.values()]
+        params = {
+            "latitude": ",".join(map(str, lats)),
+            "longitude": ",".join(map(str, lons)),
+            "hourly": ",".join(hourly_vars),
+            "models": ",".join(models),
+            "forecast_days": 5,
+            "timezone": "Asia/Dubai",
+        }
+        r = om_get(om_url("forecast"), params, timeout=45)
+        if r.status_code != 200:
+            return False, f"API error {r.status_code}"
+        data = r.json()
+        # Normalize single vs multi location response
+        if isinstance(data, dict) and "hourly" in data:
+            data = [data]
+        elif isinstance(data, list):
+            pass
+        else:
+            return False, "Unexpected API response format"
+        result = {}
+        names = list(stations.keys())
+        for i, name in enumerate(names):
+            if i < len(data):
+                result[name] = data[i]
+        return True, result
+    except Exception as e:
+        return False, str(e)
 
 
 def fetch_abu_dhabi_sounding() -> dict:

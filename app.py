@@ -288,7 +288,7 @@ def om_get(url: str, params: Dict[str, Any], timeout: int = 20):
 def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
     cache_path = "/tmp/71wm_live.json"
     last_error = "unknown"
-    for model in ("ecmwf_ifs", "gfs_seamless"):
+    for model in ("gfs_seamless", "ecmwf_ifs"):
         params = {
             "latitude": ",".join(str(s["lat"]) for s in stations.values()),
             "longitude": ",".join(str(s["lon"]) for s in stations.values()),
@@ -386,14 +386,16 @@ if ok and isinstance(live, list):
                 rh500 = safe_num((hourly.get("relative_humidity_500hPa") or [50])[i], 50)
                 t850 = safe_num((hourly.get("temperature_850hPa") or [20])[i], 20)
                 t500 = safe_num((hourly.get("temperature_500hPa") or [-10])[i], -10)
-                prob = cape / 20.0
+                prob = max(0, (cape - 400) / 25.0)
                 moisture = rh850 * 0.4 + rh700 * 0.4 + rh500 * 0.2
                 lapse = t850 - t500
-                prob *= 1.3 if lapse > 26 else (0.5 if lapse < 20 else 1)
-                prob *= 0.1 if moisture < 40 else (1.2 if moisture > 70 else 1)
-                if coords["type"] == "Mountains" and temp > 38:
-                    prob *= 1.3
-                storm = float(np.clip(prob, 0, 100))
+                if moisture < 50 or lapse < 22:
+                    prob *= 0.2
+                elif moisture > 70 and lapse > 28:
+                    prob *= 1.15
+                if wind < 12 and gust < 25:
+                    prob *= 0.4
+                storm = float(np.clip(prob, 0, 85))
                 if dt.hour < 12 or dt.hour > 19:
                     storm *= 0.35
                 elev = ELEVATION.get(name, 0)
@@ -402,39 +404,43 @@ if ok and isinstance(live, list):
                 gulf_coast = coords["type"] == "Coast" and coords["lon"] < 55.6
                 oman_coast = coords["lon"] >= 56.15
                 empty_quarter = coords["type"] == "Desert" and coords["lat"] < 23.8
-                if east_hajar and 50 <= wind_dir <= 160:
-                    storm = min(100, storm * 1.35 + 8)
-                    alkous = max(alkous, 45 if rh >= 60 else 25)
-                if ain_plain and 12 <= dt.hour <= 19 and rh850 >= 50 and cape >= 250:
-                    storm = max(storm, 30 + min(40, cape / 25))
+                if east_hajar and 120 <= wind_dir <= 160 and cape >= 800 and moisture >= 55:
+                    storm = min(85, storm * 1.15 + 4)
+                    alkous = max(alkous, 40 if rh >= 70 else 20)
+                if ain_plain and 12 <= dt.hour <= 19 and rh850 >= 60 and cape >= 500 and moisture >= 55:
+                    storm = max(storm, min(70, 25 + cape / 40))
                 if gulf_coast:
-                    storm *= 0.55
-                if oman_coast and 40 <= wind_dir <= 170:
-                    alkous = max(alkous, float(np.clip((rh - 60) * 2, 0, 85)))
-                    storm *= 0.8
+                    storm *= 0.45
+                if oman_coast and 40 <= wind_dir <= 170 and rh >= 75:
+                    alkous = max(alkous, float(np.clip((rh - 75) * 2.5, 0, 70)))
+                    storm *= 0.7
                 if empty_quarter:
-                    storm *= 0.35
-                    if wind >= 18 and (wind_dir >= 300 or wind_dir <= 40):
-                        shamal = max(shamal, float(np.clip((wind - 16) * 3.5, 0, 100)))
-                night = dt.hour >= 21 or dt.hour <= 9
+                    storm *= 0.3
+                    if wind >= 28 and (wind_dir >= 300 or wind_dir <= 40):
+                        shamal = max(shamal, float(np.clip((wind - 26) * 3.5, 0, 90)))
+                night = dt.hour >= 18 or dt.hour <= 9
                 western = coords["type"] == "Desert" or (coords["type"] == "Coast" and coords["lon"] < 54.6)
-                if night and wind < 14 and not east_hajar:
-                    if western and rh >= 88:
-                        fog = float(np.clip((rh - 88) * 8 + (14 - wind) * 2, 0, 95))
-                    elif rh >= 93 and wind < 8:
-                        fog = float(np.clip((rh - 93) * 7 + (8 - wind) * 2, 0, 90))
-                if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 65:
-                    base_k = (rh - 65) * 2 + cloud * 0.5
-                    alkous = float(np.clip(base_k * (1.2 if temp >= 35 else 1), 0, 100))
+                if night and wind < 12 and not east_hajar:
+                    if western and rh >= 90:
+                        fog = float(np.clip((rh - 90) * 8 + (12 - wind) * 2, 0, 90))
+                    elif rh >= 95 and wind < 6:
+                        fog = float(np.clip((rh - 95) * 6, 0, 75))
+                if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 75 and cloud >= 40:
+                    base_k = (rh - 75) * 2 + cloud * 0.4
+                    alkous = float(np.clip(base_k * (1.15 if temp >= 35 else 1), 0, 85))
                 elev = ELEVATION.get(name, 0)
-                if elev >= 800 and 45 <= wind_dir <= 160 and rh >= 60:
-                    alkous = max(alkous, 40)
-                    drizzle = max(drizzle, 15)
-                if coords["lon"] >= 55.8 and 3 <= dt.hour <= 9 and 45 <= wind_dir <= 160 and rh >= 85 and cloud >= 75:
-                    drizzle = float(np.clip((rh - 85) * 4 + (cloud - 75) * 2 + wind * 0.8, 0, 100))
+                if elev >= 800 and 45 <= wind_dir <= 160 and rh >= 70 and cloud >= 50:
+                    alkous = max(alkous, 35)
+                    drizzle = max(drizzle, 10)
+                if coords["lon"] >= 55.8 and 3 <= dt.hour <= 9 and 45 <= wind_dir <= 160 and rh >= 88 and cloud >= 80:
+                    drizzle = float(np.clip((rh - 88) * 3.5 + (cloud - 80) * 1.5, 0, 80))
                 nw = wind_dir >= 300 or wind_dir <= 30
-                if shamal == 0 and wind >= 20 and nw:
-                    shamal = float(np.clip((wind - 18) * 3.2 + (12 if nw else 0) + (8 if coords["type"] in ("Desert", "Coast") else 0), 0, 100))
+                southern = 140 <= wind_dir <= 200
+                central_inland = 24.0 <= coords["lat"] <= 25.0 and 54.5 <= coords["lon"] <= 55.6 and coords["type"] != "Coast"
+                if shamal == 0 and wind >= 28 and nw and coords["type"] in ("Desert", "Coast"):
+                    shamal = float(np.clip((wind - 26) * 3.5 + 8, 0, 90))
+                if wind >= 25 and southern and (central_inland or coords["type"] == "Desert"):
+                    shamal = max(shamal, float(np.clip((wind - 23) * 3.2 + (10 if central_inland else 4), 0, 90)))
             except Exception:
                 pass
             rows.append({
@@ -522,7 +528,7 @@ st.markdown(
   <div class="sub">{tr(f"قراءة موحّدة للعواصف، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Storms, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
   <span class="pill">{tr("مباشر", "Live")} <span class="pulse"></span> {uae_now.strftime('%H:%M')}</span>
   <span class="pill" style="background:{risk_color};color:#fff;">{tr("التحذيرات", "Warnings")} {risk}% · {status}</span>
-  <span class="pill">{tr("دورة النموذج", "Model cycle")} ECMWF {cycle}</span>
+  <span class="pill">{tr("دورة النموذج", "Model cycle")} GFS {cycle}</span>
   <span class="pill">{tr("نشرة الخمسة أيام", "Five-day bulletin")} {bulletin_day} · 05:00</span>
 </div>
 """,
@@ -608,11 +614,11 @@ def rain_words(level: int) -> str:
 alerts = []
 if not df.empty:
     checks = [
-        ("Fog Probability", 70, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
-        ("Storm Probability", 45, 3, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
-        ("Shamal Index", 50, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
-        ("Wind", 40, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
-        ("Drizzle Prob", 45, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
+        ("Fog Probability", 75, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
+        ("Storm Probability", 65, 3, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
+        ("Shamal Index", 60, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
+        ("Wind", 45, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
+        ("Drizzle Prob", 55, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
     ]
     for column, threshold, lead, title_ar, title_en, verb_ar, verb_en in checks:
         found_areas = []

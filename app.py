@@ -1390,19 +1390,17 @@ def fetch_uae_drivers() -> pd.DataFrame:
     rows = []
     for model in ("ecmwf_ifs", "icon_seamless", "gfs_seamless"):
         try:
-            response = requests.get(
-                om_url("forecast"),
-                params={
-                    "latitude": ",".join(str(v[0]) for v in points.values()),
-                    "longitude": ",".join(str(v[1]) for v in points.values()),
-                    "hourly": "surface_pressure,relative_humidity_2m,cape,precipitation_probability",
-                    "forecast_days": 3,
-                    "models": model,
-                    "timezone": "Asia/Dubai",
-                },
-                timeout=30,
-            )
-            response.raise_for_status()
+            params = {
+                "latitude": ",".join(str(v[0]) for v in points.values()),
+                "longitude": ",".join(str(v[1]) for v in points.values()),
+                "hourly": "surface_pressure,relative_humidity_2m,cape,precipitation_probability",
+                "forecast_days": 3,
+                "models": model,
+                "timezone": "Asia/Dubai",
+            }
+            response = om_get(om_url("forecast"), params, timeout=30)
+            if response.status_code != 200:
+                continue
             payload = response.json()
             blocks = payload if isinstance(payload, list) else [payload]
             for name, block in zip(points, blocks):
@@ -1540,19 +1538,17 @@ def fetch_model_rain(model: str) -> Tuple[bool, Any]:
         "ناهل": (24.62, 55.58), "ليوا": (23.13, 53.77), "جبل جيس": (25.95, 56.17),
     }
     try:
-        response = requests.get(
-            om_url("forecast"),
-            params={
-                "latitude": ",".join(str(v[0]) for v in points.values()),
-                "longitude": ",".join(str(v[1]) for v in points.values()),
-                "hourly": "precipitation",
-                "models": model,
-                "forecast_days": 3,
-                "timezone": "Asia/Dubai",
-            },
-            timeout=30,
-        )
-        response.raise_for_status()
+        params = {
+            "latitude": ",".join(str(v[0]) for v in points.values()),
+            "longitude": ",".join(str(v[1]) for v in points.values()),
+            "hourly": "precipitation",
+            "models": model,
+            "forecast_days": 3,
+            "timezone": "Asia/Dubai",
+        }
+        response = om_get(om_url("forecast"), params, timeout=30)
+        if response.status_code != 200:
+            return False, f"HTTP {response.status_code}"
         data = response.json()
         blocks = data if isinstance(data, list) else [data]
         rows = []
@@ -1568,18 +1564,16 @@ def fetch_model_rain(model: str) -> Tuple[bool, Any]:
 def fetch_dust() -> Tuple[bool, Any]:
     points = {"الساحل الشرقي": (25.12, 56.33), "جبل جيس": (25.95, 56.17), "أبوظبي": (24.45, 54.38), "العين": (24.26, 55.61)}
     try:
-        response = requests.get(
-            om_url("air"),
-            params={
-                "latitude": ",".join(str(v[0]) for v in points.values()),
-                "longitude": ",".join(str(v[1]) for v in points.values()),
-                "hourly": "pm10,dust",
-                "forecast_days": 3,
-                "timezone": "Asia/Dubai",
-            },
-            timeout=30,
-        )
-        response.raise_for_status()
+        params = {
+            "latitude": ",".join(str(v[0]) for v in points.values()),
+            "longitude": ",".join(str(v[1]) for v in points.values()),
+            "hourly": "pm10,dust",
+            "forecast_days": 3,
+            "timezone": "Asia/Dubai",
+        }
+        response = om_get(om_url("air"), params, timeout=30)
+        if response.status_code != 200:
+            return False, f"HTTP {response.status_code}"
         data = response.json()
         return True, dict(zip(points, data if isinstance(data, list) else [data]))
     except Exception as exc:
@@ -1900,9 +1894,9 @@ with tab8:
    'The gap between maximum and minimum. In the desert it can exceed 20 degrees, which favours dawn fog.'),
   ('STORM',
    'جريان الوادي',
-   'مجرى جاف يمتلئ فجأة من زخة أعلى الجبل. الخطر في سرعة الوصول لا في كمية المطر وحدها.',
+   'مجرى جاف في الجبال أو السهول يمتلئ فجأة بمياه قادمة من زخة مطر في أعلى الوادي أو على الجبال. الخطر ليس في كمية المطر فقط، بل في سرعة وصول المياه التي قد تقطع الطرق وتغمر المركبات خلال دقائق. يحدث غالباً مع سحب ركامية بعد الظهر على الحجر أو الجبال الشمالية.',
    'Wadi flash flow',
-   'A dry channel filling suddenly from rain higher up. The danger is how fast it arrives, not rainfall total alone.'),
+   'A normally dry channel in the mountains or plains that fills suddenly with water from rain higher in the catchment. The danger is the speed of arrival, which can cut roads and flood vehicles within minutes. Most common with afternoon cumulonimbus on the Hajar or northern mountains.'),
   ('KOUS',
    'رطوبة 850',
    'رطوبة فوق السطح بنحو 1.5 كم. إذا ارتفعت مع ريح شرقية قوي احتمال الكوس والمطر الخفيف.',
@@ -2203,11 +2197,9 @@ with tab8:
    'favours dawn fog.'),
   ('STORM',
    'الانتقال: جريان الوادي',
-   'في أشهر الانتقال بين القيظ والوسم: مجرى جاف يمتلئ فجأة من زخة أعلى الجبل. الخطر في سرعة الوصول لا في كمية المطر '
-   'وحدها.',
+   'في أشهر الانتقال بين القيظ والوسم: مجرى جاف في الجبال أو السهول يمتلئ فجأة بمياه قادمة من زخة على الجبال. الخطر في سرعة الوصول التي قد تقطع الطرق خلال دقائق، خاصة مع السحب الركامية بعد الظهر.',
    'Transition: Wadi flash flow',
-   'In the transition months: A dry channel filling suddenly from rain higher up. The danger is how fast it arrives, '
-   'not rainfall total alone.'),
+   'In the transition months: A dry channel that fills suddenly from mountain rain. The danger is the rapid arrival that can cut roads within minutes, especially with afternoon cumulonimbus.'),
   ('KOUS',
    'الانتقال: رطوبة 850',
    'في أشهر الانتقال بين القيظ والوسم: رطوبة فوق السطح بنحو 1.5 كم. إذا ارتفعت مع ريح شرقية قوي احتمال الكوس والمطر '
@@ -2518,10 +2510,9 @@ with tab8:
    'which favours dawn fog.'),
   ('STORM',
    'القيظ: جريان الوادي',
-   'في قلب القيظ على الإمارات: مجرى جاف يمتلئ فجأة من زخة أعلى الجبل. الخطر في سرعة الوصول لا في كمية المطر وحدها.',
+   'في قلب القيظ على الإمارات: مجرى جاف يمتلئ فجأة من زخة جبلية عابرة. رغم ندرة المطر، فإن الجريان إذا حدث يكون سريعاً وخطراً على الطرق الجبلية والشعاب.',
    'Hot season: Wadi flash flow',
-   'In the peak hot season in the UAE: A dry channel filling suddenly from rain higher up. The danger is how fast it '
-   'arrives, not rainfall total alone.'),
+   'In the peak hot season in the UAE: A dry channel filling suddenly from a brief mountain shower. Rain is rare, but when flow occurs it is fast and dangerous on mountain roads and valleys.'),
   ('KOUS',
    'القيظ: رطوبة 850',
    'في قلب القيظ على الإمارات: رطوبة فوق السطح بنحو 1.5 كم. إذا ارتفعت مع ريح شرقية قوي احتمال الكوس والمطر الخفيف.',
@@ -2830,10 +2821,9 @@ with tab8:
    'favours dawn fog.'),
   ('STORM',
    'الوسم: جريان الوادي',
-   'في موسم الوسم والاعتدال: مجرى جاف يمتلئ فجأة من زخة أعلى الجبل. الخطر في سرعة الوصول لا في كمية المطر وحدها.',
+   'في موسم الوسم والاعتدال: مجرى جاف يمتلئ فجأة من زخة على الجبال أو السهول الشرقية. الخطر في سرعة وصول المياه التي قد تغمر الطرق والشعاب خلال دقائق، خاصة مع العواصف الرعدية بعد الظهر.',
    'Wasm: Wadi flash flow',
-   'In the Wasm and milder season: A dry channel filling suddenly from rain higher up. The danger is how fast it '
-   'arrives, not rainfall total alone.'),
+   'In the Wasm and milder season: A dry channel filling suddenly from rain on the mountains or eastern plains. The danger is the speed of arrival that can flood roads and valleys within minutes, especially with afternoon thunderstorms.'),
   ('KOUS',
    'الوسم: رطوبة 850',
    'في موسم الوسم والاعتدال: رطوبة فوق السطح بنحو 1.5 كم. إذا ارتفعت مع ريح شرقية قوي احتمال الكوس والمطر الخفيف.',

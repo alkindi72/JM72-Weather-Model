@@ -185,12 +185,12 @@ STATIONS: Dict[str, Dict[str, Any]] = {
 }
 SECTOR_MAP = {
     "الساحل الشرقي": ["Fujairah Port", "Fujairah Int'l Airport", "Kalba", "Khor Fakkan Port", "Dibba"],
-    "الجبال الشرقية": ["Hatta", "Jabal Al Rahba", "Masafi", "Jebel Hafeet", "AlQor", "Al Heben", "Al Tawiyen", "Wadi Wurayah", "Al Bithnah", "Al Siji", "Masafi Valley", "Al Ghail"],
-    "الشمال": ["Jabal Jais", "Shaam", "Wadi Al Bih", "Ras Al khaimah", "Ras Al Khaimah Int'l Airport", "Umm Al Quwain"],
+    "الجبال الشرقية": ["Hatta", "Jabal Jais", "Jabal Al Rahba", "Masafi", "Jebel Hafeet", "Shaam", "AlQor", "Al Heben", "Al Tawiyen", "Wadi Wurayah", "Al Bithnah", "Al Siji", "Wadi Al Bih", "Masafi Valley", "Al Ghail"],
     "المنطقة الوسطى": ["Al Dhaid", "Al Malaiha", "Madam", "Falaj Al Mualla", "Digdaga", "Al Yahar", "Al Hayer", "Al Khaznah"],
     "العين": ["Al Ain Int'l Airport", "Al Aamerah", "Nahil", "Al Faqa", "Al Ajban", "Sweihan", "Shwaib", "Al Quaa", "Al Wagan", "Remah", "Al Shiweb"],
     "دبي": ["Burj Khalifah", "Dubai Int'l Airport", "Al Maktoum Int'l Airport", "Jebel Ali"],
-    "الشارقة وعجمان": ["Sharjah University", "Sharjah Int'l Airport", "Ajman"],
+    "الشارقة وعجمان وأم القيوين": ["Sharjah University", "Sharjah Int'l Airport", "Ajman", "Umm Al Quwain"],
+    "رأس الخيمة": ["Ras Al khaimah", "Ras Al Khaimah Int'l Airport"],
     "أبوظبي": ["Abu Dhabi", "ADNOC HQ", "Al Wathbah", "Zayed Int'l Airport", "Al Bateen Executive Airport", "Sir Bu Nair", "Yas Island"],
     "الظفرة": ["Abu Al Abyad", "AlRuwais", "Sir Bani Yas", "Dalma", "Madinat Zayed", "Mukhariz", "Owtaid", "Liwa", "Ghayathi", "Sila", "Liwa Oasis", "Qasr Al Sarab", "Baynunah", "Al Mirfa", "Tarif"],
 }
@@ -204,11 +204,11 @@ def tr(ar: str, en: str) -> str:
 SECTOR_EN = {
     "الساحل الشرقي": "East coast",
     "الجبال الشرقية": "Eastern mountains",
-    "الشمال": "North (Ras Al Khaimah, Jebel Jais, Umm Al Quwain)",
     "المنطقة الوسطى": "Central region",
     "العين": "Al Ain",
     "دبي": "Dubai",
-    "الشارقة وعجمان": "Sharjah and Ajman",
+    "الشارقة وعجمان وأم القيوين": "Sharjah, Ajman and Umm Al Quwain",
+    "رأس الخيمة": "Ras Al Khaimah",
     "أبوظبي": "Abu Dhabi",
     "الظفرة": "Al Dhafra",
     "متفرقة": "Other",
@@ -297,131 +297,43 @@ def om_params(params: Dict[str, Any]) -> Dict[str, Any]:
 
 def om_get(url: str, params: Dict[str, Any], timeout: int = 20):
     return requests.get(url, params=om_params(params), timeout=timeout)
+    return requests.get(url, params=params, timeout=timeout)
 
 
 def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
-    """Fetch multi-model hourly data (ECMWF, GFS, ICON) for all stations."""
-    models = ["ecmwf_ifs", "gfs_seamless", "icon_seamless"]
-    hourly_vars = [
-        "temperature_2m", "apparent_temperature", "relative_humidity_2m",
-        "precipitation_probability", "cloudcover_low", "cloudcover_mid", "cloudcover_high",
-        "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m",
-        "cape", "visibility", "dew_point_2m"
-    ]
+    """Fetch ECMWF, GFS, ICON separately via commercial API and return per-station model data."""
+    models = ("ecmwf_ifs", "gfs_seamless", "icon_seamless")
+    hourly_vars = "temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low,precipitation_probability,visibility,dew_point_2m"
     try:
-        lats = [s["lat"] for s in stations.values()]
-        lons = [s["lon"] for s in stations.values()]
-        params = {
-            "latitude": ",".join(map(str, lats)),
-            "longitude": ",".join(map(str, lons)),
-            "hourly": ",".join(hourly_vars),
-            "models": ",".join(models),
-            "forecast_days": 5,
-            "timezone": "Asia/Dubai",
-        }
-        r = om_get(om_url("forecast"), params, timeout=45)
-        if r.status_code != 200:
-            return False, f"API error {r.status_code}: {r.text[:200]}"
-        data = r.json()
-        # Normalize single vs multi location response
-        if isinstance(data, dict) and "hourly" in data:
-            data = [data]
-        elif isinstance(data, list):
-            pass
-        else:
-            return False, "Unexpected API response format"
-        result = {}
+        lats = ",".join(str(s["lat"]) for s in stations.values())
+        lons = ",".join(str(s["lon"]) for s in stations.values())
         names = list(stations.keys())
-        for i, name in enumerate(names):
-            if i < len(data) and isinstance(data[i], dict):
-                result[name] = data[i]
-        return True, result
+        per_station = {}
+        for model in models:
+            params = {
+                "latitude": lats,
+                "longitude": lons,
+                "hourly": hourly_vars,
+                "models": model,
+                "forecast_days": 5,
+                "timezone": "Asia/Dubai",
+            }
+            r = om_get(om_url("forecast"), params, timeout=40)
+            if r.status_code != 200:
+                continue
+            data = r.json()
+            if isinstance(data, dict) and "hourly" in data:
+                data = [data]
+            elif not isinstance(data, list):
+                continue
+            for i, name in enumerate(names):
+                if i < len(data) and isinstance(data[i], dict) and "hourly" in data[i]:
+                    per_station.setdefault(name, {})[model] = data[i]
+        if not per_station:
+            return False, "No model data received from commercial API"
+        return True, per_station
     except Exception as e:
         return False, str(e)
-
-
-def fetch_abu_dhabi_sounding() -> dict:
-    """Fetch latest available Abu Dhabi (41217) radiosonde indices from Wyoming. Returns empty dict on failure."""
-    from datetime import datetime, timedelta
-    now = datetime.utcnow()
-    for hours_back in range(0, 72, 12):
-        t = (now - timedelta(hours=hours_back)).replace(minute=0, second=0, microsecond=0)
-        if t.hour not in (0, 12):
-            continue
-        dt_str = t.strftime("%Y-%m-%d %H:%M:%S")
-        url = f"https://weather.uwyo.edu/wsgi/sounding?datetime={dt_str.replace(' ', '%20')}&id=41217&type=TEXT:LIST"
-        try:
-            r = requests.get(url, timeout=15)
-            if r.status_code != 200 or "Precipitable water" not in r.text:
-                continue
-            text = r.text
-            indices = {}
-            for line in text.splitlines():
-                if "Precipitable water" in line and "[mm]" in line:
-                    try:
-                        indices["pw"] = float(line.split()[-1])
-                    except Exception:
-                        pass
-                if "Convective Available Potential Energy" in line or "CAPE" in line:
-                    try:
-                        val = float(line.split()[-1])
-                        if val > 0:
-                            indices["cape"] = val
-                    except Exception:
-                        pass
-                if "Showalter index" in line:
-                    try:
-                        indices["showalter"] = float(line.split()[-1])
-                    except Exception:
-                        pass
-            if indices:
-                indices["time"] = dt_str
-                return indices
-        except Exception:
-            continue
-    return {}
-    cache_path = "/tmp/71wm_live.json"
-    models = ("gfs_seamless", "ecmwf_ifs", "icon_seamless")
-    results = {}
-    last_error = "unknown"
-    lats = ",".join(str(s["lat"]) for s in stations.values())
-    lons = ",".join(str(s["lon"]) for s in stations.values())
-    for model in models:
-        params = {
-            "latitude": lats,
-            "longitude": lons,
-            "current": "precipitation,weather_code",
-            "hourly": "temperature_2m,apparent_temperature,relative_humidity_2m,cape,winddirection_10m,windspeed_10m,windgusts_10m,relative_humidity_850hPa,relative_humidity_700hPa,relative_humidity_500hPa,temperature_850hPa,temperature_500hPa,cloudcover_low",
-            "models": model,
-            "timezone": "auto",
-        }
-        for _ in range(2):
-            try:
-                response = om_get(om_url("forecast"), params=params, timeout=25)
-                response.raise_for_status()
-                data = response.json()
-                if isinstance(data, dict) and data.get("error"):
-                    last_error = data.get("reason", "API error")
-                    break
-                if isinstance(data, dict):
-                    data = [data]
-                if data:
-                    results[model] = data
-                    break
-            except Exception as exc:
-                last_error = str(exc)
-                time.sleep(2)
-    if len(results) >= 2:
-        with open(cache_path, "w", encoding="utf-8") as handle:
-            json.dump(results, handle)
-        return True, results
-    if os.path.exists(cache_path):
-        try:
-            with open(cache_path, encoding="utf-8") as handle:
-                return True, json.load(handle)
-        except Exception:
-            pass
-    return False, last_error
 
 
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
@@ -542,44 +454,44 @@ rows: List[Dict[str, Any]] = []
 if ok and isinstance(live, dict):
     for name, coords in STATIONS.items():
         zone = "Inland" if coords["type"] in ("Inland", "Desert") else coords["type"]
-        station_data = live.get(name) or {}
-        hourly = (station_data.get("hourly") or {})
-        times = hourly.get("time") or []
-        if not times:
+        station_models = live.get(name) or {}
+        if not station_models:
             continue
-        api_times = [datetime.fromisoformat(t).replace(tzinfo=None) for t in times]
-        for dt_str, dt in zip(timeline_str, timeline):
-            p = compute_probs(hourly, api_times, name, coords, dt)
+        # Collect probabilities from each available model
+        time_probs: Dict[str, List] = {}
+        for model_name, station_data in station_models.items():
+            hourly = (station_data.get("hourly") or {})
+            times = hourly.get("time") or []
+            if not times:
+                continue
+            api_times = [datetime.fromisoformat(t).replace(tzinfo=None) for t in times]
+            for dt_str, dt in zip(timeline_str, timeline):
+                p = compute_probs(hourly, api_times, name, coords, dt)
+                time_probs.setdefault(dt_str, []).append((dt, p))
+        for dt_str, items in time_probs.items():
+            if not items:
+                continue
+            dt = items[0][0]
+            probs = [item[1] for item in items]
+            avg = lambda k: sum(p[k] for p in probs) / len(probs)
+            agree_storm = sum(1 for p in probs if p["storm"] >= 65)
+            agree_fog = sum(1 for p in probs if p["fog"] >= 75)
+            agree_shamal = sum(1 for p in probs if p["shamal"] >= 60)
+            agree_drizzle = sum(1 for p in probs if p["drizzle"] >= 55)
+            agreement = max(agree_storm, agree_fog, agree_shamal, agree_drizzle)
             rows.append({
                 "Time": dt_str, "DateOnly": f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')}",
                 "Station": name, "Sector": sector_of(name), "Zone": zone,
                 "Latitude": coords["lat"], "Longitude": coords["lon"],
-                "Storm Probability": round(p["storm"]), "Fog Probability": round(p["fog"]),
-                "AlKous Prob": round(p["alkous"]), "Drizzle Prob": round(p["drizzle"]),
-                "Shamal Index": round(p["shamal"]), "Temperature": round(p["temp"], 1),
-                "Apparent Temp": round(p["app"], 1), "Humidity": round(p["rh"]),
-                "Wind": round(p["wind"], 1), "Gust": round(p["gust"], 1), "Wind Dir": round(p["wind_dir"]),
-                "Agreement": 1, "ModelsUsed": 1,
+                "Storm Probability": round(avg("storm")), "Fog Probability": round(avg("fog")),
+                "AlKous Prob": round(avg("alkous")), "Drizzle Prob": round(avg("drizzle")),
+                "Shamal Index": round(avg("shamal")), "Temperature": round(avg("temp"), 1),
+                "Apparent Temp": round(avg("app"), 1), "Humidity": round(avg("rh")),
+                "Wind": round(avg("wind"), 1), "Gust": round(avg("gust"), 1), "Wind Dir": round(avg("wind_dir")),
+                "Agreement": agreement, "ModelsUsed": len(probs),
             })
 
 df = pd.DataFrame(rows)
-
-# Support from Abu Dhabi radiosonde: adjust storm probability based on observed stability
-sounding = fetch_abu_dhabi_sounding()
-if sounding and not df.empty:
-    factor = 1.0
-    if "cape" in sounding:
-        if sounding["cape"] < 200:
-            factor *= 0.6
-        elif sounding["cape"] > 1500:
-            factor *= 1.2
-    if "showalter" in sounding and sounding["showalter"] > 2:
-        factor *= 0.7
-    if "pw" in sounding and sounding["pw"] < 15:
-        factor *= 0.75
-    if factor != 1.0:
-        df["Storm Probability"] = (df["Storm Probability"] * factor).clip(0, 100).round()
-        df["SoundingSupport"] = f"Abu Dhabi {sounding.get('time','')} CAPE={sounding.get('cape','—')} PW={sounding.get('pw','—')} mm"
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def ai_sector_bias() -> dict:
@@ -946,8 +858,6 @@ def fetch_wave_points() -> pd.DataFrame:
 
 
 with tab1:
-    if "SoundingSupport" in df.columns and not df.empty:
-        st.caption(tr(f"دعم راديو ساوند أبوظبي: {df['SoundingSupport'].iloc[0]}", f"Abu Dhabi radiosonde support: {df['SoundingSupport'].iloc[0]}"))
     if alerts:
         st.markdown(
             "<div style='background:#7F1D1D;border:1px solid #FCA5A5;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'><b style='color:#FEE2E2;'>"
@@ -1480,17 +1390,19 @@ def fetch_uae_drivers() -> pd.DataFrame:
     rows = []
     for model in ("ecmwf_ifs", "icon_seamless", "gfs_seamless"):
         try:
-            params = {
-                "latitude": ",".join(str(v[0]) for v in points.values()),
-                "longitude": ",".join(str(v[1]) for v in points.values()),
-                "hourly": "surface_pressure,relative_humidity_2m,cape,precipitation_probability",
-                "forecast_days": 3,
-                "models": model,
-                "timezone": "Asia/Dubai",
-            }
-            response = om_get(om_url("forecast"), params, timeout=30)
-            if response.status_code != 200:
-                continue
+            response = requests.get(
+                om_url("forecast"),
+                params={
+                    "latitude": ",".join(str(v[0]) for v in points.values()),
+                    "longitude": ",".join(str(v[1]) for v in points.values()),
+                    "hourly": "surface_pressure,relative_humidity_2m,cape,precipitation_probability",
+                    "forecast_days": 3,
+                    "models": model,
+                    "timezone": "Asia/Dubai",
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
             payload = response.json()
             blocks = payload if isinstance(payload, list) else [payload]
             for name, block in zip(points, blocks):
@@ -1628,17 +1540,19 @@ def fetch_model_rain(model: str) -> Tuple[bool, Any]:
         "ناهل": (24.62, 55.58), "ليوا": (23.13, 53.77), "جبل جيس": (25.95, 56.17),
     }
     try:
-        params = {
-            "latitude": ",".join(str(v[0]) for v in points.values()),
-            "longitude": ",".join(str(v[1]) for v in points.values()),
-            "hourly": "precipitation",
-            "models": model,
-            "forecast_days": 3,
-            "timezone": "Asia/Dubai",
-        }
-        response = om_get(om_url("forecast"), params, timeout=30)
-        if response.status_code != 200:
-            return False, f"HTTP {response.status_code}"
+        response = requests.get(
+            om_url("forecast"),
+            params={
+                "latitude": ",".join(str(v[0]) for v in points.values()),
+                "longitude": ",".join(str(v[1]) for v in points.values()),
+                "hourly": "precipitation",
+                "models": model,
+                "forecast_days": 3,
+                "timezone": "Asia/Dubai",
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
         data = response.json()
         blocks = data if isinstance(data, list) else [data]
         rows = []
@@ -1654,16 +1568,18 @@ def fetch_model_rain(model: str) -> Tuple[bool, Any]:
 def fetch_dust() -> Tuple[bool, Any]:
     points = {"الساحل الشرقي": (25.12, 56.33), "جبل جيس": (25.95, 56.17), "أبوظبي": (24.45, 54.38), "العين": (24.26, 55.61)}
     try:
-        params = {
-            "latitude": ",".join(str(v[0]) for v in points.values()),
-            "longitude": ",".join(str(v[1]) for v in points.values()),
-            "hourly": "pm10,dust",
-            "forecast_days": 3,
-            "timezone": "Asia/Dubai",
-        }
-        response = om_get(om_url("air"), params, timeout=30)
-        if response.status_code != 200:
-            return False, f"HTTP {response.status_code}"
+        response = requests.get(
+            om_url("air"),
+            params={
+                "latitude": ",".join(str(v[0]) for v in points.values()),
+                "longitude": ",".join(str(v[1]) for v in points.values()),
+                "hourly": "pm10,dust",
+                "forecast_days": 3,
+                "timezone": "Asia/Dubai",
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
         data = response.json()
         return True, dict(zip(points, data if isinstance(data, list) else [data]))
     except Exception as exc:
@@ -3051,17 +2967,17 @@ with tab8:
     side = "rtl" if lang == "ar" else "ltr"
     components.html(
         f"""
-        <div style="position:relative;border-radius:18px;overflow:hidden;height:420px;">
-          <img src="data:image/jpeg;base64,{img}" style="width:100%;height:420px;object-fit:cover;display:block;filter:brightness(0.85);">
-          <div style="position:absolute;top:12px;left:0;right:0;text-align:center;direction:{side};pointer-events:none;">
-            <div style="display:inline-block;background:rgba(15,23,42,.7);border-radius:12px;padding:8px 18px;max-width:90%;">
-              <div style="font-size:1.4rem;line-height:1;">{icon}</div>
-              <div style="font-size:1.5rem;font-weight:800;color:#fff;line-height:1.2;">{title}</div>
+        <div style="position:relative;border-radius:18px;overflow:hidden;height:520px;">
+          <img src="data:image/jpeg;base64,{img}" style="width:100%;height:520px;object-fit:cover;display:block;filter:brightness(0.78);">
+          <div style="position:absolute;top:18px;left:0;right:0;text-align:center;direction:{side};">
+            <div style="display:inline-block;background:rgba(15,23,42,.55);border-radius:14px;padding:10px 22px;">
+              <div style="font-size:1.8rem;line-height:1;">{icon}</div>
+              <div style="font-size:2rem;font-weight:800;color:#fff;">{title}</div>
             </div>
           </div>
         </div>
         """,
-        height=440,
+        height=530,
     )
     labels = ("ما هي؟", "أين تظهر عندنا؟", "ماذا نلاحظ؟") if lang == "ar" else ("What is it?", "Where do we see it?", "What do we notice?")
     paras = "".join(f"<p><b>{lab}</b><br>{txt.rstrip('،')}.</p>" for lab, txt in zip(labels, parts))

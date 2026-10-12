@@ -1334,12 +1334,30 @@ with tab5:
             where = SECTOR_EN.get(where, where) if lang == "en" else where
             sky_parts.append(tr(f"مع ضباب فجراً يتركز على {where}", f"with dawn fog concentrating over {where}"))
         if safe_max(day["Storm Probability"]) >= 40 or safe_max(day["Drizzle Prob"]) >= 45:
-            where = day.loc[day[["Storm Probability", "Drizzle Prob"]].max(axis=1).idxmax(), "Sector"]
-            where = SECTOR_EN.get(where, where) if lang == "en" else where
+            rain_day = day.copy()
+            rain_day["rain_score"] = rain_day[["Storm Probability", "Drizzle Prob"]].max(axis=1)
+            top = rain_day.nlargest(4, "rain_score")
+            sectors = []
+            for _, row in top.iterrows():
+                sec = row["Sector"]
+                sec = SECTOR_EN.get(sec, sec) if lang == "en" else sec
+                if sec not in sectors and row["rain_score"] >= 35:
+                    sectors.append(sec)
+            if not sectors:
+                sectors = [top.iloc[0]["Sector"]]
             stormy = safe_max(day["Storm Probability"]) >= 55
+            if len(sectors) == 1:
+                where_txt = sectors[0]
+            elif len(sectors) == 2:
+                where_txt = tr(f"{sectors[0]} و{sectors[1]}", f"{sectors[0]} and {sectors[1]}")
+            else:
+                where_txt = tr("، ".join(sectors[:-1]) + f" و{sectors[-1]}", ", ".join(sectors[:-1]) + f" and {sectors[-1]}")
+            extend = ""
+            if any(s in ("الجبال الشرقية", "المنطقة الشرقية", "Eastern Mountains", "East Coast") for s in sectors):
+                extend = tr(" قد تمتد إلى الوسطى أو أبوظبي", " which may extend to the central areas or Abu Dhabi")
             sky_parts.append(tr(
-                f"وفرصة أمطار متفرقة{' تكون رعدية أحياناً' if stormy else ''} على {where}",
-                f"and a chance of scattered{' thundery' if stormy else ''} rain over {where}",
+                f"وفرصة أمطار متفرقة{' تكون رعدية أحياناً' if stormy else ''} على {where_txt}{extend}",
+                f"and a chance of scattered{' thundery' if stormy else ''} rain over {where_txt}{extend}",
             ))
         if safe_max(day["Shamal Index"]) >= 45:
             where = day.loc[day["Shamal Index"].idxmax(), "Sector"]

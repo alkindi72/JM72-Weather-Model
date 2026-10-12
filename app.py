@@ -1328,9 +1328,9 @@ with tab5:
         wname, wforce = wind_words(direction, speed)
 
         cloud = safe_max(day["AlKous Prob"]) if "AlKous Prob" in day else 0
-        if cloud >= 70:
+        if cloud >= 75:
             sky = tr("غائم جزئياً إلى غائم", "partly cloudy to cloudy")
-        elif cloud >= 35:
+        elif cloud >= 20:
             sky = tr("صحو إلى غائم جزئياً", "fair to partly cloudy")
         else:
             sky = tr("صحو", "fair")
@@ -1370,10 +1370,14 @@ with tab5:
 
         sky_full = " ".join(sky_parts)
 
-        dust_note = tr(" وقد تثير الغبار", " and may raise dust") if safe_max(day["Shamal Index"]) >= 50 else ""
+        # Wind in the requested style
+        dust_note = tr(
+            " مثيرة للغبار والأتربة على المناطق المكشوفة خاصة أثناء تكون السحب الركامية",
+            " raising dust over open areas especially with cumulonimbus",
+        ) if safe_max(day["Shamal Index"]) >= 50 else ""
         wind_detail = tr(
-            f"الرياح {wname} {wforce}{dust_note}، وقد تنشط بعد الظهر",
-            f"Wind {wname}, {wforce}{dust_note}, may freshen in the afternoon",
+            f"والرياح {wname} من {wforce} السرعة قد تنشط بعد الظهر{dust_note}",
+            f"Wind {wname}, {wforce}, may freshen in the afternoon{dust_note}",
         )
 
         def wave_pair(key):
@@ -1392,8 +1396,8 @@ with tab5:
         oo0, oo1 = wave_pair("oman_offshore")
 
         text = tr(
-            f"الطقس {sky_full} بوجه عام. {wind_detail}. البحر في الخليج العربي وبحر عمان {sea_words(max(gc1, go1, oc1, oo1))}، وارتفاع الموج من {feet_phrase(min(gc0, oc0))} إلى {feet_phrase(max(gc1, oc1))} قرب الساحل ومن {feet_phrase(min(go0, oo0))} إلى {feet_phrase(max(go1, oo1))} في العمق.",
-            f"{sky_full.capitalize()} overall. {wind_detail}. Arabian Gulf and Gulf of Oman {sea_words(max(gc1, go1, oc1, oo1))}, waves {feet_phrase(min(gc0, oc0))} to {feet_phrase(max(gc1, oc1))} near the coast and {feet_phrase(min(go0, oo0))} to {feet_phrase(max(go1, oo1))} offshore.",
+            f"الطقس {sky_full} بوجه عام، {wind_detail}، البحر في الخليج العربي وبحر عمان {sea_words(max(gc1, go1, oc1, oo1))} ويبلغ ارتفاع الموج من {feet_phrase(min(gc0, oc0))} إلى {feet_phrase(max(gc1, oc1))} قرب الساحل وفي العمق من {feet_phrase(min(go0, oo0))} إلى {feet_phrase(max(go1, oo1))}.",
+            f"{sky_full.capitalize()} overall, {wind_detail}. Arabian Gulf and Gulf of Oman {sea_words(max(gc1, go1, oc1, oo1))}, waves {feet_phrase(min(gc0, oc0))} to {feet_phrase(max(gc1, oc1))} near the coast and {feet_phrase(min(go0, oo0))} to {feet_phrase(max(go1, oo1))} offshore.",
         )
         shown_day = date if lang == "en" else f"{DAYS_AR.get(date.split()[0], date.split()[0])} {date.split()[-1]}"
         cards.append(f"<div class='card'><div class='kicker'>{shown_day}</div><p>{text}</p></div>")

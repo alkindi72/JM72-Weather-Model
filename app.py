@@ -391,36 +391,34 @@ def compute_probs(hourly, api_times, name, coords, dt):
         t500 = safe_num((hourly.get("temperature_500hPa") or [-10])[i], -10)
         precip_prob = safe_num((hourly.get("precipitation_probability") or [0])[i], 0)
         elev = ELEVATION.get(name, 0)
-        east_hajar = coords["lon"] >= 55.9 and (coords["type"] == "Mountains" or elev >= 400)
-        # Lower base threshold, especially for eastern mountains
-        base = 250 if east_hajar else 350
-        prob = max(0, (cape - base) / 18.0) + precip_prob * 0.35
-        moisture = rh850 * 0.4 + rh700 * 0.4 + rh500 * 0.2
+        east_hajar = coords["lon"] >= 55.85 and (coords["type"] == "Mountains" or elev >= 300)
+        moisture = rh850 * 0.45 + rh700 * 0.35 + rh500 * 0.20
         lapse = t850 - t500
-        if moisture < 40:
-            prob *= 0.5
-        elif moisture > 65 and lapse > 24:
-            prob *= 1.2
-        if wind < 8 and gust < 18 and not east_hajar:
-            prob *= 0.6
-        storm = float(np.clip(prob, 0, 90))
-        if not east_hajar and (dt.hour < 11 or dt.hour > 20):
-            storm *= 0.5
-        if east_hajar and cape >= 400:
-            storm = max(storm, min(80, 30 + cape / 25 + precip_prob * 0.4))
+        # Orographic-aware convective score
+        cape_score = max(0, (cape - (180 if east_hajar else 280)) / 14.0)
+        moisture_score = max(0, (moisture - 45) * 0.8)
+        precip_score = precip_prob * 0.55
+        lapse_bonus = 8 if lapse > 26 else (3 if lapse > 22 else 0)
+        orographic = 12 if east_hajar and cape >= 250 else 0
+        storm = cape_score + moisture_score * 0.4 + precip_score + lapse_bonus + orographic
+        if moisture < 38:
+            storm *= 0.55
+        if east_hajar and cape >= 300 and moisture >= 48:
+            storm = max(storm, 35 + cape / 22 + precip_prob * 0.45)
+        storm = float(np.clip(storm, 0, 92))
+        if not east_hajar and (dt.hour < 10 or dt.hour > 21):
+            storm *= 0.55
         ain_plain = 24.1 <= coords["lat"] <= 24.9 and 55.2 <= coords["lon"] <= 55.9
         gulf_coast = coords["type"] == "Coast" and coords["lon"] < 55.6
         oman_coast = coords["lon"] >= 56.15
         empty_quarter = coords["type"] == "Desert" and coords["lat"] < 23.8
-        if east_hajar and cape >= 500 and moisture >= 50:
-            storm = min(90, storm * 1.2 + 8)
-        if ain_plain and 12 <= dt.hour <= 19 and rh850 >= 55 and cape >= 400:
-            storm = max(storm, min(65, 20 + cape / 35))
+        if ain_plain and 11 <= dt.hour <= 20 and rh850 >= 50 and cape >= 300:
+            storm = max(storm, min(70, 18 + cape / 30 + precip_prob * 0.3))
         if gulf_coast:
-            storm *= 0.5
-        if oman_coast and 40 <= wind_dir <= 170 and rh >= 75:
-            alkous = max(alkous, float(np.clip((rh - 75) * 2.5, 0, 70)))
-            storm *= 0.75
+            storm *= 0.48
+        if oman_coast and 40 <= wind_dir <= 170 and rh >= 72:
+            alkous = max(alkous, float(np.clip((rh - 72) * 2.8, 0, 75)))
+            storm *= 0.72
         if empty_quarter:
             storm *= 0.3
             if wind >= 28 and (wind_dir >= 300 or wind_dir <= 40):

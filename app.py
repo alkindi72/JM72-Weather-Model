@@ -926,16 +926,19 @@ with tab1:
 
 def layer_map(kind: str, radar_url: str = "") -> str:
     overlay = ""
+    max_zoom = 18
     if kind == "Radar" and radar_url:
-        overlay = f"L.tileLayer({json.dumps(radar_url)}, {{opacity: 0.8, maxZoom: 10}}).addTo(map);"
+        overlay = f"L.tileLayer({json.dumps(radar_url)}, {{opacity: 0.8, maxZoom: 7, maxNativeZoom: 7}}).addTo(map);"
+        max_zoom = 8
     if kind == "Satellite":
-        overlay = "L.tileLayer('https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png', {opacity: 0.85, maxZoom: 8}).addTo(map);"
+        overlay = "L.tileLayer('https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png', {opacity: 0.85, maxZoom: 8, maxNativeZoom: 8}).addTo(map);"
+        max_zoom = 8
     return f"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <div id="uaemap" style="height:640px;border-radius:16px;background:#e5e7eb"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-      var map = L.map('uaemap').setView([24.4, 54.6], 6);
+      var map = L.map('uaemap', {{maxZoom: {max_zoom}}}).setView([24.4, 54.6], 6);
       L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{maxZoom: 18, attribution: '© OpenStreetMap'}}).addTo(map);
       {overlay}
     </script>

@@ -927,17 +927,20 @@ with tab1:
 def layer_map(kind: str, radar_url: str = "") -> str:
     overlay = ""
     if kind == "Radar" and radar_url:
-        overlay = "L.tileLayer(" + json.dumps(radar_url) + ", {opacity: 0.7}).addTo(map);"
+        overlay = f"L.tileLayer({json.dumps(radar_url)}, {{opacity: 0.75, maxZoom: 10}}).addTo(map);"
     if kind == "Satellite":
-        overlay = "L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/2026-10-08/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg', {opacity: 0.85, maxZoom: 9}).addTo(map);"
-    return """
+        # Use RainViewer infrared satellite (more reliable for UAE)
+        overlay = """
+        L.tileLayer('https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png', {opacity: 0.8, maxZoom: 8}).addTo(map);
+        """
+    return f"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <div id="uaemap" style="height:640px;border-radius:16px"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
       var map = L.map('uaemap').setView([24.4, 54.6], 6);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18}).addTo(map);
-      """ + overlay + """
+      L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{maxZoom: 18}}).addTo(map);
+      {overlay}
     </script>
     """
 
@@ -1073,10 +1076,12 @@ with tab2:
             radar_url = ""
             if field == "Radar":
                 try:
-                    info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=20).json()
-                    radar_url = f"{info['host']}{info['radar']['past'][-1]['path']}/256/{{z}}/{{x}}/{{y}}/2/1_1.png"
-                except Exception as exc:
-                    st.info(tr(f"تعذر جلب الرادار: {exc}", f"Radar could not be loaded: {exc}"))
+                    info = requests.get("https://api.rainviewer.com/public/weather-maps.json", timeout=15).json()
+                    past = info.get("radar", {}).get("past") or []
+                    if past:
+                        radar_url = f"{info['host']}{past[-1]['path']}/256/{{z}}/{{x}}/{{y}}/2/1_1.png"
+                except Exception:
+                    radar_url = ""
             components.html(layer_map(field, radar_url), height=660)
         else:
             day_slots = [slot for slot in timeline_str if slot.startswith(st.session_state.forecast_day)] or timeline_str

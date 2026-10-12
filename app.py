@@ -1348,17 +1348,30 @@ with tab5:
         if safe_max(day["Storm Probability"]) >= 45 or safe_max(day["Drizzle Prob"]) >= 50:
             rain_day = day.copy()
             rain_day["rain_score"] = rain_day[["Storm Probability", "Drizzle Prob"]].max(axis=1)
+            # Strong preference for eastern mountains / east when storms are present there
+            east_mask = rain_day["Sector"].isin(["الجبال الشرقية", "الساحل الشرقي", "المنطقة الشرقية", "الشمال"])
+            east_rows = rain_day.loc[east_mask & (rain_day["rain_score"] >= 40)]
             top_sectors = []
-            for _, row in rain_day.nlargest(3, "rain_score").iterrows():
-                sec = row["Sector"]
-                sec = SECTOR_EN.get(sec, sec) if lang == "en" else sec
-                if sec not in top_sectors and row["rain_score"] >= 40:
-                    top_sectors.append(sec)
+            if not east_rows.empty:
+                for sec in east_rows.nlargest(3, "rain_score")["Sector"].unique():
+                    sec_disp = SECTOR_EN.get(sec, sec) if lang == "en" else sec
+                    if sec_disp not in top_sectors:
+                        top_sectors.append(sec_disp)
+            else:
+                for _, row in rain_day.nlargest(3, "rain_score").iterrows():
+                    if row["rain_score"] < 40:
+                        continue
+                    sec = row["Sector"]
+                    sec = SECTOR_EN.get(sec, sec) if lang == "en" else sec
+                    if sec not in top_sectors:
+                        top_sectors.append(sec)
+            if not top_sectors:
+                top_sectors = [tr("الجبال الشرقية", "Eastern mountains")]
             if top_sectors:
                 where_txt = top_sectors[0] if len(top_sectors) == 1 else tr(" و".join(top_sectors[:2]), " and ".join(top_sectors[:2]))
-                stormy = safe_max(day["Storm Probability"]) >= 60
+                stormy = safe_max(day["Storm Probability"]) >= 55
                 sky_parts.append(tr(
-                    f"وفرصة أمطار متفرقة{' رعدية أحياناً' if stormy else ''} على {where_txt}",
+                    f"وفرصة أمطار متفرقة{' تكون رعدية أحياناً' if stormy else ''} على {where_txt}",
                     f"and a chance of scattered{' thundery' if stormy else ''} rain over {where_txt}",
                 ))
 

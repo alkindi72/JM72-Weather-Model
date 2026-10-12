@@ -1322,48 +1322,59 @@ with tab5:
             continue
         noon = day[day["Time"].str.contains("13:00|16:00")]
         sample = noon if not noon.empty else day
-        direction = safe_max(sample["Wind Dir"]) if "Wind Dir" in sample else 320
-        speed = safe_max(day["Wind"])
+        # Median wind direction for stability
+        direction = day["Wind Dir"].median() if "Wind Dir" in day and not day["Wind Dir"].empty else 320
+        speed = safe_max(day["Wind"]) if "Wind" in day else 15
         wname, wforce = wind_words(direction, speed)
-        cloud = safe_max(day["AlKous Prob"])
-        sky = tr("غائم", "cloudy") if cloud >= 60 else (tr("صحو إلى غائم جزئياً", "fair to partly cloudy") if cloud >= 25 else tr("صحو", "fair"))
-        tmax, tmin = safe_max(day["Temperature"]), day["Temperature"].min()
+
+        cloud = safe_max(day["AlKous Prob"]) if "AlKous Prob" in day else 0
+        if cloud >= 70:
+            sky = tr("غائم جزئياً إلى غائم", "partly cloudy to cloudy")
+        elif cloud >= 35:
+            sky = tr("صحو إلى غائم جزئياً", "fair to partly cloudy")
+        else:
+            sky = tr("صحو", "fair")
+
         sky_parts = [sky]
-        if safe_max(day["Fog Probability"]) >= 45:
+        mentioned = set()
+
+        if safe_max(day["Fog Probability"]) >= 50:
             where = day.loc[day["Fog Probability"].idxmax(), "Sector"]
             where = SECTOR_EN.get(where, where) if lang == "en" else where
-            sky_parts.append(tr(f"مع ضباب فجراً يتركز على {where}", f"with dawn fog concentrating over {where}"))
-        if safe_max(day["Storm Probability"]) >= 40 or safe_max(day["Drizzle Prob"]) >= 45:
+            if where not in mentioned:
+                sky_parts.append(tr(f"مع ضباب فجراً على {where}", f"with dawn fog over {where}"))
+                mentioned.add(where)
+
+        if safe_max(day["Storm Probability"]) >= 45 or safe_max(day["Drizzle Prob"]) >= 50:
             rain_day = day.copy()
             rain_day["rain_score"] = rain_day[["Storm Probability", "Drizzle Prob"]].max(axis=1)
-            top = rain_day.nlargest(4, "rain_score")
-            sectors = []
-            for _, row in top.iterrows():
+            top_sectors = []
+            for _, row in rain_day.nlargest(3, "rain_score").iterrows():
                 sec = row["Sector"]
                 sec = SECTOR_EN.get(sec, sec) if lang == "en" else sec
-                if sec not in sectors and row["rain_score"] >= 35:
-                    sectors.append(sec)
-            if not sectors:
-                sectors = [top.iloc[0]["Sector"]]
-            stormy = safe_max(day["Storm Probability"]) >= 55
-            if len(sectors) == 1:
-                where_txt = sectors[0]
-            elif len(sectors) == 2:
-                where_txt = tr(f"{sectors[0]} و{sectors[1]}", f"{sectors[0]} and {sectors[1]}")
-            else:
-                where_txt = tr("، ".join(sectors[:-1]) + f" و{sectors[-1]}", ", ".join(sectors[:-1]) + f" and {sectors[-1]}")
-            extend = ""
-            if any(s in ("الجبال الشرقية", "المنطقة الشرقية", "Eastern Mountains", "East Coast") for s in sectors):
-                extend = tr(" قد تمتد إلى الوسطى أو أبوظبي", " which may extend to the central areas or Abu Dhabi")
-            sky_parts.append(tr(
-                f"وفرصة أمطار متفرقة{' تكون رعدية أحياناً' if stormy else ''} على {where_txt}{extend}",
-                f"and a chance of scattered{' thundery' if stormy else ''} rain over {where_txt}{extend}",
-            ))
-        if safe_max(day["Shamal Index"]) >= 45:
+                if sec not in top_sectors and row["rain_score"] >= 40:
+                    top_sectors.append(sec)
+            if top_sectors:
+                where_txt = top_sectors[0] if len(top_sectors) == 1 else tr(" و".join(top_sectors[:2]), " and ".join(top_sectors[:2]))
+                stormy = safe_max(day["Storm Probability"]) >= 60
+                sky_parts.append(tr(
+                    f"وفرصة أمطار متفرقة{' رعدية أحياناً' if stormy else ''} على {where_txt}",
+                    f"and a chance of scattered{' thundery' if stormy else ''} rain over {where_txt}",
+                ))
+
+        if safe_max(day["Shamal Index"]) >= 50:
             where = day.loc[day["Shamal Index"].idxmax(), "Sector"]
             where = SECTOR_EN.get(where, where) if lang == "en" else where
-            sky_parts.append(tr(f"مع غبار مثار على المناطق المكشوفة خاصة {where}", f"with raised dust over open areas especially {where}"))
+            if where not in mentioned:
+                sky_parts.append(tr(f"مع غبار مثار خاصة على {where}", f"with raised dust especially over {where}"))
+
         sky_full = " ".join(sky_parts)
+
+        dust_note = tr(" وقد تثير الغبار", " and may raise dust") if safe_max(day["Shamal Index"]) >= 50 else ""
+        wind_detail = tr(
+            f"الرياح {wname} {wforce}{dust_note}، وقد تنشط بعد الظهر",
+            f"Wind {wname}, {wforce}{dust_note}, may freshen in the afternoon",
+        )
 
         def wave_pair(key):
             if not marine_ok:
@@ -1373,21 +1384,15 @@ with tab5:
             heights = hourly.get("wave_height") or []
             day_no = date.split()[-1]
             vals = [safe_num(h, 0.3) for t, h in zip(times, heights) if f"-{day_no}T" in t or t[8:10] == day_no]
-            if not vals:
-                return 0.3, 0.6
-            return min(vals), max(vals)
+            return (min(vals), max(vals)) if vals else (0.3, 0.6)
 
         gc0, gc1 = wave_pair("gulf_coast")
         go0, go1 = wave_pair("gulf_offshore")
         oc0, oc1 = wave_pair("oman_coast")
         oo0, oo1 = wave_pair("oman_offshore")
-        dust_note = tr(" مثيرة للغبار والأتربة على المناطق المكشوفة خاصة أثناء تكون السحب الركامية", " raising dust over open areas especially with cumulonimbus") if safe_max(day["Shamal Index"]) >= 45 else ""
-        wind_detail = tr(
-            f"الرياح {wname} من {wforce} السرعة قد تنشط بعد الظهر{dust_note}",
-            f"Wind {wname}, {wforce}, may freshen in the afternoon{dust_note}",
-        )
+
         text = tr(
-            f"الطقس {sky_full} بوجه عام. {wind_detail}. البحر في الخليج العربي وبحر عمان {sea_words(max(gc1, go1, oc1, oo1))} الموج، ويبلغ ارتفاع الموج من {feet_phrase(min(gc0, oc0))} إلى {feet_phrase(max(gc1, oc1))} قرب الساحل، وفي العمق من {feet_phrase(min(go0, oo0))} إلى {feet_phrase(max(go1, oo1))}.",
+            f"الطقس {sky_full} بوجه عام. {wind_detail}. البحر في الخليج العربي وبحر عمان {sea_words(max(gc1, go1, oc1, oo1))}، وارتفاع الموج من {feet_phrase(min(gc0, oc0))} إلى {feet_phrase(max(gc1, oc1))} قرب الساحل ومن {feet_phrase(min(go0, oo0))} إلى {feet_phrase(max(go1, oo1))} في العمق.",
             f"{sky_full.capitalize()} overall. {wind_detail}. Arabian Gulf and Gulf of Oman {sea_words(max(gc1, go1, oc1, oo1))}, waves {feet_phrase(min(gc0, oc0))} to {feet_phrase(max(gc1, oc1))} near the coast and {feet_phrase(min(go0, oo0))} to {feet_phrase(max(go1, oo1))} offshore.",
         )
         shown_day = date if lang == "en" else f"{DAYS_AR.get(date.split()[0], date.split()[0])} {date.split()[-1]}"

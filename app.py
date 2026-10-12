@@ -1328,21 +1328,24 @@ with tab5:
         cloud = safe_max(day["AlKous Prob"])
         sky = tr("غائم", "cloudy") if cloud >= 60 else (tr("صحو إلى غائم جزئياً", "fair to partly cloudy") if cloud >= 25 else tr("صحو", "fair"))
         tmax, tmin = safe_max(day["Temperature"]), day["Temperature"].min()
-        extras = []
+        sky_parts = [sky]
         if safe_max(day["Fog Probability"]) >= 45:
             where = day.loc[day["Fog Probability"].idxmax(), "Sector"]
             where = SECTOR_EN.get(where, where) if lang == "en" else where
-            extras.append(tr(f"ضباب فجراً على {where}", f"dawn fog over {where}"))
+            sky_parts.append(tr(f"مع ضباب فجراً يتركز على {where}", f"with dawn fog concentrating over {where}"))
         if safe_max(day["Storm Probability"]) >= 40 or safe_max(day["Drizzle Prob"]) >= 45:
             where = day.loc[day[["Storm Probability", "Drizzle Prob"]].max(axis=1).idxmax(), "Sector"]
             where = SECTOR_EN.get(where, where) if lang == "en" else where
-            extras.append(tr(f"فرصة أمطار على {where}", f"a chance of rain over {where}"))
+            stormy = safe_max(day["Storm Probability"]) >= 55
+            sky_parts.append(tr(
+                f"وفرصة أمطار متفرقة{' تكون رعدية أحياناً' if stormy else ''} على {where}",
+                f"and a chance of scattered{' thundery' if stormy else ''} rain over {where}",
+            ))
         if safe_max(day["Shamal Index"]) >= 45:
             where = day.loc[day["Shamal Index"].idxmax(), "Sector"]
             where = SECTOR_EN.get(where, where) if lang == "en" else where
-            extras.append(tr(f"غبار مثار على {where}", f"raised dust over {where}"))
-        extra = ("، " if lang == "ar" else ", ").join(extras)
-        event = (tr(" الظاهرة: ", " Event: ") + extra + ".") if extra else ""
+            sky_parts.append(tr(f"مع غبار مثار على المناطق المكشوفة خاصة {where}", f"with raised dust over open areas especially {where}"))
+        sky_full = " ".join(sky_parts)
 
         def wave_pair(key):
             if not marine_ok:
@@ -1360,10 +1363,14 @@ with tab5:
         go0, go1 = wave_pair("gulf_offshore")
         oc0, oc1 = wave_pair("oman_coast")
         oo0, oo1 = wave_pair("oman_offshore")
-        afternoon = tr("يضطرب بعد الظهر", "becoming rougher in the afternoon") if go1 > gc1 + 0.4 else tr("يبقى على حاله", "staying similar")
+        dust_note = tr(" مثيرة للغبار والأتربة على المناطق المكشوفة خاصة أثناء تكون السحب الركامية", " raising dust over open areas especially with cumulonimbus") if safe_max(day["Shamal Index"]) >= 45 else ""
+        wind_detail = tr(
+            f"الرياح {wname} من {wforce} السرعة قد تنشط بعد الظهر{dust_note}",
+            f"Wind {wname}, {wforce}, may freshen in the afternoon{dust_note}",
+        )
         text = tr(
-            f"الطقس {sky} بوجه عام، والحرارة من {tmin:.0f} إلى {tmax:.0f} درجة. الرياح {wname}، {wforce} على البحر، وقد تنشط بعد الظهر.{event} الخليج العربي {sea_words(max(gc1, go1))} {afternoon}، وارتفاع الموج قرب ميناء أبوظبي من {feet_phrase(gc0)} إلى {feet_phrase(gc1)}، وفي العمق إلى {feet_phrase(go1)}. بحر عمان {sea_words(max(oc1, oo1))}، وارتفاع الموج قرب ميناء الفجيرة {feet_phrase(oc1)}، وفي العمق من {feet_phrase(oo0)} إلى {feet_phrase(oo1)}.",
-            f"{sky.capitalize()} overall, {tmin:.0f} to {tmax:.0f} °C. Wind {wname}, {wforce} over the sea, freshening in the afternoon.{event} Arabian Gulf {sea_words(max(gc1, go1))}, {afternoon}. Waves near Abu Dhabi port {feet_phrase(gc0)} to {feet_phrase(gc1)}, offshore {feet_phrase(go1)}. Gulf of Oman {sea_words(max(oc1, oo1))}: near Fujairah port {feet_phrase(oc1)}, offshore {feet_phrase(oo0)} to {feet_phrase(oo1)}.",
+            f"الطقس {sky_full} بوجه عام. {wind_detail}. البحر في الخليج العربي وبحر عمان {sea_words(max(gc1, go1, oc1, oo1))} الموج، ويبلغ ارتفاع الموج من {feet_phrase(min(gc0, oc0))} إلى {feet_phrase(max(gc1, oc1))} قرب الساحل، وفي العمق من {feet_phrase(min(go0, oo0))} إلى {feet_phrase(max(go1, oo1))}.",
+            f"{sky_full.capitalize()} overall. {wind_detail}. Arabian Gulf and Gulf of Oman {sea_words(max(gc1, go1, oc1, oo1))}, waves {feet_phrase(min(gc0, oc0))} to {feet_phrase(max(gc1, oc1))} near the coast and {feet_phrase(min(go0, oo0))} to {feet_phrase(max(go1, oo1))} offshore.",
         )
         shown_day = date if lang == "en" else f"{DAYS_AR.get(date.split()[0], date.split()[0])} {date.split()[-1]}"
         cards.append(f"<div class='card'><div class='kicker'>{shown_day}</div><p>{text}</p></div>")

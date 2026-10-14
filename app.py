@@ -336,6 +336,26 @@ def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
         return False, str(e)
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def has_observed_storm() -> bool:
+    """True only if a current METAR reports thunderstorms or CB."""
+    try:
+        r = requests.get(
+            "https://aviationweather.gov/api/data/metar",
+            params={"ids": "OMAA,OMDB,OMAL,OMFJ,OMSJ,OMRK,OMDW", "format": "json"},
+            timeout=15,
+        )
+        if r.status_code != 200:
+            return False
+        for item in r.json():
+            raw = (item.get("rawOb") or "").upper()
+            if any(code in raw for code in ("TS", "TSRA", "VCTS", "+TS", "CB", "TCU")):
+                return True
+    except Exception:
+        pass
+    return False
+
+
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
 def fetch_oni() -> Tuple[bool, Any]:
     try:
@@ -1164,26 +1184,6 @@ AIRPORTS = {
     "OMDL": "مطار دلما",
     "OMBY": "مطار صير بني ياس",
 }
-
-
-@st.cache_data(ttl=300, show_spinner=False)
-def has_observed_storm() -> bool:
-    """True only if a current METAR reports thunderstorms or CB."""
-    try:
-        r = requests.get(
-            "https://aviationweather.gov/api/data/metar",
-            params={"ids": "OMAA,OMDB,OMAL,OMFJ,OMSJ,OMRK,OMDW", "format": "json"},
-            timeout=15,
-        )
-        if r.status_code != 200:
-            return False
-        for item in r.json():
-            raw = (item.get("rawOb") or "").upper()
-            if any(code in raw for code in ("TS", "TSRA", "VCTS", "+TS", "CB", "TCU")):
-                return True
-    except Exception:
-        pass
-    return False
 
 
 @st.cache_data(ttl=600, show_spinner=False)

@@ -336,47 +336,6 @@ def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
         return False, str(e)
 
 
-@st.cache_data(ttl=600, show_spinner=False)
-def fetch_obs_wind() -> dict:
-    """Extract live wind from METAR and short-term TAF for UAE airports."""
-    wind = {}
-    try:
-        r = requests.get(
-            "https://aviationweather.gov/api/data/metar",
-            params={"ids": "OMAA,OMDB,OMAL,OMFJ,OMSJ,OMRK", "format": "json"},
-            timeout=20,
-        )
-        if r.status_code == 200:
-            for item in r.json():
-                icao = item.get("icaoId", "")
-                raw = (item.get("rawOb") or "").upper()
-                parts = raw.split()
-                for p in parts:
-                    if "KT" in p and len(p) >= 5:
-                        if p.startswith("VRB"):
-                            wind[icao] = {"dir": 0, "spd": int(p[3:5]) if p[3:5].isdigit() else 5, "source": "METAR"}
-                        elif p[:3].isdigit():
-                            wind[icao] = {"dir": int(p[:3]), "spd": int(p[3:5]) if p[3:5].isdigit() else 0, "source": "METAR"}
-                        break
-        r2 = requests.get(
-            "https://aviationweather.gov/api/data/taf",
-            params={"ids": "OMAA,OMDB,OMAL,OMFJ", "format": "json"},
-            timeout=20,
-        )
-        if r2.status_code == 200:
-            for item in r2.json():
-                icao = item.get("icaoId", "")
-                raw = (item.get("rawTAF") or "").upper()
-                if icao not in wind:
-                    for p in raw.split():
-                        if "KT" in p and len(p) >= 5 and p[:3].isdigit():
-                            wind[icao] = {"dir": int(p[:3]), "spd": int(p[3:5]) if p[3:5].isdigit() else 0, "source": "TAF"}
-                            break
-    except Exception:
-        pass
-    return wind
-
-
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
 def fetch_oni() -> Tuple[bool, Any]:
     try:
@@ -558,35 +517,6 @@ if ok and isinstance(live, dict):
                 "Wind": round(avg("wind"), 1), "Gust": round(avg("gust"), 1), "Wind Dir": round(avg("wind_dir")),
                 "Agreement": agreement, "ModelsUsed": len(probs),
             })
-            # Blend live METAR/TAF wind for nearest airport
-            obs = fetch_obs_wind()
-            airport_map = {
-                "Abu Dhabi": "OMAA", "ADNOC HQ": "OMAA", "Al Wathbah": "OMAA", "Al Yahar": "OMAL",
-                "Al Hayer": "OMAL", "Al Khaznah": "OMAL", "Al Shiweb": "OMAL", "Al Aamerah": "OMAL",
-                "Burj Khalifah": "OMDB", "Sharjah University": "OMSJ", "Ajman": "OMSJ",
-                "Umm Al Quwain": "OMSJ", "Al Dhaid": "OMSJ", "Al Malaiha": "OMSJ",
-                "Ras Al khaimah": "OMRK", "Jabal Jais": "OMRK", "Jabal Al Rahba": "OMRK",
-                "Fujairah Port": "OMFJ", "Kalba": "OMFJ", "Khor Fakkan Port": "OMFJ",
-                "Masafi": "OMFJ", "Masafi Valley": "OMFJ", "Al Siji": "OMFJ", "Al Heben": "OMFJ",
-                "Al Tawiyen": "OMFJ", "Al Ghail": "OMFJ", "Hatta": "OMAL", "AlQor": "OMAL",
-                "Wadi Wurayah": "OMFJ", "Al Bithnah": "OMFJ", "Dibba": "OMFJ",
-            }
-            if name in airport_map and airport_map[name] in obs:
-                o = obs[airport_map[name]]
-                if o.get("dir", 0) > 0:
-                    # Geography-aware weight: lower for distant mountain stations
-                    distant = name in ("Masafi", "Masafi Valley", "Al Siji", "Al Heben", "Hatta", "AlQor", "Jabal Jais", "Jabal Al Rahba")
-                    w = 0.35 if distant else 0.55
-                    new_dir = round(w * o["dir"] + (1 - w) * rows[-1]["Wind Dir"])
-                    new_spd = round(w * o["spd"] * 1.852 + (1 - w) * rows[-1]["Wind"], 1)
-                    rows[-1]["Wind Dir"] = new_dir
-                    rows[-1]["Wind"] = new_spd
-                    # Re-adjust storm based on observed wind vs local orography
-                    sector = sector_of(name)
-                    if sector in ("الجبال الشرقية", "الساحل الشرقي") and not (110 <= new_dir <= 170):
-                        rows[-1]["Storm Probability"] = max(0, round(rows[-1]["Storm Probability"] * 0.45))
-                    elif sector in ("الوسطى", "العين") and not (100 <= new_dir <= 280):
-                        rows[-1]["Storm Probability"] = max(0, round(rows[-1]["Storm Probability"] * 0.55))
 
 df = pd.DataFrame(rows)
 
@@ -769,7 +699,7 @@ if not df.empty:
             found_areas.append(f"{place} ({level}%)")
             starts.append(start)
             ends.append(end)
-            occurring = occurring or is_now
+            occurring = occurring or (is_now and has_observed_storm())
             names = ["شمالية", "شمالية شرقية", "شرقية", "جنوبية شرقية", "جنوبية", "جنوبية غربية", "غربية", "شمالية غربية"]
             wind_bit = tr(
                 f" الرياح {names[int((direction + 22.5) // 45) % 8]} تتراوح بين {wind_min:.0f} و {wind_max:.0f} كم/س.",
@@ -1234,6 +1164,26 @@ AIRPORTS = {
     "OMDL": "مطار دلما",
     "OMBY": "مطار صير بني ياس",
 }
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def has_observed_storm() -> bool:
+    """True only if a current METAR reports thunderstorms or CB."""
+    try:
+        r = requests.get(
+            "https://aviationweather.gov/api/data/metar",
+            params={"ids": "OMAA,OMDB,OMAL,OMFJ,OMSJ,OMRK,OMDW", "format": "json"},
+            timeout=15,
+        )
+        if r.status_code != 200:
+            return False
+        for item in r.json():
+            raw = (item.get("rawOb") or "").upper()
+            if any(code in raw for code in ("TS", "TSRA", "VCTS", "+TS", "CB", "TCU")):
+                return True
+    except Exception:
+        pass
+    return False
 
 
 @st.cache_data(ttl=600, show_spinner=False)

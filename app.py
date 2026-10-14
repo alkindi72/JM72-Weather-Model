@@ -3194,9 +3194,14 @@ with tab8:
     try:
         import base64, pathlib
         for key, fname in [("CLOUD", "O3ydi.jpg"), ("FOG", "BZVRB.jpg"), ("RAIN", "rain.jpg"), ("HAIL", "hail.jpg"), ("DUST", "dust.jpg"), ("THUNDER", "thunder.jpg"), ("DRIZZLE", "drizzle.jpg"), ("MIST", "mist.jpg"), ("SANDSTORM", "sandstorm.jpg"), ("VIRGA", "virga.jpg"), ("DEW", "dew.jpg"), ("FROST", "frost.jpg"), ("HAZE", "haze.jpg"), ("RAINBOW", "rainbow.jpg"), ("HALO", "halo.jpg"), ("MIRAGE", "mirage.jpg"), ("DUST_DEVIL", "dust_devil.jpg"), ("MAMMATUS", "mammatus.jpg"), ("ANVIL", "anvil.jpg"), ("CREPUSCULAR_RAYS", "crepuscular.jpg"), ("SEA_BREEZE", "sea_breeze.jpg"), ("HABOOB", "haboob.jpg"), ("SHAMAL", "shamal.jpg"), ("CONTRAIL", "contrail.jpg"), ("FUNNEL_CLOUD", "funnel.jpg"), ("KOUS", "kous.jpg"), ("LAND_BREEZE", "land_breeze.jpg"), ("SHELF_CLOUD", "shelf.jpg"), ("WALL_CLOUD", "wall.jpg"), ("MICROBURST", "microburst.jpg"), ("GUST_FRONT", "gust_front.jpg"), ("IRIDESCENCE", "iridescence.jpg"), ("SUN_PILLAR", "sun_pillar.jpg"), ("CORONA", "corona.jpg"), ("GLORY", "glory.jpg"), ("GREEN_FLASH", "green_flash.jpg"), ("TWILIGHT_COLOURS", "twilight.jpg"), ("FOEHN", "foehn.jpg"), ("KATABATIC", "katabatic.jpg"), ("ANABATIC", "anabatic.jpg"), ("MONSOON", "monsoon.jpg"), ("SMOKE", "smoke.jpg"), ("SPRAY", "spray.jpg"), ("DRIFTING_DUST", "drifting_dust.jpg"), ("BLOWING_SAND", "blowing_sand.jpg"), ("SQUALL", "squall.jpg"), ("WATERSPOUT", "waterspout.jpg"), ("LIGHTNING", "lightning.jpg"), ("DIAMOND_DUST", "diamond_dust.jpg")]:
-            p = pathlib.Path(f"/workspace/artifacts/imagine_images/{fname}")
-            if p.exists():
-                img_map[key] = base64.b64encode(p.read_bytes()).decode()
+            base = pathlib.Path(__file__).parent / "imagine_images" / fname
+            if base.exists():
+                img_map[key] = base64.b64encode(base.read_bytes()).decode()
+            else:
+                # fallback for local workspace
+                p = pathlib.Path(f"/workspace/artifacts/imagine_images/{fname}")
+                if p.exists():
+                    img_map[key] = base64.b64encode(p.read_bytes()).decode()
     except Exception:
         pass
     if code in img_map:

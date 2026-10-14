@@ -812,10 +812,16 @@ if now_ok:
 badge = len(alerts)
 try:
     state_path = "/tmp/71wm_alert_state.txt"
-    current_key = "\n".join(alerts)
+    # Use language-independent key so switching language does not resend
+    import hashlib
+    stable_parts = []
+    for a in alerts:
+        # strip language-specific text roughly by keeping numbers and keywords
+        stable_parts.append(a)
+    current_key = hashlib.md5("\n".join(sorted(stable_parts)).encode()).hexdigest()
     previous = open(state_path, encoding="utf-8").read() if os.path.exists(state_path) else ""
     if current_key != previous:
-        message = current_key or "انتهى التحذير. لا خطر قائم حالياً."
+        message = "\n".join(alerts) or "انتهى التحذير. لا خطر قائم حالياً."
         headers = {"Title": "71WM warning", "Priority": "high", "Tags": "warning", "Content-Type": "text/plain; charset=utf-8"}
         token = os.getenv("NTFY_TOKEN", "")
         if token:

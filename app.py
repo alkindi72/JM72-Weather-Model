@@ -336,6 +336,47 @@ def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
         return False, str(e)
 
 
+@st.cache_data(ttl=600, show_spinner=False)
+def fetch_obs_wind() -> dict:
+    """Extract live wind from METAR and short-term TAF for UAE airports."""
+    wind = {}
+    try:
+        r = requests.get(
+            "https://aviationweather.gov/api/data/metar",
+            params={"ids": "OMAA,OMDB,OMAL,OMFJ,OMSJ,OMRK", "format": "json"},
+            timeout=20,
+        )
+        if r.status_code == 200:
+            for item in r.json():
+                icao = item.get("icaoId", "")
+                raw = (item.get("rawOb") or "").upper()
+                parts = raw.split()
+                for p in parts:
+                    if "KT" in p and len(p) >= 5:
+                        if p.startswith("VRB"):
+                            wind[icao] = {"dir": 0, "spd": int(p[3:5]) if p[3:5].isdigit() else 5, "source": "METAR"}
+                        elif p[:3].isdigit():
+                            wind[icao] = {"dir": int(p[:3]), "spd": int(p[3:5]) if p[3:5].isdigit() else 0, "source": "METAR"}
+                        break
+        r2 = requests.get(
+            "https://aviationweather.gov/api/data/taf",
+            params={"ids": "OMAA,OMDB,OMAL,OMFJ", "format": "json"},
+            timeout=20,
+        )
+        if r2.status_code == 200:
+            for item in r2.json():
+                icao = item.get("icaoId", "")
+                raw = (item.get("rawTAF") or "").upper()
+                if icao not in wind:
+                    for p in raw.split():
+                        if "KT" in p and len(p) >= 5 and p[:3].isdigit():
+                            wind[icao] = {"dir": int(p[:3]), "spd": int(p[3:5]) if p[3:5].isdigit() else 0, "source": "TAF"}
+                            break
+    except Exception:
+        pass
+    return wind
+
+
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
 def fetch_oni() -> Tuple[bool, Any]:
     try:
@@ -1193,47 +1234,6 @@ AIRPORTS = {
     "OMDL": "مطار دلما",
     "OMBY": "مطار صير بني ياس",
 }
-
-
-@st.cache_data(ttl=600, show_spinner=False)
-def fetch_obs_wind() -> dict:
-    """Extract live wind from METAR and short-term TAF for UAE airports."""
-    wind = {}
-    try:
-        r = requests.get(
-            "https://aviationweather.gov/api/data/metar",
-            params={"ids": "OMAA,OMDB,OMAL,OMFJ,OMSJ,OMRK", "format": "json"},
-            timeout=20,
-        )
-        if r.status_code == 200:
-            for item in r.json():
-                icao = item.get("icaoId", "")
-                raw = (item.get("rawOb") or "").upper()
-                parts = raw.split()
-                for p in parts:
-                    if "KT" in p and len(p) >= 5:
-                        if p.startswith("VRB"):
-                            wind[icao] = {"dir": 0, "spd": int(p[3:5]) if p[3:5].isdigit() else 5, "source": "METAR"}
-                        elif p[:3].isdigit():
-                            wind[icao] = {"dir": int(p[:3]), "spd": int(p[3:5]) if p[3:5].isdigit() else 0, "source": "METAR"}
-                        break
-        r2 = requests.get(
-            "https://aviationweather.gov/api/data/taf",
-            params={"ids": "OMAA,OMDB,OMAL,OMFJ", "format": "json"},
-            timeout=20,
-        )
-        if r2.status_code == 200:
-            for item in r2.json():
-                icao = item.get("icaoId", "")
-                raw = (item.get("rawTAF") or "").upper()
-                if icao not in wind:
-                    for p in raw.split():
-                        if "KT" in p and len(p) >= 5 and p[:3].isdigit():
-                            wind[icao] = {"dir": int(p[:3]), "spd": int(p[3:5]) if p[3:5].isdigit() else 0, "source": "TAF"}
-                            break
-    except Exception:
-        pass
-    return wind
 
 
 @st.cache_data(ttl=600, show_spinner=False)

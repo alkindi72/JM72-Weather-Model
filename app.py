@@ -405,11 +405,18 @@ def compute_probs(hourly, api_times, name, coords, dt):
             storm = cape_score + max(0, (moisture - 48) * 0.6) + precip_prob * 0.5 + orographic
             if cape >= 350 and moisture >= 52:
                 storm = max(storm, 40 + cape / 20 + precip_prob * 0.4)
+            # SE flow preferred on east side of Hajar
+            if not (110 <= wind_dir <= 170 or 240 <= wind_dir <= 300):
+                storm *= 0.3
+            elif 110 <= wind_dir <= 170:
+                storm = min(88, storm * 1.15 + 4)
         elif central_inland:
             cape_score = max(0, (cape - 320) / 16.0)
             storm = cape_score + max(0, (moisture - 52) * 0.4) + precip_prob * 0.35
             if cape >= 450 and moisture >= 55:
                 storm = max(storm, 25 + cape / 28)
+            if not (100 <= wind_dir <= 280):
+                storm *= 0.45
         else:
             # Strong suppression for Dubai, Abu Dhabi, Dhafra and western coast
             storm = max(0, (cape - 500) / 25.0) * 0.3 + precip_prob * 0.15
@@ -500,6 +507,12 @@ if ok and isinstance(live, dict):
             else:
                 storm_val *= 0.55
                 drizzle_val *= 0.6
+            # Recent observed convective zones (Oct 12-13: Kadra, Shawka, Siji, Masafi, Madam, Al Ain, Hatta)
+            sector = sector_of(name)
+            if sector in ("الجبال الشرقية", "الساحل الشرقي", "المنطقة الشرقية", "الوسطى", "العين") and storm_val >= 20:
+                storm_val = min(88, storm_val * 1.2 + 5)
+            elif sector in ("دبي", "أبوظبي", "الظفرة"):
+                storm_val *= 0.4
             avg = lambda k: sum(p[k] for p in probs) / len(probs)
             agree_storm = sum(1 for p in probs if p["storm"] >= 70)
             agree_fog = sum(1 for p in probs if p["fog"] >= 75)

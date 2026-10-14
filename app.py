@@ -3082,63 +3082,6 @@ with tab8:
     st.markdown(f"<div class='card'><h4>{tr('ما هي؟', 'What is it?')}</h4><p>{parts[0]}.</p></div>", unsafe_allow_html=True)
     st.markdown(f"<div class='card'><h4>{tr('أين تظهر عندنا؟', 'Where does it appear here?')}</h4><p>{parts[1] if len(parts)>1 else parts[0]}.</p></div>", unsafe_allow_html=True)
     st.markdown(f"<div class='card'><h4>{tr('ماذا نلاحظ؟', 'What do we observe?')}</h4><p>{parts[2] if len(parts)>2 else parts[0]}.</p></div>", unsafe_allow_html=True)
-    raw_title = topic[1] if lang == "ar" else topic[3]
-    raw_body = topic[2] if lang == "ar" else topic[4]
-    if ": " in raw_title:
-        season, title = raw_title.split(": ", 1)
-    else:
-        season, title = "", raw_title
-    plain = {
-        "ضغط سطح البحر": (
-            "الضغط هو رقم يخبرنا إن كان الهواء فوق المكان ثقيلاً أو خفيفاً. الرقم المعتاد عندنا قريب من 1013. ليس شيئاً نراه، بل نقرأه من البارومتر.",
-            "إذا نزل الرقم خلال ساعات مع ريح من الشمال الغربي، فالشمال أنشط على الخليج. إذا ارتفع الرقم فالأجواء أهدأ وأصفى غالباً.",
-            "على ساحل أبوظبي يظهر أثره في ارتفاع الموج. على الفجيرة قد يبقى بحر عُمان أهدأ لأن الريح تأتيه من اليابسة.",
-        ),
-        "Sea-level pressure": (
-            "Pressure is a number that tells us whether the air overhead is heavier or lighter. Around here the usual figure is near 1013. We do not see it; we read it from a barometer.",
-            "If the number falls over a few hours and the wind is northwesterly, the shamal on the Gulf is livelier. If the number rises, the weather is usually calmer and clearer.",
-            "On the Abu Dhabi coast the effect shows up as higher waves. At Fujairah the Gulf of Oman may stay calmer, because the wind is coming off the land.",
-        ),
-    }
-    if title in plain:
-        parts = plain[title]
-    else:
-        bits = [x.strip() for x in raw_body.replace("؛", ".").split(".") if x.strip()]
-        while len(bits) < 3:
-            bits.append(bits[-1] if bits else raw_body)
-        parts = tuple(bits[:3])
-    icons = {
-        "FOG": "🌫️",
-        "SHAMAL": "💨",
-        "KOUS": "☁️",
-        "STORM": "⛈️",
-        "CLOUD": "☁️",
-        "WADI": "🌊",
-    }
-    icon = icons.get(topic[0], "🌤️")
-    # Prefer title-based image if available
-    title_key = "WADI" if "وادي" in title or "جريان" in title else topic[0]
-    img = pics.get(title_key, pics.get(topic[0], list(pics.values())[0]))
-    side = "rtl" if lang == "ar" else "ltr"
-    st.markdown(
-        f"<div style='text-align:center;margin-bottom:10px;direction:{side};'><h2 style='margin:0;font-size:2rem;font-weight:800;color:#0f766e;'>{icon} {title}</h2></div>",
-        unsafe_allow_html=True,
-    )
-    components.html(
-        f"""
-        <div style="border-radius:18px;overflow:hidden;height:420px;">
-          <img src="data:image/jpeg;base64,{img}" style="width:100%;height:420px;object-fit:cover;display:block;">
-        </div>
-        """,
-        height=430,
-    )
-    labels = ("ما هي؟", "أين تظهر عندنا؟", "ماذا نلاحظ؟") if lang == "ar" else ("What is it?", "Where do we see it?", "What do we notice?")
-    paras = "".join(f"<p><b>{lab}</b><br>{txt.rstrip('،')}.</p>" for lab, txt in zip(labels, parts))
-    season_html = f"<div class='muted' style='text-align:center'>{season}</div>" if season else ""
-    st.markdown(
-        f"<div class='card' dir='{side}'>{season_html}{paras}</div>",
-        unsafe_allow_html=True,
-    )
     suhail = datetime(uae_now.year, 8, 14).date()
     today = uae_now.date()
     if today < suhail:

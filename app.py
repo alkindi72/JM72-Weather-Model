@@ -391,35 +391,42 @@ def compute_probs(hourly, api_times, name, coords, dt):
         t500 = safe_num((hourly.get("temperature_500hPa") or [-10])[i], -10)
         precip_prob = safe_num((hourly.get("precipitation_probability") or [0])[i], 0)
         elev = ELEVATION.get(name, 0)
-        east_hajar = coords["lon"] >= 55.85 and (coords["type"] == "Mountains" or elev >= 300)
+        # Strict geographic zones
+        east_hajar = coords["lon"] >= 55.9 and (coords["type"] == "Mountains" or elev >= 400)
+        central_inland = 24.3 <= coords["lat"] <= 25.1 and 55.4 <= coords["lon"] <= 56.0 and coords["type"] in ("Inland", "Mountains")
+        dubai_abudhabi = coords["lon"] < 55.5 and coords["lat"] >= 24.0
+        dhafra = coords["type"] == "Desert" or coords["lon"] < 54.2
         moisture = rh850 * 0.45 + rh700 * 0.35 + rh500 * 0.20
         lapse = t850 - t500
-        # Orographic-aware convective score
-        cape_score = max(0, (cape - (180 if east_hajar else 280)) / 14.0)
-        moisture_score = max(0, (moisture - 45) * 0.8)
-        precip_score = precip_prob * 0.55
-        lapse_bonus = 8 if lapse > 26 else (3 if lapse > 22 else 0)
-        orographic = 12 if east_hajar and cape >= 250 else 0
-        storm = cape_score + moisture_score * 0.4 + precip_score + lapse_bonus + orographic
-        if moisture < 38:
-            storm *= 0.55
-        if east_hajar and cape >= 300 and moisture >= 48:
-            storm = max(storm, 35 + cape / 22 + precip_prob * 0.45)
-        storm = float(np.clip(storm, 0, 92))
-        if not east_hajar and (dt.hour < 10 or dt.hour > 21):
-            storm *= 0.55
-        ain_plain = 24.1 <= coords["lat"] <= 24.9 and 55.2 <= coords["lon"] <= 55.9
+        storm = 0.0
+        if east_hajar:
+            cape_score = max(0, (cape - 220) / 12.0)
+            orographic = 15 if cape >= 300 else 0
+            storm = cape_score + max(0, (moisture - 48) * 0.6) + precip_prob * 0.5 + orographic
+            if cape >= 350 and moisture >= 52:
+                storm = max(storm, 40 + cape / 20 + precip_prob * 0.4)
+        elif central_inland:
+            cape_score = max(0, (cape - 320) / 16.0)
+            storm = cape_score + max(0, (moisture - 52) * 0.4) + precip_prob * 0.35
+            if cape >= 450 and moisture >= 55:
+                storm = max(storm, 25 + cape / 28)
+        else:
+            # Strong suppression for Dubai, Abu Dhabi, Dhafra and western coast
+            storm = max(0, (cape - 500) / 25.0) * 0.3 + precip_prob * 0.15
+            if dhafra or dubai_abudhabi:
+                storm *= 0.35
+        if moisture < 42:
+            storm *= 0.4
+        storm = float(np.clip(storm, 0, 88))
+        if not (east_hajar or central_inland) and (dt.hour < 11 or dt.hour > 20):
+            storm *= 0.4
         gulf_coast = coords["type"] == "Coast" and coords["lon"] < 55.6
         oman_coast = coords["lon"] >= 56.15
-        empty_quarter = coords["type"] == "Desert" and coords["lat"] < 23.8
-        if ain_plain and 11 <= dt.hour <= 20 and rh850 >= 50 and cape >= 300:
-            storm = max(storm, min(70, 18 + cape / 30 + precip_prob * 0.3))
-        if gulf_coast:
-            storm *= 0.48
+        if gulf_coast and not east_hajar:
+            storm *= 0.4
         if oman_coast and 40 <= wind_dir <= 170 and rh >= 72:
             alkous = max(alkous, float(np.clip((rh - 72) * 2.8, 0, 75)))
-            storm *= 0.72
-        if empty_quarter:
+            storm *= 0.65
             storm *= 0.3
             if wind >= 28 and (wind_dir >= 300 or wind_dir <= 40):
                 shamal = max(shamal, float(np.clip((wind - 26) * 3.5, 0, 90)))
@@ -475,18 +482,36 @@ if ok and isinstance(live, dict):
                 continue
             dt = items[0][0]
             probs = [item[1] for item in items]
+            # Separate by model preference
+            ecmwf_storms = [p["storm"] for p in probs if any("ecmwf" in str(k) for k in station_models)]
+            icon_rains = [p["drizzle"] for p in probs if any("icon" in str(k) for k in station_models)]
+            all_storms = [p["storm"] for p in probs]
+            all_drizzles = [p["drizzle"] for p in probs]
+            # ECMWF primary for storms, ICON primary for rain
+            storm_val = (sum(ecmwf_storms) / len(ecmwf_storms)) if ecmwf_storms else (sum(all_storms) / max(1, len(all_storms)))
+            drizzle_val = (sum(icon_rains) / len(icon_rains)) if icon_rains else (sum(all_drizzles) / max(1, len(all_drizzles)))
+            # Topographic boost
+            elev = ELEVATION.get(name, 0)
+            if coords["lon"] >= 55.9 and elev >= 400:
+                storm_val = min(90, storm_val * 1.25 + 6)
+                drizzle_val = min(85, drizzle_val * 1.15 + 4)
+            elif 55.4 <= coords["lon"] <= 56.0 and 24.3 <= coords["lat"] <= 25.1:
+                storm_val = min(75, storm_val * 1.1 + 3)
+            else:
+                storm_val *= 0.55
+                drizzle_val *= 0.6
             avg = lambda k: sum(p[k] for p in probs) / len(probs)
-            agree_storm = sum(1 for p in probs if p["storm"] >= 65)
+            agree_storm = sum(1 for p in probs if p["storm"] >= 70)
             agree_fog = sum(1 for p in probs if p["fog"] >= 75)
             agree_shamal = sum(1 for p in probs if p["shamal"] >= 60)
-            agree_drizzle = sum(1 for p in probs if p["drizzle"] >= 55)
+            agree_drizzle = sum(1 for p in probs if p["drizzle"] >= 50)
             agreement = max(agree_storm, agree_fog, agree_shamal, agree_drizzle)
             rows.append({
                 "Time": dt_str, "DateOnly": f"{DAYS_EN[dt.strftime('%A')]} {dt.strftime('%d')}",
                 "Station": name, "Sector": sector_of(name), "Zone": zone,
                 "Latitude": coords["lat"], "Longitude": coords["lon"],
-                "Storm Probability": round(avg("storm")), "Fog Probability": round(avg("fog")),
-                "AlKous Prob": round(avg("alkous")), "Drizzle Prob": round(avg("drizzle")),
+                "Storm Probability": round(storm_val), "Fog Probability": round(avg("fog")),
+                "AlKous Prob": round(avg("alkous")), "Drizzle Prob": round(drizzle_val),
                 "Shamal Index": round(avg("shamal")), "Temperature": round(avg("temp"), 1),
                 "Apparent Temp": round(avg("app"), 1), "Humidity": round(avg("rh")),
                 "Wind": round(avg("wind"), 1), "Gust": round(avg("gust"), 1), "Wind Dir": round(avg("wind_dir")),
@@ -654,7 +679,7 @@ alerts = []
 if not df.empty:
     checks = [
         ("Fog Probability", 75, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
-        ("Storm Probability", 65, 3, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
+        ("Storm Probability", 75, 3, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
         ("Shamal Index", 60, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
         ("Wind", 45, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
         ("Drizzle Prob", 55, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),

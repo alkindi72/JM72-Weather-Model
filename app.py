@@ -1908,16 +1908,20 @@ with tab8:
         st.warning(tr("تعذر قراءة أرشيف المناخ الوطني لهذا اليوم.", "The national climate almanac could not be read for today."))
     else:
         item = row.iloc[0]
+        today_str = uae_now.strftime("%d %B")
         lines = [
-            tr(f"أعلى كمية أمطار: {item['highest_rainfall_value']} مم في {item['highest_rainfall_location_ar']}.", f"Highest rainfall: {item['highest_rainfall_value']} mm at {item['highest_rainfall_location_en']}."),
-            tr(f"أعلى درجة حرارة: {item['highest_temperature_value']} °C في {item['highest_temperature_location_ar']}.", f"Highest temperature: {item['highest_temperature_value']} °C at {item['highest_temperature_location_en']}."),
-            tr(f"أقل درجة حرارة: {item['lowest_temperature_value']} °C في {item['lowest_temperature_location_ar']}.", f"Lowest temperature: {item['lowest_temperature_value']} °C at {item['lowest_temperature_location_en']}."),
+            tr(f"أعلى كمية أمطار: {item['highest_rainfall_value']} مم في {item['highest_rainfall_location_ar']} سنة {item['highest_rainfall_year']}.", f"Highest rainfall: {item['highest_rainfall_value']} mm at {item['highest_rainfall_location_en']} in {item['highest_rainfall_year']}."),
+            tr(f"أعلى درجة حرارة: {item['highest_temperature_value']} °C في {item['highest_temperature_location_ar']} سنة {item['highest_temperature_year']}.", f"Highest temperature: {item['highest_temperature_value']} °C at {item['highest_temperature_location_en']} in {item['highest_temperature_year']}."),
+            tr(f"أقل درجة حرارة: {item['lowest_temperature_value']} °C في {item['lowest_temperature_location_ar']} سنة {item['lowest_temperature_year']}.", f"Lowest temperature: {item['lowest_temperature_value']} °C at {item['lowest_temperature_location_en']} in {item['lowest_temperature_year']}."),
         ]
         align = "right" if lang == "ar" else "left"
         side = "rtl" if lang == "ar" else "ltr"
         items = "".join(f"<li style='margin:6px 0;'>{line}</li>" for line in lines)
         st.markdown(
-            f"<div dir='{side}' style='direction:{side};text-align:{align};background:#f0fdf4;color:#14532d;border:1px solid #86efac;border-radius:14px;padding:12px 16px;margin-top:12px;'><ul style='direction:{side};text-align:{align};padding-inline-start:1.1rem;margin:0;'>{items}</ul></div>",
+            f"""<div dir='{side}' style='direction:{side};text-align:{align};background:#f0fdf4;color:#14532d;border:1px solid #86efac;border-radius:14px;padding:14px 16px;margin:8px 0 18px;'>
+                <div style='font-weight:700;font-size:1.05rem;margin-bottom:8px;text-align:center;'>{tr('حدث في مثل هذا اليوم', 'On this day')} — {today_str}</div>
+                <ul style='direction:{side};text-align:{align};padding-inline-start:1.1rem;margin:0;'>{items}</ul>
+            </div>""",
             unsafe_allow_html=True,
         )
     banks = [[('FOG',
@@ -3302,10 +3306,11 @@ with tab8:
         pass
     if code in img_map:
         components.html(f"""
-        <div style="border-radius:20px;overflow:hidden;height:440px;margin:8px auto 18px;max-width:920px;box-shadow:0 8px 30px rgba(15,118,110,0.18);border:3px solid #0f766e;background:#f0fdfa;">
-          <img src="data:image/jpeg;base64,{img_map[code]}" style="width:100%;height:440px;object-fit:cover;display:block;">
+        <div style="border-radius:24px;overflow:hidden;height:460px;margin:12px auto 20px;max-width:940px;box-shadow:0 10px 40px rgba(15,118,110,0.22);border:4px solid #0f766e;background:linear-gradient(135deg,#f0fdfa,#ecfdf5);position:relative;">
+          <div style="position:absolute;top:12px;right:16px;background:#0f766e;color:#fff;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600;z-index:2;">ظاهرة اليوم</div>
+          <img src="data:image/jpeg;base64,{img_map[code]}" style="width:100%;height:460px;object-fit:cover;display:block;">
         </div>
-        """, height=460)
+        """, height=480)
     parts = [x.strip() for x in body.split(".") if x.strip()]
     while len(parts) < 3:
         parts.append(parts[-1] if parts else body)

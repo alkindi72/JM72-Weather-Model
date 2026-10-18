@@ -918,7 +918,7 @@ tab1, tab2, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     tr("النشرة الجوية", "Bulletin"),
     tr("النينيو", "ENSO"),
     tr("النماذج والغبار", "Models & dust"),
-    tr("في مثل هذا اليوم", "On this day"),
+    tr("بوابة الثقافة", "Culture Portal"),
 ])
 
 
@@ -1035,8 +1035,8 @@ with tab1:
         hot = now_df.assign(score=now_df[["Storm Probability", "Fog Probability", "Shamal Index"]].max(axis=1)).sort_values("score", ascending=False).head(1).iloc[0]
         place = hot["Sector"] if lang == "ar" else SECTOR_EN.get(hot["Sector"], hot["Sector"])
         st.info(tr(
-            f"أبرز نقطة الآن: {hot['Station']} في {place}. الإحساس {hot['Apparent Temp']:.0f} °C، والرياح {hot['Wind']:.0f} كم/س. هذا أعلى خطر محسوب حالياً، لا تحذير إلا إذا أكده الرصد.",
-            f"Lead point now: {hot['Station']} in {place}. Feels like {hot['Apparent Temp']:.0f} °C, wind {hot['Wind']:.0f} km/h. This is the highest calculated risk, not a warning unless observations confirm it.",
+            f"أبرز نقطة الآن: {hot['Station']} في {place}. الإحساس {hot['Apparent Temp']:.0f} °C، والرياح {hot['Wind']:.0f} كم/س. أعلى قيمة محسوبة حالياً.",
+            f"Lead point now: {hot['Station']} in {place}. Feels like {hot['Apparent Temp']:.0f} °C, wind {hot['Wind']:.0f} km/h. Highest calculated value at the moment.",
         ))
     sea = fetch_wave_points()
     if not sea.empty:
@@ -1898,7 +1898,7 @@ with tab7:
         st.warning(tr(f"تعذر جلب الغبار: {dust}", f"Dust unavailable: {dust}"))
 
 with tab8:
-    st.markdown(tr("#### في مثل هذا اليوم", "#### On this day"))
+    st.markdown(tr("#### بوابة الثقافة", "#### Culture Portal"))
     try:
         almanac = pd.read_csv("climate_yearly_almanac_till_dec_20252.csv", header=1)
         row = almanac[(almanac["month"].astype(str).str.lower() == uae_now.strftime("%B").lower()) & (almanac["month_day"].astype(int) == uae_now.day)]
@@ -1909,17 +1909,15 @@ with tab8:
     else:
         item = row.iloc[0]
         lines = [
-            tr(f"أعلى كمية أمطار: {item['highest_rainfall_value']} مم، سُجّلت في {item['highest_rainfall_location_ar']} سنة {item['highest_rainfall_year']}.", f"Highest rainfall: {item['highest_rainfall_value']} mm at {item['highest_rainfall_location_en']} in {item['highest_rainfall_year']}."),
-            tr(f"أعلى درجة حرارة: {item['highest_temperature_value']} °C، سُجّلت في {item['highest_temperature_location_ar']} سنة {item['highest_temperature_year']}.", f"Highest temperature: {item['highest_temperature_value']} °C at {item['highest_temperature_location_en']} in {item['highest_temperature_year']}."),
-            tr(f"أقل درجة حرارة: {item['lowest_temperature_value']} °C، سُجّلت في {item['lowest_temperature_location_ar']} سنة {item['lowest_temperature_year']}.", f"Lowest temperature: {item['lowest_temperature_value']} °C at {item['lowest_temperature_location_en']} in {item['lowest_temperature_year']}."),
-            tr(f"أعلى سرعة رياح: {item['maximum_wind_value']} كم/س، سُجّلت في {item['maximum_wind_location_ar']} سنة {item['maximum_wind_year']}.", f"Highest wind: {item['maximum_wind_value']} km/h at {item['maximum_wind_location_en']} in {item['maximum_wind_year']}."),
-            tr(f"عدد سنوات حدوث المطر في هذا التاريخ: {item['rainfall_occurence_value']} من {item['rainfall_period_years']}.", f"Rain occurred on this date in {item['rainfall_occurence_value']} of {item['rainfall_period_years']} years."),
+            tr(f"أعلى كمية أمطار: {item['highest_rainfall_value']} مم في {item['highest_rainfall_location_ar']}.", f"Highest rainfall: {item['highest_rainfall_value']} mm at {item['highest_rainfall_location_en']}."),
+            tr(f"أعلى درجة حرارة: {item['highest_temperature_value']} °C في {item['highest_temperature_location_ar']}.", f"Highest temperature: {item['highest_temperature_value']} °C at {item['highest_temperature_location_en']}."),
+            tr(f"أقل درجة حرارة: {item['lowest_temperature_value']} °C في {item['lowest_temperature_location_ar']}.", f"Lowest temperature: {item['lowest_temperature_value']} °C at {item['lowest_temperature_location_en']}."),
         ]
         align = "right" if lang == "ar" else "left"
         side = "rtl" if lang == "ar" else "ltr"
-        items = "".join(f"<li style='margin:8px 0;'>{line}</li>" for line in lines)
+        items = "".join(f"<li style='margin:6px 0;'>{line}</li>" for line in lines)
         st.markdown(
-            f"<div dir='{side}' style='direction:{side};text-align:{align};background:#f8fafc;color:#111827;border:1px solid #e5e7eb;border-radius:14px;padding:14px 18px;'><b>{tr('السجل الوطني من 2003 إلى 2025', 'National record, 2003 to 2025')}</b><ul style='direction:{side};text-align:{align};padding-inline-start:1.2rem;'>{items}</ul></div>",
+            f"<div dir='{side}' style='direction:{side};text-align:{align};background:#f0fdf4;color:#14532d;border:1px solid #86efac;border-radius:14px;padding:12px 16px;margin-top:12px;'><ul style='direction:{side};text-align:{align};padding-inline-start:1.1rem;margin:0;'>{items}</ul></div>",
             unsafe_allow_html=True,
         )
     banks = [[('FOG',
@@ -3304,10 +3302,10 @@ with tab8:
         pass
     if code in img_map:
         components.html(f"""
-        <div style="border-radius:18px;overflow:hidden;height:420px;margin-bottom:16px;">
-          <img src="data:image/jpeg;base64,{img_map[code]}" style="width:100%;height:420px;object-fit:cover;display:block;">
+        <div style="border-radius:20px;overflow:hidden;height:440px;margin:8px auto 18px;max-width:920px;box-shadow:0 8px 30px rgba(15,118,110,0.18);border:3px solid #0f766e;background:#f0fdfa;">
+          <img src="data:image/jpeg;base64,{img_map[code]}" style="width:100%;height:440px;object-fit:cover;display:block;">
         </div>
-        """, height=440)
+        """, height=460)
     parts = [x.strip() for x in body.split(".") if x.strip()]
     while len(parts) < 3:
         parts.append(parts[-1] if parts else body)

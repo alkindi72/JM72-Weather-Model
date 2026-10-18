@@ -929,24 +929,32 @@ with tab1:
         st.info(tr("لا تحذيرات ضمن مهلة النشر: 6 ساعات للغبار والرياح والمطر والبحر، و3 ساعات للعواصف والضباب.", "No warnings inside the lead window: 6 hours for dust, wind, rain and sea, 3 hours for storms and fog."))
 
     # Extended weather situation (separate from short-term warnings)
-    outlook_lines = []
     if not df.empty and "Storm Probability" in df.columns:
-        long_window = df[df["Time"].isin(timeline_str[:48])]  # next 48 hours
+        long_window = df[df["Time"].isin(timeline_str[:48])]
         east_storm = safe_max(long_window[long_window["Sector"] == "الجبال الشرقية"]["Storm Probability"]) if "الجبال الشرقية" in long_window["Sector"].values else 0
-        if east_storm >= 60:
-            outlook_lines.append(tr(
-                f"حالة جوية ممتدة: احتمال عواصف رعدية على الجبال الشرقية (حتى {east_storm:.0f}%) خلال اليومين القادمين. قد تترافق مع رياح جنوبية شرقية ورطوبة مرتفعة.",
-                f"Extended situation: thunderstorm chance on eastern mountains (up to {east_storm:.0f}%) over the next two days. May be accompanied by SE winds and higher humidity.",
-            ))
-    if outlook_lines:
-        st.markdown(
-            "<div style='background:#1E3A5F;border:1px solid #93C5FD;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'><b style='color:#DBEAFE;'>"
-            + tr("حالة جوية ممتدة", "Extended Weather Situation")
-            + "</b>"
-            + "".join(f"<p style='color:#DBEAFE;margin:8px 0;font-size:17px;'>{line}</p>" for line in outlook_lines)
-            + "</div>",
-            unsafe_allow_html=True,
-        )
+        if east_storm >= 55:
+            # Simple period estimate
+            period = tr("اليومين القادمين", "the next two days")
+            center = tr("شرق الدولة والجبال الشرقية", "eastern UAE and the Hajar mountains")
+            system = tr("منخفض جوي", "a low pressure system")
+            effect = tr("حالة عدم استقرار", "unstable conditions")
+            vis = "1500" if east_storm >= 70 else "3000"
+            body = tr(
+                f"تتأثر الدولة بـ{system} متمركز على {center} مما يتسبب في {effect}. وعليه يكون الطقس خلال {period} مع احتمال عواصف رعدية (حتى {east_storm:.0f}%). قد تترافق مع رياح جنوبية شرقية ورطوبة مرتفعة، وقد تنخفض الرؤية إلى {vis} م.",
+                f"The country is affected by {system} centered over {center} causing {effect}. Weather during {period} may include thunderstorms (up to {east_storm:.0f}%). May be accompanied by SE winds and higher humidity, with visibility possibly dropping to {vis} m.",
+            )
+            note = tr(
+                "ملاحظة: سيتم إصدار تحذيرات رسمية بهذا الخصوص عند اقتراب الحالة من الحدوث.",
+                "Note: Official warnings will be issued when the situation approaches.",
+            )
+            st.markdown(
+                f"""<div style='background:#1E3A5F;border:1px solid #93C5FD;border-radius:14px;padding:16px 18px;margin:10px 0 16px;text-align:center;'>
+                    <div style='color:#DBEAFE;font-size:1.25rem;font-weight:700;margin-bottom:10px;'>{tr("حالة جوية ممتدة", "Extended Weather Situation")}</div>
+                    <p style='color:#E0F2FE;font-size:16.5px;line-height:1.6;margin:8px 0;'>{body}</p>
+                    <p style='color:#93C5FD;font-size:14px;margin-top:12px;font-style:italic;'>{note}</p>
+                </div>""",
+                unsafe_allow_html=True,
+            )
     st.markdown(tr("#### الوضع الآن على الدولة", "#### Country status now"))
     if now_df.empty:
         st.warning(tr("لا توجد قراءة حالية.", "No current reading."))

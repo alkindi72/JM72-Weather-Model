@@ -457,6 +457,9 @@ def compute_probs(hourly, api_times, name, coords, dt):
                 fog = float(np.clip((rh - 90) * 8 + (12 - wind) * 2, 0, 90))
             elif rh >= 95 and wind < 6:
                 fog = float(np.clip((rh - 95) * 6, 0, 75))
+            # Al Ain / central inland boost
+            if central_inland and rh >= 88 and wind < 8:
+                fog = max(fog, float(np.clip((rh - 88) * 7 + (8 - wind) * 1.5, 0, 85)))
         if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 75 and cloud >= 40:
             base_k = (rh - 75) * 2 + cloud * 0.4
             alkous = float(np.clip(base_k * (1.15 if temp >= 35 else 1), 0, 85))
@@ -699,7 +702,7 @@ alerts = []
 if not df.empty:
     checks = [
         ("Fog Probability", 75, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
-        ("Storm Probability", 75, 3, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
+        ("Storm Probability", 82, 2, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
         ("Shamal Index", 60, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
         ("Wind", 45, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
         ("Drizzle Prob", 55, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
@@ -812,13 +815,15 @@ if now_ok:
 badge = len(alerts)
 try:
     state_path = "/tmp/71wm_alert_state.txt"
-    # Use language-independent key so switching language does not resend
-    import hashlib
+    # Language-independent key: based only on alert count and numeric content
+    import hashlib, re
     stable_parts = []
     for a in alerts:
-        # strip language-specific text roughly by keeping numbers and keywords
-        stable_parts.append(a)
-    current_key = hashlib.md5("\n".join(sorted(stable_parts)).encode()).hexdigest()
+        # extract numbers and key weather words only
+        nums = re.findall(r'\d+(?:\.\d+)?', a)
+        words = re.findall(r'(ضباب|عواصف|غبار|رياح|أمطار|بحر|Fog|Storm|Dust|Wind|Rain|Sea)', a)
+        stable_parts.append("|".join(nums + words))
+    current_key = hashlib.md5("\n".join(sorted(stable_parts)).encode()).hexdigest() if stable_parts else "none"
     previous = open(state_path, encoding="utf-8").read() if os.path.exists(state_path) else ""
     if current_key != previous:
         message = "\n".join(alerts) or "انتهى التحذير. لا خطر قائم حالياً."
@@ -922,6 +927,26 @@ with tab1:
         )
     else:
         st.info(tr("لا تحذيرات ضمن مهلة النشر: 6 ساعات للغبار والرياح والمطر والبحر، و3 ساعات للعواصف والضباب.", "No warnings inside the lead window: 6 hours for dust, wind, rain and sea, 3 hours for storms and fog."))
+
+    # Extended weather situation (separate from short-term warnings)
+    outlook_lines = []
+    if not df.empty and "Storm Probability" in df.columns:
+        long_window = df[df["Time"].isin(timeline_str[:48])]  # next 48 hours
+        east_storm = safe_max(long_window[long_window["Sector"] == "الجبال الشرقية"]["Storm Probability"]) if "الجبال الشرقية" in long_window["Sector"].values else 0
+        if east_storm >= 60:
+            outlook_lines.append(tr(
+                f"حالة جوية ممتدة: احتمال عواصف رعدية على الجبال الشرقية (حتى {east_storm:.0f}%) خلال اليومين القادمين. قد تترافق مع رياح جنوبية شرقية ورطوبة مرتفعة.",
+                f"Extended situation: thunderstorm chance on eastern mountains (up to {east_storm:.0f}%) over the next two days. May be accompanied by SE winds and higher humidity.",
+            ))
+    if outlook_lines:
+        st.markdown(
+            "<div style='background:#1E3A5F;border:1px solid #93C5FD;border-radius:14px;padding:14px 16px;margin:10px 0 16px;'><b style='color:#DBEAFE;'>"
+            + tr("حالة جوية ممتدة", "Extended Weather Situation")
+            + "</b>"
+            + "".join(f"<p style='color:#DBEAFE;margin:8px 0;font-size:17px;'>{line}</p>" for line in outlook_lines)
+            + "</div>",
+            unsafe_allow_html=True,
+        )
     st.markdown(tr("#### الوضع الآن على الدولة", "#### Country status now"))
     if now_df.empty:
         st.warning(tr("لا توجد قراءة حالية.", "No current reading."))

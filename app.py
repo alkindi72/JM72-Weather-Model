@@ -461,8 +461,17 @@ def compute_probs(hourly, api_times, name, coords, dt):
         if moisture < 42:
             storm *= 0.4
         storm = float(np.clip(storm, 0, 88))
-        if not (east_hajar or central_inland) and (dt.hour < 11 or dt.hour > 20):
-            storm *= 0.4
+        # Strong diurnal control: thunderstorms in UAE are rare before midday unless a strong synoptic low is present
+        morning = dt.hour < 12
+        evening = dt.hour > 19
+        if morning or evening:
+            # Suppress heavily outside afternoon peak (12-19)
+            storm *= 0.25
+            # Allow only if very high CAPE + moisture (proxy for synoptic forcing)
+            if cape >= 600 and moisture >= 60:
+                storm *= 2.0  # partial recovery
+        if not (east_hajar or central_inland) and (morning or evening):
+            storm *= 0.5
         gulf_coast = coords["type"] == "Coast" and coords["lon"] < 55.6
         oman_coast = coords["lon"] >= 56.15
         if gulf_coast and not east_hajar:
@@ -749,6 +758,15 @@ if not df.empty:
                 else:
                     local_threshold = 80
             found = hazard_window(agree_frame, column, local_threshold, sector, lead)
+            # Storms rarely form before late morning in the UAE
+            if column == "Storm Probability" and found:
+                start_time = found[0]
+                try:
+                    hour = int(start_time.split(" - ")[1].split(":")[0])
+                    if hour < 11 and not has_observed_storm():
+                        found = None
+                except Exception:
+                    pass
             if not found:
                 continue
             start, end, level, stations, is_now, direction, wind_min, wind_max, vis = found

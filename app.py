@@ -337,6 +337,29 @@ def fetch_live(stations: Dict[str, Dict], cycle: str) -> Tuple[bool, Any]:
 
 
 @st.cache_data(ttl=300, show_spinner=False)
+def observed_fog_stations() -> set:
+    """Return set of ICAO stations currently reporting fog or very low visibility."""
+    fogged = set()
+    try:
+        r = requests.get(
+            "https://aviationweather.gov/api/data/metar",
+            params={"ids": "OMAA,OMDB,OMAL,OMFJ,OMSJ,OMRK,OMDW", "format": "json"},
+            timeout=15,
+        )
+        if r.status_code != 200:
+            return fogged
+        for item in r.json():
+            raw = (item.get("rawOb") or "").upper()
+            station = item.get("icaoId", "")
+            if any(code in raw for code in ("FG", "BCFG", "MIFG", "PRFG", "VCFG", "BR")):
+                fogged.add(station)
+            elif any(x in raw for x in ("1/4SM", "1/2SM", "3/4SM", "1SM")):
+                fogged.add(station)
+    except Exception:
+        pass
+    return fogged
+
+
 def has_observed_storm() -> bool:
     """True only if a current METAR reports thunderstorms or CB."""
     try:
@@ -701,7 +724,7 @@ def rain_words(level: int) -> str:
 alerts = []
 if not df.empty:
     checks = [
-        ("Fog Probability", 75, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),
+        ("Fog Probability", 0, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),  # threshold handled per sector
         ("Storm Probability", 82, 2, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
         ("Shamal Index", 60, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
         ("Wind", 45, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
@@ -714,7 +737,18 @@ if not df.empty:
         extra = ""
         agree_frame = df[df["Agreement"] >= 2] if "Agreement" in df.columns else df
         for sector in SECTOR_MAP:
-            found = hazard_window(agree_frame, column, threshold, sector, lead)
+            # Per-sector fog thresholds based on geography
+            local_threshold = threshold
+            if column == "Fog Probability":
+                if sector in ("الظفرة", "الساحل الغربي"):
+                    local_threshold = 70
+                elif sector in ("المنطقة الوسطى", "العين"):
+                    local_threshold = 60
+                elif sector in ("دبي", "الشارقة وعجمان وأم القيوين"):
+                    local_threshold = 75
+                else:
+                    local_threshold = 80
+            found = hazard_window(agree_frame, column, local_threshold, sector, lead)
             if not found:
                 continue
             start, end, level, stations, is_now, direction, wind_min, wind_max, vis = found
@@ -722,7 +756,13 @@ if not df.empty:
             found_areas.append(f"{place} ({level}%)")
             starts.append(start)
             ends.append(end)
-            occurring = occurring or (is_now and has_observed_storm())
+            if column == "Fog Probability":
+                fogged = observed_fog_stations()
+                # Map stations roughly to sectors
+                station_sector = {"OMAL": "العين", "OMAA": "أبوظبي", "OMDB": "دبي", "OMFJ": "الفجيرة", "OMSJ": "الشارقة", "OMRK": "رأس الخيمة", "OMDW": "دبي"}
+                occurring = occurring or (is_now and any(station_sector.get(s, "") == sector for s in fogged))
+            else:
+                occurring = occurring or (is_now and has_observed_storm())
             names = ["شمالية", "شمالية شرقية", "شرقية", "جنوبية شرقية", "جنوبية", "جنوبية غربية", "غربية", "شمالية غربية"]
             wind_bit = tr(
                 f" الرياح {names[int((direction + 22.5) // 45) % 8]} تتراوح بين {wind_min:.0f} و {wind_max:.0f} كم/س.",
@@ -939,9 +979,10 @@ with tab1:
             system = tr("منخفض جوي", "a low pressure system")
             effect = tr("حالة عدم استقرار", "unstable conditions")
             vis = "1500" if east_storm >= 70 else "3000"
+            sky = tr("صحو إلى غائم جزئياً بوجه عام", "generally clear to partly cloudy")
             body = tr(
-                f"تتأثر الدولة بـ{system} متمركز على {center} مما يتسبب في {effect}. وعليه يكون الطقس خلال {period} مع احتمال عواصف رعدية (حتى {east_storm:.0f}%). قد تترافق مع رياح جنوبية شرقية ورطوبة مرتفعة، وقد تنخفض الرؤية إلى {vis} م.",
-                f"The country is affected by {system} centered over {center} causing {effect}. Weather during {period} may include thunderstorms (up to {east_storm:.0f}%). May be accompanied by SE winds and higher humidity, with visibility possibly dropping to {vis} m.",
+                f"تتأثر الدولة بـ{system} متمركز على {center} مما يتسبب في {effect}. وعليه يكون الطقس خلال {period} {sky}، مع احتمال عواصف رعدية (حتى {east_storm:.0f}%). قد تترافق مع رياح جنوبية شرقية ورطوبة مرتفعة، وقد تنخفض الرؤية إلى {vis} م.",
+                f"The country is affected by {system} centered over {center} causing {effect}. Weather during {period} will be {sky}, with a chance of thunderstorms (up to {east_storm:.0f}%). May be accompanied by SE winds and higher humidity, with visibility possibly dropping to {vis} m.",
             )
             note = tr(
                 "ملاحظة: سيتم إصدار تحذيرات رسمية بهذا الخصوص عند اقتراب الحالة من الحدوث.",

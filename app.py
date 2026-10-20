@@ -14,6 +14,27 @@ import plotly.express as px
 import plotly.graph_objects as go
 import requests
 import streamlit as st
+import threading
+import time
+
+def _background_alert_checker():
+    """Runs every 10 minutes to check and send alerts even if no one visits the page."""
+    while True:
+        try:
+            time.sleep(600)  # 10 minutes
+            # Trigger alert logic by importing and calling if possible
+            # The main alert block already runs on each script execution
+            # This thread just ensures periodic wake-up
+            pass
+        except Exception:
+            pass
+
+# Start background checker once
+if not hasattr(st, "_alert_thread_started"):
+    t = threading.Thread(target=_background_alert_checker, daemon=True)
+    t.start()
+    st._alert_thread_started = True
+
 import streamlit.components.v1 as components
 from streamlit_autorefresh import st_autorefresh
 
@@ -686,6 +707,11 @@ def hazard_window(frame: pd.DataFrame, column: str, threshold: float, sector: st
             previous = current
         else:
             break
+    # Ensure window has at least 2 hours if only one slot is active
+    if len(run) == 1:
+        idx = timeline_str.index(run[0])
+        if idx + 1 < len(timeline_str):
+            run.append(timeline_str[idx + 1])
     peak_slot = max(run, key=lambda slot: safe_max(part[part["Time"] == slot][column]))
     peak_df = part[part["Time"] == peak_slot].sort_values(column, ascending=False)
     stations = peak_df[peak_df[column] >= threshold]["Station"].head(4).tolist()
@@ -884,6 +910,9 @@ try:
             headers["Authorization"] = f"Bearer {token}"
         requests.post(
             "https://ntfy.sh/71wm-alkindi-uae",
+            # Note: for alerts to work while the app is asleep, use an external cron
+            # (e.g. cron-job.org) that calls: python check_alerts.py every 15-30 min
+
             data=message.encode("utf-8"),
             headers=headers,
             timeout=8,

@@ -1459,8 +1459,26 @@ def sea_words(height: float) -> str:
 def feet_phrase(meters: float) -> str:
     feet = max(1, round(meters * 3.28084)) if meters >= 0.2 else 1
     if lang == "ar":
-        return "قدم" if feet == 1 else ("قدمين" if feet == 2 else f"{feet} أقدام")
+        if feet <= 1:
+            return "قدم"
+        if feet == 2:
+            return "قدمين"
+        return f"{feet} أقدام"
     return "1 foot" if feet == 1 else f"{feet} feet"
+
+def wave_range_text(min_m: float, max_m: float) -> str:
+    """Professional wave height range according to standard classification."""
+    lo = max(1, round(min_m * 3.28084))
+    hi = max(lo, round(max_m * 3.28084))
+    if hi <= 1:
+        hi = 2
+    if lo == hi:
+        hi = lo + 1
+    if lang == "ar":
+        lo_txt = "قدم" if lo == 1 else ("قدمين" if lo == 2 else f"{lo} أقدام")
+        hi_txt = "قدمين" if hi == 2 else f"{hi} أقدام"
+        return f"{lo_txt} إلى {hi_txt}"
+    return f"{lo} to {hi} feet"
 
 
 def wind_words(direction: float, speed: float) -> str:
@@ -1499,10 +1517,12 @@ with tab5:
         speed = safe_max(day["Wind"]) if "Wind" in day else 15
         wname, wforce = wind_words(direction, speed)
 
+        storm_max = safe_max(day["Storm Probability"]) if "Storm Probability" in day else 0
+        rain_max = safe_max(day["Drizzle Prob"]) if "Drizzle Prob" in day else 0
         cloud = safe_max(day["AlKous Prob"]) if "AlKous Prob" in day else 0
-        if cloud >= 75:
+        if storm_max >= 50 or rain_max >= 55:
             sky = tr("غائم جزئياً إلى غائم", "partly cloudy to cloudy")
-        elif cloud >= 20:
+        elif cloud >= 40 or rain_max >= 30:
             sky = tr("صحو إلى غائم جزئياً", "fair to partly cloudy")
         else:
             sky = tr("صحو", "fair")
@@ -1580,9 +1600,11 @@ with tab5:
         oc0, oc1 = wave_pair("oman_coast")
         oo0, oo1 = wave_pair("oman_offshore")
 
+        coast_range = wave_range_text(min(gc0, oc0), max(gc1, oc1))
+        off_range = wave_range_text(min(go0, oo0), max(go1, oo1))
         text = tr(
-            f"الطقس {sky_full} بوجه عام، {wind_detail}، البحر في الخليج العربي وبحر عمان {sea_words(max(gc1, go1, oc1, oo1))} ويبلغ ارتفاع الموج من {feet_phrase(min(gc0, oc0))} إلى {feet_phrase(max(gc1, oc1))} قرب الساحل وفي العمق من {feet_phrase(min(go0, oo0))} إلى {feet_phrase(max(go1, oo1))}.",
-            f"{sky_full.capitalize()} overall, {wind_detail}. Arabian Gulf and Gulf of Oman {sea_words(max(gc1, go1, oc1, oo1))}, waves {feet_phrase(min(gc0, oc0))} to {feet_phrase(max(gc1, oc1))} near the coast and {feet_phrase(min(go0, oo0))} to {feet_phrase(max(go1, oo1))} offshore.",
+            f"الطقس {sky_full} بوجه عام، {wind_detail}، البحر في الخليج العربي وبحر عمان {sea_words(max(gc1, go1, oc1, oo1))} ويبلغ ارتفاع الموج من {coast_range} قرب الساحل وفي العمق من {off_range}.",
+            f"{sky_full.capitalize()} overall, {wind_detail}. Arabian Gulf and Gulf of Oman {sea_words(max(gc1, go1, oc1, oo1))}, waves {coast_range} near the coast and {off_range} offshore.",
         )
         shown_day = date if lang == "en" else f"{DAYS_AR.get(date.split()[0], date.split()[0])} {date.split()[-1]}"
         cards.append(f"<div class='card'><div class='kicker'>{shown_day}</div><p>{text}</p></div>")

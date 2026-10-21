@@ -475,10 +475,12 @@ def compute_probs(hourly, api_times, name, coords, dt):
             if cape >= 450 and moisture >= 55:
                 storm = max(storm, 25 + cape / 28)
         else:
-            # Strong suppression for Dubai, Abu Dhabi, Dhafra and western coast
-            storm = max(0, (cape - 500) / 25.0) * 0.3 + precip_prob * 0.15
-            if dhafra or dubai_abudhabi:
-                storm *= 0.35
+            # Moderate suppression for Dubai, Abu Dhabi, Dhafra — allow rain when models show it
+            storm = max(0, (cape - 380) / 22.0) * 0.55 + precip_prob * 0.35
+            if dhafra:
+                storm *= 0.65
+            elif dubai_abudhabi:
+                storm *= 0.75
         if moisture < 42:
             storm *= 0.4
         storm = float(np.clip(storm, 0, 88))
@@ -486,11 +488,11 @@ def compute_probs(hourly, api_times, name, coords, dt):
         morning = dt.hour < 12
         evening = dt.hour > 19
         if morning or evening:
-            # Suppress heavily outside afternoon peak (12-19)
-            storm *= 0.25
-            # Allow only if very high CAPE + moisture (proxy for synoptic forcing)
-            if cape >= 600 and moisture >= 60:
-                storm *= 2.0  # partial recovery
+            # Suppress outside afternoon peak, but allow nocturnal activity
+            storm *= 0.45
+            # Allow recovery with moderate CAPE + moisture
+            if cape >= 350 and moisture >= 55:
+                storm *= 1.6
         if not (east_hajar or central_inland) and (morning or evening):
             storm *= 0.5
         gulf_coast = coords["type"] == "Coast" and coords["lon"] < 55.6
@@ -950,7 +952,7 @@ def density(frame: pd.DataFrame, z: str, lat=24.4, lon=54.6, zoom=5.5, title="")
         fig.update_layout(title=title or "لا بيانات", height=420, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(size=16))
         return fig
     fig = px.density_mapbox(
-        frame, lat="Latitude", lon="Longitude", z=z, radius=42,
+        frame, lat="Latitude", lon="Longitude", z=z, radius=60,
         center=dict(lat=lat, lon=lon), zoom=zoom,
         mapbox_style="open-street-map", range_color=[0, 100], opacity=0.72, title=title,
     )
@@ -1145,7 +1147,7 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
     hover = {"Wave": ["الارتفاع"], "Wind": ["الرياح"], "Temperature": ["الحرارة"]}
     zmin, zmax = (None, None) if field == "Temperature" else ((0, 3) if field == "Wave" else (0, 100))
     fig = px.density_mapbox(
-        work, lat="Latitude", lon="Longitude", z=field, radius=28,
+        work, lat="Latitude", lon="Longitude", z=field, radius=55,
         color_continuous_scale=colors.get(scale if field != "Wave" else "Wave", "Hot"),
         range_color=(zmin, zmax), zoom=zoom, center=dict(lat=24.3, lon=54.8),
         mapbox_style="carto-positron", title=title, hover_name="Station",
@@ -1153,7 +1155,7 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
     unit = {"Temperature": "°", "Wave": " م", "Wind": ""}.get(field, "%")
     fig.add_trace(go.Scattermapbox(
         lat=work["Latitude"], lon=work["Longitude"], mode="markers+text",
-        marker=dict(size=8, color="white", opacity=0.8),
+        marker=dict(size=11, color="white", opacity=0.85),
         text=work[field].map(lambda v: f"{v:.0f}{unit}"),
         textposition="top center", textfont=dict(size=12, color="#111827"),
         hoverinfo="skip", name="القيمة",

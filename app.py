@@ -669,13 +669,13 @@ if not df.empty:
         df.loc[mask, "Storm Probability"] = (df.loc[mask, "Storm Probability"] * factor).clip(0, 100).round()
 now_df = df[df["Time"] == timeline_str[0]] if not df.empty else pd.DataFrame()
 risk = 0 if now_df.empty else int(np.clip(max(safe_max(now_df["Storm Probability"]), safe_max(now_df["Fog Probability"]), safe_max(now_df["Shamal Index"]) * 0.7, safe_max(now_df["Drizzle Prob"]) * 0.8), 0, 100))
-status_ar = "حرج" if risk >= 70 else ("مراقب" if risk >= 40 else "مستقر")
-status_en = "Critical" if risk >= 70 else ("Watch" if risk >= 40 else "Stable")
+status_ar = "حرج" if risk >= 80 else ("مراقب" if risk >= 50 else "مستقر")
+status_en = "Critical" if risk >= 80 else ("Watch" if risk >= 50 else "Stable")
 choice = st.radio("Language", ["العربية", "English"], horizontal=True, key="lang_choice", label_visibility="collapsed")
 st.session_state.lang = "ar" if choice == "العربية" else "en"
 lang = st.session_state.lang
 status = status_ar if lang == "ar" else status_en
-risk_color = "#DC2626" if risk >= 70 else ("#D97706" if risk >= 40 else "#166534")
+risk_color = "#DC2626" if risk >= 80 else ("#D97706" if risk >= 50 else "#166534")
 side = "rtl" if lang == "ar" else "ltr"
 align = "right" if lang == "ar" else "left"
 st.markdown(

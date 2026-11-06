@@ -667,15 +667,28 @@ if not df.empty:
     for sector, factor in ai_sector_bias().items():
         mask = df["Sector"] == sector
         df.loc[mask, "Storm Probability"] = (df.loc[mask, "Storm Probability"] * factor).clip(0, 100).round()
+# Smart real-time monitoring: adjust based on observations + model agreement
+if not df.empty and "Storm Probability" in df.columns:
+    today_mask = df["DateOnly"] == uae_now.strftime("%a %d")
+    # Reduce only if models disagree and no live observation supports activity
+    low_agreement = "Agreement" in df.columns and df.loc[today_mask, "Agreement"].max() < 2
+    no_storm_obs = not has_observed_storm()
+    if low_agreement and no_storm_obs:
+        df.loc[today_mask, "Storm Probability"] = (df.loc[today_mask, "Storm Probability"] * 0.72).clip(0, 100).round()
+        df.loc[today_mask, "Drizzle Prob"] = (df.loc[today_mask, "Drizzle Prob"] * 0.78).clip(0, 100).round()
+    # Boost slightly if live observation confirms activity
+    elif has_observed_storm():
+        df.loc[today_mask, "Storm Probability"] = (df.loc[today_mask, "Storm Probability"] * 1.15).clip(0, 100).round()
+
 now_df = df[df["Time"] == timeline_str[0]] if not df.empty else pd.DataFrame()
 risk = 0 if now_df.empty else int(np.clip(max(safe_max(now_df["Storm Probability"]), safe_max(now_df["Fog Probability"]), safe_max(now_df["Shamal Index"]) * 0.7, safe_max(now_df["Drizzle Prob"]) * 0.8), 0, 100))
-status_ar = "حرج" if risk >= 80 else ("مراقب" if risk >= 50 else "مستقر")
-status_en = "Critical" if risk >= 80 else ("Watch" if risk >= 50 else "Stable")
+status_ar = "حرج" if risk >= 88 else ("مراقب" if risk >= 55 else "مستقر")
+status_en = "Critical" if risk >= 88 else ("Watch" if risk >= 55 else "Stable")
 choice = st.radio("Language", ["العربية", "English"], horizontal=True, key="lang_choice", label_visibility="collapsed")
 st.session_state.lang = "ar" if choice == "العربية" else "en"
 lang = st.session_state.lang
 status = status_ar if lang == "ar" else status_en
-risk_color = "#DC2626" if risk >= 80 else ("#D97706" if risk >= 50 else "#166534")
+risk_color = "#DC2626" if risk >= 88 else ("#D97706" if risk >= 55 else "#166534")
 side = "rtl" if lang == "ar" else "ltr"
 align = "right" if lang == "ar" else "left"
 st.markdown(

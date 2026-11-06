@@ -1055,8 +1055,14 @@ with tab1:
         long_window = df[df["Time"].isin(timeline_str[:48])]
         east_storm = safe_max(long_window[long_window["Sector"] == "الجبال الشرقية"]["Storm Probability"]) if "الجبال الشرقية" in long_window["Sector"].values else 0
         # Only show extended situation for significant multi-day events (not ordinary daily activity)
-        multi_day_high = east_storm >= 75 and safe_max(long_window["Storm Probability"]) >= 70
-        if multi_day_high:
+        # Detect any strong persistent weather situation (storms, dust, rain, fog)
+        storm_max = safe_max(long_window["Storm Probability"])
+        shamal_max = safe_max(long_window["Shamal Index"])
+        rain_max = safe_max(long_window["Drizzle Prob"])
+        fog_max = safe_max(long_window["Fog Probability"])
+        strong = max(storm_max, shamal_max, rain_max, fog_max) >= 70
+        persistent = long_window[["Storm Probability","Shamal Index","Drizzle Prob","Fog Probability"]].max(axis=1).mean() >= 35
+        if strong and persistent:
             # Simple period estimate
             period = tr("اليومين القادمين", "the next two days")
             center = tr("شرق الدولة والجبال الشرقية", "eastern UAE and the Hajar mountains")
@@ -1064,8 +1070,11 @@ with tab1:
             effect = tr("حالة عدم استقرار", "unstable conditions")
             vis = "1500" if east_storm >= 70 else "3000"
             sky = tr("صحو إلى غائم جزئياً بوجه عام", "generally clear to partly cloudy")
+            start_d = long_window["DateOnly"].min() if not long_window.empty else ""
+            end_d = long_window["DateOnly"].max() if not long_window.empty else ""
+            period_txt = tr(f"من {start_d} إلى {end_d}", f"from {start_d} to {end_d}")
             body = tr(
-                f"تقرير حالة جوية: تتأثر الدولة بـ{system} متمركز على {center} مما يتسبب في {effect}. وعليه يكون الطقس خلال {period} {sky}، مع احتمال عواصف رعدية (حتى {east_storm:.0f}%). قد تترافق مع رياح جنوبية شرقية ورطوبة مرتفعة، وقد تنخفض الرؤية إلى {vis} م.",
+                f"تقرير حالة جوية: تتأثر الدولة بـ{system} متمركز على {center} مما يتسبب في {effect}. الحالة متوقعة {period_txt}. وعليه يكون الطقس خلال الفترة {sky}، مع احتمال عواصف رعدية (حتى {east_storm:.0f}%). قد تترافق مع رياح جنوبية شرقية ورطوبة مرتفعة، وقد تنخفض الرؤية إلى {vis} م.",
                 f"The country is affected by {system} centered over {center} causing {effect}. Weather during {period} will be {sky}, with a chance of thunderstorms (up to {east_storm:.0f}%). May be accompanied by SE winds and higher humidity, with visibility possibly dropping to {vis} m.",
             )
             note = tr(
@@ -1617,7 +1626,15 @@ with tab5:
             if where not in mentioned:
                 sky_parts.append(tr(f"مع غبار مثار خاصة على {where}", f"with raised dust especially over {where}"))
 
-        sky_full = " ".join(sky_parts)
+        # Add regional variation
+        regions = []
+        if safe_max(day["Storm Probability"]) >= 40:
+            regions.append(tr("مع نشاط رعدي محتمل على الشرق", "with possible thundery activity in the east"))
+        if safe_max(day["Drizzle Prob"]) >= 35:
+            regions.append(tr("وفرصة أمطار على الوسطى والشرق", "and a chance of rain over central and eastern areas"))
+        if safe_max(day["Fog Probability"]) >= 45:
+            regions.append(tr("مع ضباب فجراً على بعض المناطق الداخلية", "with dawn fog over some inland areas"))
+        sky_full = " ".join(sky_parts + regions)
 
         # Wind in the requested style
         dust_note = tr(

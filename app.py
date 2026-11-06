@@ -1442,7 +1442,8 @@ with tab2:
                 key=f"map_{field}_{shown}",
                 config={"displayModeBar": False, "scrollZoom": True},
             )
-    if field not in ("Radar", "Satellite"):
+    show_timeline = field not in ("Radar", "Satellite")
+    if show_timeline:
         st.markdown(tr("#### شريط الأيام والوقت", "#### Day and time strip"))
     day_cols = st.columns(min(7, max(1, len(dates[:7]))))
     for col, date in zip(day_cols, dates[:7]):

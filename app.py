@@ -1251,8 +1251,11 @@ with tab1:
 
 def enhance_satellite_image(image_url: str) -> str:
     """Enhance satellite image quality."""
-    # Prefer higher quality RainViewer satellite tiles
+    enhanced = st.session_state.get("ai_sat_enhanced", False)
     if "rainviewer.com" in image_url:
+        # Use higher quality tile when AI enhance is requested
+        if enhanced:
+            return image_url.replace("/0/0_0.png", "/2/0_0.png")
         return image_url.replace("/0/0_0.png", "/1/0_0.png")
     return image_url
 
@@ -1406,6 +1409,10 @@ with tab2:
             unsafe_allow_html=True,
         )
         if field in ("Radar", "Satellite"):
+            if field == "Satellite":
+                if st.button(tr("تحسين بالذكاء الاصطناعي", "Enhance with AI"), key="ai_sat"):
+                    st.session_state.ai_sat_enhanced = True
+                    st.rerun()
             radar_url = ""
             if field == "Radar":
                 try:

@@ -1250,9 +1250,10 @@ with tab1:
 
 
 def enhance_satellite_image(image_url: str) -> str:
-    """Enhance satellite image using AI (placeholder for Grok Imagine / external)."""
-    # In production this can call an AI upscaler or contrast enhancer.
-    # For now we return the original URL with a high-quality hint.
+    """Enhance satellite image quality."""
+    # Prefer higher quality RainViewer satellite tiles
+    if "rainviewer.com" in image_url:
+        return image_url.replace("/0/0_0.png", "/1/0_0.png")
     return image_url
 
 def layer_map(kind: str, radar_url: str = "") -> str:
@@ -1263,7 +1264,7 @@ def layer_map(kind: str, radar_url: str = "") -> str:
         max_zoom = 8
     if kind == "Satellite":
         sat_url = enhance_satellite_image("https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png")
-        overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.98, maxZoom: 9, maxNativeZoom: 8}}).addTo(map);"
+        overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.98, maxZoom: 9, maxNativeZoom: 8, className: 'sat-enhanced'}}).addTo(map);"
         max_zoom = 8
     return f"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>

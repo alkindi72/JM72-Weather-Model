@@ -1266,8 +1266,9 @@ def layer_map(kind: str, radar_url: str = "") -> str:
         overlay = f"L.tileLayer({json.dumps(radar_url)}, {{opacity: 0.9, maxZoom: 8, maxNativeZoom: 7}}).addTo(map);"
         max_zoom = 8
     if kind == "Satellite":
-        sat_url = enhance_satellite_image("https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png")
-        overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.98, maxZoom: 9, maxNativeZoom: 8, className: 'sat-enhanced'}}).addTo(map);"
+        # Higher quality satellite tiles closer to Windy style
+        sat_url = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.92, maxZoom: 18, maxNativeZoom: 18}}).addTo(map);"
         max_zoom = 8
     return f"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>

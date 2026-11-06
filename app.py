@@ -1096,7 +1096,7 @@ def density(frame: pd.DataFrame, z: str, lat=24.4, lon=54.6, zoom=5.5, title="")
         fig.update_layout(title=title or "لا بيانات", height=420, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(size=16))
         return fig
     fig = px.density_mapbox(
-        frame, lat="Latitude", lon="Longitude", z=z, radius=60,
+        frame, lat="Latitude", lon="Longitude", z=z, radius=75,
         center=dict(lat=lat, lon=lon), zoom=zoom,
         mapbox_style="open-street-map", range_color=[0, 100], opacity=0.72, title=title,
     )
@@ -1252,7 +1252,7 @@ def layer_map(kind: str, radar_url: str = "") -> str:
     overlay = ""
     max_zoom = 18
     if kind == "Radar" and radar_url:
-        overlay = f"L.tileLayer({json.dumps(radar_url)}, {{opacity: 0.8, maxZoom: 7, maxNativeZoom: 7}}).addTo(map);"
+        overlay = f"L.tileLayer({json.dumps(radar_url)}, {{opacity: 0.9, maxZoom: 8, maxNativeZoom: 7}}).addTo(map);"
         max_zoom = 8
     if kind == "Satellite":
         overlay = "L.tileLayer('https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png', {opacity: 0.85, maxZoom: 8, maxNativeZoom: 8}).addTo(map);"
@@ -1302,7 +1302,7 @@ def windy_map(frame: pd.DataFrame, field: str, title: str, scale: str, zoom: flo
     hover = {"Wave": ["الارتفاع"], "Wind": ["الرياح"], "Temperature": ["الحرارة"]}
     zmin, zmax = (None, None) if field == "Temperature" else ((0, 3) if field == "Wave" else (0, 100))
     fig = px.density_mapbox(
-        work, lat="Latitude", lon="Longitude", z=field, radius=55,
+        work, lat="Latitude", lon="Longitude", z=field, radius=70,
         color_continuous_scale=colors.get(scale if field != "Wave" else "Wave", "Hot"),
         range_color=(zmin, zmax), zoom=zoom, center=dict(lat=24.3, lon=54.8),
         mapbox_style="carto-positron", title=title, hover_name="Station",

@@ -158,6 +158,46 @@ STATIONS: Dict[str, Dict[str, Any]] = {
     "Al Siji": {"lat": 25.3000, "lon": 56.0700, "type": "Mountains"},
     "Wadi Al Bih": {"lat": 25.7800, "lon": 56.0500, "type": "Mountains"},
     "Masafi Valley": {"lat": 25.2800, "lon": 56.1200, "type": "Mountains"},
+    "Al Malaiha": {"lat": 25.13, "lon": 55.89, "type": "Inland"},
+    "Al Dhaid": {"lat": 25.24, "lon": 55.82, "type": "Inland"},
+    "Al Faqa": {"lat": 24.72, "lon": 55.62, "type": "Inland"},
+    "Swiehan": {"lat": 24.47, "lon": 55.33, "type": "Inland"},
+    "Hamim": {"lat": 22.97, "lon": 54.30, "type": "Desert"},
+    "Madinat Zayed": {"lat": 23.68, "lon": 53.70, "type": "Desert"},
+    "Al Madam": {"lat": 24.88, "lon": 55.78, "type": "Inland"},
+    "Shoukah": {"lat": 25.11, "lon": 56.04, "type": "Mountains"},
+    "Masafi": {"lat": 25.36, "lon": 56.16, "type": "Mountains"},
+    "Al Aamerah": {"lat": 24.24, "lon": 55.54, "type": "Inland"},
+    "Al Ajban": {"lat": 24.56, "lon": 54.88, "type": "Inland"},
+    "Al FarFar": {"lat": 25.17, "lon": 56.18, "type": "Mountains"},
+    "Al Hayer": {"lat": 24.63, "lon": 55.77, "type": "Inland"},
+    "Al Marjan": {"lat": 25.69, "lon": 55.73, "type": "Coast"},
+    "Al Marmoom": {"lat": 25.00, "lon": 55.52, "type": "Inland"},
+    "AL Mirfa": {"lat": 24.09, "lon": 53.54, "type": "Coast"},
+    "Al Qatara": {"lat": 24.27, "lon": 55.76, "type": "Inland"},
+    "Al Shiweb": {"lat": 24.78, "lon": 55.80, "type": "Inland"},
+    "Alfoah": {"lat": 24.37, "lon": 55.81, "type": "Inland"},
+    "Algheweifat": {"lat": 24.12, "lon": 51.63, "type": "Desert"},
+    "Alkhazna": {"lat": 24.16, "lon": 55.10, "type": "Inland"},
+    "Alwathbah": {"lat": 24.13, "lon": 54.81, "type": "Inland"},
+    "Barakah": {"lat": 23.96, "lon": 52.25, "type": "Desert"},
+    "DAS": {"lat": 25.13, "lon": 52.88, "type": "Desert"},
+    "Falaj Al Moalla": {"lat": 25.34, "lon": 55.85, "type": "Inland"},
+    "Ghayaithi": {"lat": 23.95, "lon": 52.79, "type": "Desert"},
+    "Jabal Hafeet": {"lat": 24.06, "lon": 55.78, "type": "Mountains"},
+    "Lahbab": {"lat": 25.03, "lon": 55.61, "type": "Inland"},
+    "Manama": {"lat": 25.33, "lon": 56.01, "type": "Mountains"},
+    "Mezyed": {"lat": 24.03, "lon": 55.85, "type": "Inland"},
+    "Mukhariz": {"lat": 22.91, "lon": 52.89, "type": "Desert"},
+    "Owtaid": {"lat": 23.40, "lon": 53.11, "type": "Desert"},
+    "Raknah": {"lat": 24.35, "lon": 55.71, "type": "Inland"},
+    "Rowdah": {"lat": 24.10, "lon": 55.54, "type": "Inland"},
+    "Saih Al Salem": {"lat": 24.83, "lon": 55.31, "type": "Inland"},
+    "Um Azimul": {"lat": 22.72, "lon": 55.14, "type": "Desert"},
+    "Um Ghafa": {"lat": 24.07, "lon": 55.95, "type": "Inland"},
+    "Wadi Al Tuwa": {"lat": 25.02, "lon": 56.13, "type": "Mountains"},
+
+
     "Al Ghail": {"lat": 25.4800, "lon": 56.0200, "type": "Mountains"},
     "Liwa Oasis": {"lat": 23.1400, "lon": 53.7800, "type": "Desert"},
     "Qasr Al Sarab": {"lat": 22.9500, "lon": 53.2500, "type": "Desert"},
@@ -755,7 +795,7 @@ alerts = []
 if not df.empty:
     checks = [
         ("Fog Probability", 0, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),  # threshold handled per sector
-        ("Storm Probability", 82, 2, "تحذير عواصف", "Storm warning", "عواصف رعدية", "thunderstorms"),
+        ("Storm Probability", 78, 2, "تحذير عواصف", "Storm warning", "عواصف رعدية وأمطار", "thunderstorms and rain"),
         ("Shamal Index", 60, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
         ("Wind", 45, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
         ("Drizzle Prob", 55, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
@@ -771,13 +811,13 @@ if not df.empty:
             local_threshold = threshold
             if column == "Fog Probability":
                 if sector in ("الظفرة", "الساحل الغربي"):
-                    local_threshold = 70
+                    local_threshold = 58
                 elif sector in ("المنطقة الوسطى", "العين"):
-                    local_threshold = 60
+                    local_threshold = 52
                 elif sector in ("دبي", "الشارقة وعجمان وأم القيوين"):
-                    local_threshold = 75
+                    local_threshold = 65
                 else:
-                    local_threshold = 80
+                    local_threshold = 70
             found = hazard_window(agree_frame, column, local_threshold, sector, lead)
             # Storms rarely form before late morning in the UAE
             if column == "Storm Probability" and found:
@@ -1014,7 +1054,9 @@ with tab1:
     if not df.empty and "Storm Probability" in df.columns:
         long_window = df[df["Time"].isin(timeline_str[:48])]
         east_storm = safe_max(long_window[long_window["Sector"] == "الجبال الشرقية"]["Storm Probability"]) if "الجبال الشرقية" in long_window["Sector"].values else 0
-        if east_storm >= 55:
+        # Only show extended situation for significant multi-day events (not ordinary daily activity)
+        multi_day_high = east_storm >= 75 and safe_max(long_window["Storm Probability"]) >= 70
+        if multi_day_high:
             # Simple period estimate
             period = tr("اليومين القادمين", "the next two days")
             center = tr("شرق الدولة والجبال الشرقية", "eastern UAE and the Hajar mountains")
@@ -1023,7 +1065,7 @@ with tab1:
             vis = "1500" if east_storm >= 70 else "3000"
             sky = tr("صحو إلى غائم جزئياً بوجه عام", "generally clear to partly cloudy")
             body = tr(
-                f"تتأثر الدولة بـ{system} متمركز على {center} مما يتسبب في {effect}. وعليه يكون الطقس خلال {period} {sky}، مع احتمال عواصف رعدية (حتى {east_storm:.0f}%). قد تترافق مع رياح جنوبية شرقية ورطوبة مرتفعة، وقد تنخفض الرؤية إلى {vis} م.",
+                f"تقرير حالة جوية: تتأثر الدولة بـ{system} متمركز على {center} مما يتسبب في {effect}. وعليه يكون الطقس خلال {period} {sky}، مع احتمال عواصف رعدية (حتى {east_storm:.0f}%). قد تترافق مع رياح جنوبية شرقية ورطوبة مرتفعة، وقد تنخفض الرؤية إلى {vis} م.",
                 f"The country is affected by {system} centered over {center} causing {effect}. Weather during {period} will be {sky}, with a chance of thunderstorms (up to {east_storm:.0f}%). May be accompanied by SE winds and higher humidity, with visibility possibly dropping to {vis} m.",
             )
             note = tr(
@@ -1032,7 +1074,7 @@ with tab1:
             )
             st.markdown(
                 f"""<div style='background:#1E3A5F;border:1px solid #93C5FD;border-radius:14px;padding:16px 18px;margin:10px 0 16px;text-align:center;'>
-                    <div style='color:#DBEAFE;font-size:1.25rem;font-weight:700;margin-bottom:10px;'>{tr("حالة جوية ممتدة", "Extended Weather Situation")}</div>
+                    <div style='color:#DBEAFE;font-size:1.25rem;font-weight:700;margin-bottom:10px;'>{tr("تقرير حالة جوية", "Weather Situation Report")}</div>
                     <p style='color:#E0F2FE;font-size:16.5px;line-height:1.6;margin:8px 0;'>{body}</p>
                     <p style='color:#93C5FD;font-size:14px;margin-top:12px;font-style:italic;'>{note}</p>
                 </div>""",

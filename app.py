@@ -331,6 +331,31 @@ def gfs_cycle(now_utc: datetime) -> str:
 
 
 OM_KEY = os.environ.get("OPEN_METEO_API_KEY", "").strip()
+WINDY_KEY = os.environ.get("WINDY_API_KEY", "").strip()
+
+def fetch_windy_point(lat: float, lon: float) -> dict:
+    """Fetch point forecast from Windy (ECMWF preferred)."""
+    if not WINDY_KEY:
+        return {}
+    try:
+        r = requests.get(
+            "https://api.windy.com/api/point-forecast/v2",
+            params={
+                "lat": lat,
+                "lon": lon,
+                "model": "ecmwf",
+                "parameters": ["wind", "precip", "cape", "rh"],
+                "levels": ["surface"],
+                "key": WINDY_KEY,
+            },
+            timeout=15,
+        )
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    return {}
+
 
 
 def om_url(kind: str = "forecast") -> str:
@@ -523,6 +548,15 @@ def compute_probs(hourly, api_times, name, coords, dt):
                 storm *= 0.75
         if moisture < 42:
             storm *= 0.4
+        # Blend with Windy CAPE if available
+        windy = fetch_windy_point(coords["lat"], coords["lon"])
+        if windy and "cape" in str(windy).lower():
+            try:
+                w_cape = float(windy.get("cape", [0])[0] if isinstance(windy.get("cape"), list) else windy.get("cape", 0))
+                if w_cape > cape:
+                    storm = storm * 0.7 + min(w_cape / 8.0, 40)
+            except Exception:
+                pass
         storm = float(np.clip(storm, 0, 88))
         # Strong diurnal control: thunderstorms in UAE are rare before midday unless a strong synoptic low is present
         morning = dt.hour < 12
@@ -1676,9 +1710,11 @@ with tab5:
 
         coast_range = wave_range_text(min(gc0, oc0), max(gc1, oc1))
         off_range = wave_range_text(min(go0, oo0), max(go1, oo1))
+        coast_state = sea_words(max(gc1, oc1))
+        off_state = sea_words(max(go1, oo1))
         text = tr(
-            f"الطقس {sky_full} بوجه عام، {wind_detail}، البحر في الخليج العربي وبحر عمان {sea_words(max(gc1, go1, oc1, oo1))} ويبلغ ارتفاع الموج من {coast_range} قرب الساحل وفي العمق من {off_range}.",
-            f"{sky_full.capitalize()} overall, {wind_detail}. Arabian Gulf and Gulf of Oman {sea_words(max(gc1, go1, oc1, oo1))}, waves {coast_range} near the coast and {off_range} offshore.",
+            f"الطقس {sky_full} بوجه عام، {wind_detail}، البحر في الخليج العربي وبحر عمان {coast_state} قرب الساحل ({coast_range}) و{off_state} في العمق ({off_range}).",
+            f"{sky_full.capitalize()} overall, {wind_detail}. Arabian Gulf and Gulf of Oman {coast_state} near the coast ({coast_range}) and {off_state} offshore ({off_range}).",
         )
         shown_day = date if lang == "en" else f"{DAYS_AR.get(date.split()[0], date.split()[0])} {date.split()[-1]}"
         cards.append(f"<div class='card'><div class='kicker'>{shown_day}</div><p>{text}</p></div>")

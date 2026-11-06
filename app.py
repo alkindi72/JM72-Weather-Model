@@ -333,6 +333,27 @@ def gfs_cycle(now_utc: datetime) -> str:
 OM_KEY = os.environ.get("OPEN_METEO_API_KEY", "").strip()
 WINDY_KEY = os.environ.get("WINDY_API_KEY", "").strip()
 
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def windy_cape_for_key_points() -> dict:
+    """Fetch Windy CAPE only for a few key UAE points, once per hour."""
+    if not WINDY_KEY:
+        return {}
+    points = {
+        "east": (25.30, 56.16),
+        "central": (24.50, 55.70),
+        "west": (23.80, 53.50),
+    }
+    result = {}
+    for name, (lat, lon) in points.items():
+        data = fetch_windy_point(lat, lon)
+        try:
+            cape = data.get("cape") or [0]
+            result[name] = float(cape[0] if isinstance(cape, list) else cape)
+        except Exception:
+            result[name] = 0.0
+    return result
+
 def fetch_windy_point(lat: float, lon: float) -> dict:
     """Fetch point forecast from Windy (ECMWF preferred)."""
     if not WINDY_KEY:
@@ -548,15 +569,13 @@ def compute_probs(hourly, api_times, name, coords, dt):
                 storm *= 0.75
         if moisture < 42:
             storm *= 0.4
-        # Blend with Windy CAPE if available
-        windy = fetch_windy_point(coords["lat"], coords["lon"])
-        if windy and "cape" in str(windy).lower():
-            try:
-                w_cape = float(windy.get("cape", [0])[0] if isinstance(windy.get("cape"), list) else windy.get("cape", 0))
-                if w_cape > cape:
-                    storm = storm * 0.7 + min(w_cape / 8.0, 40)
-            except Exception:
-                pass
+        # Light Windy influence from key points (cached)
+        w_cape = windy_cape_for_key_points()
+        if w_cape:
+            if east_hajar and w_cape.get("east", 0) > 400:
+                storm = min(storm * 1.12, 88)
+            elif central_inland and w_cape.get("central", 0) > 350:
+                storm = min(storm * 1.08, 88)
         storm = float(np.clip(storm, 0, 88))
         # Strong diurnal control: thunderstorms in UAE are rare before midday unless a strong synoptic low is present
         morning = dt.hour < 12

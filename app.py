@@ -1266,9 +1266,9 @@ def layer_map(kind: str, radar_url: str = "") -> str:
         overlay = f"L.tileLayer({json.dumps(radar_url)}, {{opacity: 0.9, maxZoom: 8, maxNativeZoom: 7}}).addTo(map);"
         max_zoom = 8
     if kind == "Satellite":
-        # Live satellite with clouds (RainViewer infrared)
+        # Live infrared satellite with clouds
         sat_url = "https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png"
-        overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.85, maxZoom: 8, maxNativeZoom: 8}}).addTo(map);"
+        overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.9, maxZoom: 8, maxNativeZoom: 8}}).addTo(map);"
         max_zoom = 8
     return f"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -1442,7 +1442,8 @@ with tab2:
                 key=f"map_{field}_{shown}",
                 config={"displayModeBar": False, "scrollZoom": True},
             )
-    st.markdown(tr("#### شريط الأيام والوقت", "#### Day and time strip"))
+    if field not in ("Radar", "Satellite"):
+        st.markdown(tr("#### شريط الأيام والوقت", "#### Day and time strip"))
     day_cols = st.columns(min(7, max(1, len(dates[:7]))))
     for col, date in zip(day_cols, dates[:7]):
         day = df[df["DateOnly"] == date] if not df.empty else pd.DataFrame()

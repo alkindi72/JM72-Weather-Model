@@ -335,23 +335,28 @@ WINDY_KEY = os.environ.get("WINDY_API_KEY", "").strip()
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def windy_cape_for_key_points() -> dict:
-    """Fetch Windy CAPE only for a few key UAE points, once per hour."""
+def windy_key_points() -> dict:
+    """Fetch Windy CAPE and precip for key UAE points, once per hour."""
     if not WINDY_KEY:
         return {}
     points = {
         "east": (25.30, 56.16),
         "central": (24.50, 55.70),
         "west": (23.80, 53.50),
+        "north": (25.80, 55.95),
     }
     result = {}
     for name, (lat, lon) in points.items():
         data = fetch_windy_point(lat, lon)
         try:
             cape = data.get("cape") or [0]
-            result[name] = float(cape[0] if isinstance(cape, list) else cape)
+            precip = data.get("precip") or [0]
+            result[name] = {
+                "cape": float(cape[0] if isinstance(cape, list) else cape),
+                "precip": float(precip[0] if isinstance(precip, list) else precip),
+            }
         except Exception:
-            result[name] = 0.0
+            result[name] = {"cape": 0.0, "precip": 0.0}
     return result
 
 def fetch_windy_point(lat: float, lon: float) -> dict:
@@ -365,11 +370,11 @@ def fetch_windy_point(lat: float, lon: float) -> dict:
                 "lat": lat,
                 "lon": lon,
                 "model": "ecmwf",
-                "parameters": ["wind", "precip", "cape", "rh"],
+                "parameters": ["wind", "precip", "cape", "rh", "temp"],
                 "levels": ["surface"],
                 "key": WINDY_KEY,
             },
-            timeout=15,
+            timeout=12,
         )
         if r.status_code == 200:
             return r.json()
@@ -570,7 +575,8 @@ def compute_probs(hourly, api_times, name, coords, dt):
         if moisture < 42:
             storm *= 0.4
         # Light Windy influence from key points (cached)
-        w_cape = windy_cape_for_key_points()
+        w_data = windy_key_points()
+        w_cape = {k: v.get("cape", 0) for k, v in w_data.items()}
         if w_cape:
             if east_hajar and w_cape.get("east", 0) > 400:
                 storm = min(storm * 1.12, 88)

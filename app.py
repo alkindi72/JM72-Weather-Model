@@ -1255,7 +1255,7 @@ def layer_map(kind: str, radar_url: str = "") -> str:
         overlay = f"L.tileLayer({json.dumps(radar_url)}, {{opacity: 0.9, maxZoom: 8, maxNativeZoom: 7}}).addTo(map);"
         max_zoom = 8
     if kind == "Satellite":
-        overlay = "L.tileLayer('https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png', {opacity: 0.85, maxZoom: 8, maxNativeZoom: 8}).addTo(map);"
+        overlay = "L.tileLayer('https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png', {opacity: 0.95, maxZoom: 9, maxNativeZoom: 8}).addTo(map);"
         max_zoom = 8
     return f"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>

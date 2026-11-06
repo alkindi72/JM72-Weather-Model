@@ -578,8 +578,11 @@ def compute_probs(hourly, api_times, name, coords, dt):
                 storm = min(storm * 1.08, 88)
         storm = float(np.clip(storm, 0, 88))
         # Ensure rain probability accompanies thunderstorm probability
-        if storm >= 55:
-            drizzle = max(drizzle, storm * 0.35)
+        # Rain only if models actually give precipitation probability
+        if precip_prob < 5:
+            drizzle = min(drizzle, 8)
+        elif storm >= 60 and precip_prob >= 20:
+            drizzle = max(drizzle, storm * 0.3)
         drizzle = float(np.clip(drizzle, 0, 90))
         # Strong diurnal control: thunderstorms in UAE are rare before midday unless a strong synoptic low is present
         morning = dt.hour < 12
@@ -619,7 +622,7 @@ def compute_probs(hourly, api_times, name, coords, dt):
             alkous = max(alkous, 35)
             drizzle = max(drizzle, 10)
         if coords["lon"] >= 55.8 and 3 <= dt.hour <= 9 and 45 <= wind_dir <= 160 and rh >= 88 and cloud >= 80:
-            drizzle = float(np.clip((rh - 88) * 3.5 + (cloud - 80) * 1.5, 0, 80))
+            drizzle = float(np.clip((rh - 92) * 2.0 + (cloud - 85) * 0.8, 0, 40))
         nw = wind_dir >= 300 or wind_dir <= 30
         southern = 140 <= wind_dir <= 200
         central_inland = 24.0 <= coords["lat"] <= 25.0 and 54.5 <= coords["lon"] <= 55.6 and coords["type"] != "Coast"

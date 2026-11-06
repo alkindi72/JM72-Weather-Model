@@ -578,8 +578,8 @@ def compute_probs(hourly, api_times, name, coords, dt):
                 storm = min(storm * 1.08, 88)
         storm = float(np.clip(storm, 0, 88))
         # Ensure rain probability accompanies thunderstorm probability
-        if storm >= 45:
-            drizzle = max(drizzle, storm * 0.45)
+        if storm >= 55:
+            drizzle = max(drizzle, storm * 0.35)
         drizzle = float(np.clip(drizzle, 0, 90))
         # Strong diurnal control: thunderstorms in UAE are rare before midday unless a strong synoptic low is present
         morning = dt.hour < 12
@@ -749,6 +749,10 @@ def smart_monitor(df: pd.DataFrame) -> pd.DataFrame:
         df.loc[today_mask, "Drizzle Prob"] = (df.loc[today_mask, "Drizzle Prob"] * 1.12).clip(0, 100).round()
     elif agreement < 2:
         df.loc[today_mask, "Drizzle Prob"] = (df.loc[today_mask, "Drizzle Prob"] * 0.75).clip(0, 100).round()
+    # Stronger decay on northern sectors when no observation
+    north_mask = today_mask & df["Sector"].isin(["الشمال", "رأس الخيمة", "الشارقة وعجمان وأم القيوين"])
+    if not obs_storm and north_mask.any():
+        df.loc[north_mask, "Drizzle Prob"] = (df.loc[north_mask, "Drizzle Prob"] * 0.55).clip(0, 100).round()
 
     # Fog adjustment
     if obs_fog:

@@ -577,6 +577,10 @@ def compute_probs(hourly, api_times, name, coords, dt):
             elif central_inland and w_cape.get("central", 0) > 350:
                 storm = min(storm * 1.08, 88)
         storm = float(np.clip(storm, 0, 88))
+        # Ensure rain probability accompanies thunderstorm probability
+        if storm >= 30:
+            drizzle = max(drizzle, storm * 0.65)
+        drizzle = float(np.clip(drizzle, 0, 90))
         # Strong diurnal control: thunderstorms in UAE are rare before midday unless a strong synoptic low is present
         morning = dt.hour < 12
         evening = dt.hour > 19

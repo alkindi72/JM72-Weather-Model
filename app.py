@@ -578,8 +578,8 @@ def compute_probs(hourly, api_times, name, coords, dt):
                 storm = min(storm * 1.08, 88)
         storm = float(np.clip(storm, 0, 88))
         # Ensure rain probability accompanies thunderstorm probability
-        if storm >= 30:
-            drizzle = max(drizzle, storm * 0.65)
+        if storm >= 45:
+            drizzle = max(drizzle, storm * 0.45)
         drizzle = float(np.clip(drizzle, 0, 90))
         # Strong diurnal control: thunderstorms in UAE are rare before midday unless a strong synoptic low is present
         morning = dt.hour < 12
@@ -724,18 +724,39 @@ if not df.empty:
     for sector, factor in ai_sector_bias().items():
         mask = df["Sector"] == sector
         df.loc[mask, "Storm Probability"] = (df.loc[mask, "Storm Probability"] * factor).clip(0, 100).round()
-# Smart real-time monitoring: adjust based on observations + model agreement
-if not df.empty and "Storm Probability" in df.columns:
-    today_mask = df["DateOnly"] == uae_now.strftime("%a %d")
-    # Reduce only if models disagree and no live observation supports activity
-    low_agreement = "Agreement" in df.columns and df.loc[today_mask, "Agreement"].max() < 2
-    no_storm_obs = not has_observed_storm()
-    if low_agreement and no_storm_obs:
-        df.loc[today_mask, "Storm Probability"] = (df.loc[today_mask, "Storm Probability"] * 0.72).clip(0, 100).round()
-        df.loc[today_mask, "Drizzle Prob"] = (df.loc[today_mask, "Drizzle Prob"] * 0.78).clip(0, 100).round()
-    # Boost slightly if live observation confirms activity
-    elif has_observed_storm():
-        df.loc[today_mask, "Storm Probability"] = (df.loc[today_mask, "Storm Probability"] * 1.15).clip(0, 100).round()
+# Advanced AI monitoring layer
+def smart_monitor(df: pd.DataFrame) -> pd.DataFrame:
+    """Compare models with live observations and adjust probabilities intelligently."""
+    if df.empty or "Storm Probability" not in df.columns:
+        return df
+    today = uae_now.strftime("%a %d")
+    today_mask = df["DateOnly"] == today
+    if not today_mask.any():
+        return df
+
+    obs_storm = has_observed_storm()
+    obs_fog = bool(observed_fog_stations())
+    agreement = df.loc[today_mask, "Agreement"].max() if "Agreement" in df.columns else 1
+
+    # Storm adjustment
+    if obs_storm:
+        df.loc[today_mask, "Storm Probability"] = (df.loc[today_mask, "Storm Probability"] * 1.18).clip(0, 100).round()
+    elif agreement < 2:
+        df.loc[today_mask, "Storm Probability"] = (df.loc[today_mask, "Storm Probability"] * 0.68).clip(0, 100).round()
+
+    # Rain follows storm confirmation
+    if obs_storm:
+        df.loc[today_mask, "Drizzle Prob"] = (df.loc[today_mask, "Drizzle Prob"] * 1.12).clip(0, 100).round()
+    elif agreement < 2:
+        df.loc[today_mask, "Drizzle Prob"] = (df.loc[today_mask, "Drizzle Prob"] * 0.75).clip(0, 100).round()
+
+    # Fog adjustment
+    if obs_fog:
+        df.loc[today_mask, "Fog Probability"] = (df.loc[today_mask, "Fog Probability"] * 1.15).clip(0, 100).round()
+
+    return df
+
+df = smart_monitor(df)
 
 now_df = df[df["Time"] == timeline_str[0]] if not df.empty else pd.DataFrame()
 risk = 0 if now_df.empty else int(np.clip(max(safe_max(now_df["Storm Probability"]), safe_max(now_df["Fog Probability"]), safe_max(now_df["Shamal Index"]) * 0.7, safe_max(now_df["Drizzle Prob"]) * 0.8), 0, 100))
@@ -868,7 +889,7 @@ if not df.empty:
         ("Storm Probability", 78, 2, "تحذير عواصف", "Storm warning", "عواصف رعدية وأمطار", "thunderstorms and rain"),
         ("Shamal Index", 60, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
         ("Wind", 45, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
-        ("Drizzle Prob", 55, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
+        ("Drizzle Prob", 65, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
     ]
     for column, threshold, lead, title_ar, title_en, verb_ar, verb_en in checks:
         found_areas = []

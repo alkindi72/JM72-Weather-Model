@@ -1564,15 +1564,14 @@ def fetch_marine() -> Tuple[bool, Any]:
 
 
 def sea_words(height: float) -> str:
-    if height < 0.5:
+    feet = height * 3.28084
+    if feet < 1.5:
         return tr("هادئ", "calm")
-    if height < 1.25:
+    if feet < 3:
         return tr("خفيف الموج", "slight")
-    if height < 2.5:
-        return tr("معتدل الموج", "moderate")
-    if height < 4:
-        return tr("مضطرب", "rough")
-    return tr("هائج", "very rough")
+    if feet <= 5:
+        return tr("متوسط الموج", "moderate")
+    return tr("مضطرب", "rough")
 
 
 def feet_phrase(meters: float) -> str:

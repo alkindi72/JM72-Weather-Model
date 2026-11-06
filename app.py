@@ -1266,9 +1266,9 @@ def layer_map(kind: str, radar_url: str = "") -> str:
         overlay = f"L.tileLayer({json.dumps(radar_url)}, {{opacity: 0.9, maxZoom: 8, maxNativeZoom: 7}}).addTo(map);"
         max_zoom = 8
     if kind == "Satellite":
-        # Higher quality satellite tiles closer to Windy style
-        sat_url = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.92, maxZoom: 18, maxNativeZoom: 18}}).addTo(map);"
+        # Live satellite with clouds (RainViewer infrared)
+        sat_url = "https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png"
+        overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.85, maxZoom: 8, maxNativeZoom: 8}}).addTo(map);"
         max_zoom = 8
     return f"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -1411,6 +1411,7 @@ with tab2:
         )
         if field in ("Radar", "Satellite"):
             if field == "Satellite":
+                st.caption(tr("صورة أقمار حية (بدون شريط أيام)", "Live satellite (no day timeline)"))
                 if st.button(tr("تحسين بالذكاء الاصطناعي", "Enhance with AI"), key="ai_sat"):
                     st.session_state.ai_sat_enhanced = True
                     st.rerun()

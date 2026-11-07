@@ -44,8 +44,8 @@ st.markdown(
     """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap');
-  html, body, [data-testid="stAppViewContainer"], .stApp {
-    font-family: 'Almarai', 'Segoe UI', Tahoma, sans-serif;
+  html, body, [data-testid="stAppViewContainer"], .stApp, .stMarkdown, p, span, label, h1, h2, h3, h4, div {
+    font-family: 'Almarai', 'Segoe UI', Tahoma, sans-serif !important;
     background:
       radial-gradient(900px 420px at 8% -10%, rgba(43,179,199,.22), transparent 55%),
       radial-gradient(700px 380px at 100% 0%, rgba(212,175,55,.2), transparent 50%),

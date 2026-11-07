@@ -351,9 +351,13 @@ def windy_key_points() -> dict:
         try:
             cape = data.get("cape") or [0]
             precip = data.get("precip") or [0]
+            pressure = data.get("pressure") or [1013]
+            rh = data.get("rh") or [50]
             result[name] = {
                 "cape": float(cape[0] if isinstance(cape, list) else cape),
                 "precip": float(precip[0] if isinstance(precip, list) else precip),
+                "pressure": float(pressure[0] if isinstance(pressure, list) else pressure),
+                "rh": float(rh[0] if isinstance(rh, list) else rh),
             }
         except Exception:
             result[name] = {"cape": 0.0, "precip": 0.0}
@@ -370,7 +374,7 @@ def fetch_windy_point(lat: float, lon: float) -> dict:
                 "lat": lat,
                 "lon": lon,
                 "model": "ecmwf",
-                "parameters": ["wind", "precip", "cape", "rh", "temp"],
+                "parameters": ["wind", "precip", "cape", "rh", "temp", "pressure"],
                 "levels": ["surface"],
                 "key": WINDY_KEY,
             },
@@ -584,11 +588,15 @@ def compute_probs(hourly, api_times, name, coords, dt):
                 storm = min(storm * 1.08, 88)
         storm = float(np.clip(storm, 0, 88))
         # Ensure rain probability accompanies thunderstorm probability
-        # Rain only if models actually give precipitation probability
-        if precip_prob < 5:
-            drizzle = min(drizzle, 8)
-        elif storm >= 60 and precip_prob >= 20:
-            drizzle = max(drizzle, storm * 0.3)
+        # More sensitive to model precipitation, especially for approaching systems
+        if precip_prob >= 15:
+            drizzle = max(drizzle, precip_prob * 0.8)
+        elif precip_prob >= 5:
+            drizzle = max(drizzle, precip_prob * 0.5)
+        else:
+            drizzle = min(drizzle, 5)
+        if storm >= 50 and precip_prob >= 10:
+            drizzle = max(drizzle, storm * 0.4)
         drizzle = float(np.clip(drizzle, 0, 90))
         # Strong diurnal control: thunderstorms in UAE are rare before midday unless a strong synoptic low is present
         morning = dt.hour < 12
@@ -770,6 +778,40 @@ def smart_monitor(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 df = smart_monitor(df)
+
+# Western system detection (approaching lows)
+def detect_western_system(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    w_data = windy_key_points()
+    west = w_data.get("west", {})
+    # Low pressure + rising humidity on the west signals an approaching system
+    if west.get("pressure", 1015) < 1008 and west.get("rh", 40) > 55:
+        west_mask = df["Sector"].isin(["الظفرة", "أبوظبي", "المنطقة الوسطى"])
+        df.loc[west_mask, "Drizzle Prob"] = (df.loc[west_mask, "Drizzle Prob"] + 18).clip(0, 90).round()
+        df.loc[west_mask, "Storm Probability"] = (df.loc[west_mask, "Storm Probability"] + 12).clip(0, 88).round()
+    return df
+
+df = detect_western_system(df)
+
+# More accurate rain layer
+def accurate_rain_layer(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty or "Drizzle Prob" not in df.columns:
+        return df
+    # Require model agreement for higher confidence
+    if "Agreement" in df.columns:
+        low_agree = df["Agreement"] < 2
+        df.loc[low_agree, "Drizzle Prob"] = (df.loc[low_agree, "Drizzle Prob"] * 0.7).clip(0, 90).round()
+    # Regional adjustment: eastern mountains respond better to moisture
+    east = df["Sector"] == "الجبال الشرقية"
+    df.loc[east, "Drizzle Prob"] = (df.loc[east, "Drizzle Prob"] * 1.1).clip(0, 90).round()
+    # Suppress very low values
+    df.loc[df["Drizzle Prob"] < 8, "Drizzle Prob"] = 0
+    return df
+
+df = accurate_rain_layer(df)
+
+
 
 now_df = df[df["Time"] == timeline_str[0]] if not df.empty else pd.DataFrame()
 risk = 0 if now_df.empty else int(np.clip(max(safe_max(now_df["Storm Probability"]), safe_max(now_df["Fog Probability"]), safe_max(now_df["Shamal Index"]) * 0.7, safe_max(now_df["Drizzle Prob"]) * 0.8), 0, 100))

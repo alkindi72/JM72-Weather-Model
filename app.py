@@ -558,17 +558,28 @@ def compute_probs(hourly, api_times, name, coords, dt):
         moisture = rh850 * 0.45 + rh700 * 0.35 + rh500 * 0.20
         lapse = t850 - t500
         storm = 0.0
+        se_wind = 90 <= wind_dir <= 170  # SE to S
+        nw_wind = wind_dir >= 300 or wind_dir <= 40  # NW
         if east_hajar:
-            cape_score = max(0, (cape - 220) / 12.0)
-            orographic = 15 if cape >= 300 else 0
-            storm = cape_score + max(0, (moisture - 48) * 0.6) + precip_prob * 0.5 + orographic
-            if cape >= 350 and moisture >= 52:
-                storm = max(storm, 40 + cape / 20 + precip_prob * 0.4)
+            cape_score = max(0, (cape - 250) / 14.0)
+            orographic = 12 if cape >= 320 else 0
+            storm = cape_score + max(0, (moisture - 50) * 0.5) + precip_prob * 0.45 + orographic
+            if cape >= 380 and moisture >= 55:
+                storm = max(storm, 35 + cape / 22 + precip_prob * 0.35)
+            # Strict wind direction: SE raises, NW strongly suppresses
+            if se_wind:
+                storm *= 1.25
+            elif nw_wind:
+                storm *= 0.3
         elif central_inland:
-            cape_score = max(0, (cape - 320) / 16.0)
-            storm = cape_score + max(0, (moisture - 52) * 0.4) + precip_prob * 0.35
-            if cape >= 450 and moisture >= 55:
-                storm = max(storm, 25 + cape / 28)
+            cape_score = max(0, (cape - 340) / 18.0)
+            storm = cape_score + max(0, (moisture - 54) * 0.35) + precip_prob * 0.3
+            if cape >= 480 and moisture >= 58:
+                storm = max(storm, 22 + cape / 30)
+            if se_wind:
+                storm *= 1.15
+            elif nw_wind:
+                storm *= 0.45
         else:
             # Moderate suppression for Dubai, Abu Dhabi, Dhafra — allow rain when models show it
             storm = max(0, (cape - 380) / 22.0) * 0.55 + precip_prob * 0.35
@@ -582,10 +593,10 @@ def compute_probs(hourly, api_times, name, coords, dt):
         w_data = windy_key_points()
         w_cape = {k: v.get("cape", 0) for k, v in w_data.items()}
         if w_cape:
-            if east_hajar and w_cape.get("east", 0) > 400:
+            if east_hajar and w_cape.get("east", 0) > 380:
+                storm = min(storm * 1.18, 88)
+            elif central_inland and w_cape.get("central", 0) > 330:
                 storm = min(storm * 1.12, 88)
-            elif central_inland and w_cape.get("central", 0) > 350:
-                storm = min(storm * 1.08, 88)
         storm = float(np.clip(storm, 0, 88))
         # Ensure rain probability accompanies thunderstorm probability
         # More sensitive to model precipitation, especially for approaching systems
@@ -621,14 +632,14 @@ def compute_probs(hourly, api_times, name, coords, dt):
                 shamal = max(shamal, float(np.clip((wind - 26) * 3.5, 0, 90)))
         night = dt.hour >= 18 or dt.hour <= 9
         western = coords["type"] == "Desert" or (coords["type"] == "Coast" and coords["lon"] < 54.6)
-        if night and wind < 12 and not east_hajar:
-            if western and rh >= 90:
-                fog = float(np.clip((rh - 90) * 8 + (12 - wind) * 2, 0, 90))
-            elif rh >= 95 and wind < 6:
-                fog = float(np.clip((rh - 95) * 6, 0, 75))
-            # Al Ain / central inland boost
-            if central_inland and rh >= 88 and wind < 8:
-                fog = max(fog, float(np.clip((rh - 88) * 7 + (8 - wind) * 1.5, 0, 85)))
+        if night and wind < 14 and not east_hajar:
+            if western and rh >= 88:
+                fog = float(np.clip((rh - 88) * 7 + (14 - wind) * 1.8, 0, 90))
+            elif rh >= 93 and wind < 8:
+                fog = float(np.clip((rh - 93) * 5.5, 0, 78))
+            # Al Ain / central inland
+            if central_inland and rh >= 86 and wind < 10:
+                fog = max(fog, float(np.clip((rh - 86) * 6.5 + (10 - wind) * 1.4, 0, 85)))
         if coords["lon"] >= 55.8 and 45 <= wind_dir <= 160 and rh >= 75 and cloud >= 40:
             base_k = (rh - 75) * 2 + cloud * 0.4
             alkous = float(np.clip(base_k * (1.15 if temp >= 35 else 1), 0, 85))

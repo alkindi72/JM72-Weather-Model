@@ -49,7 +49,7 @@ st.markdown(
     background:
       radial-gradient(900px 420px at 8% -10%, rgba(43,179,199,.22), transparent 55%),
       radial-gradient(700px 380px at 100% 0%, rgba(212,175,55,.2), transparent 50%),
-      #0b1220 !important;
+      #e7f2f4 !important;
     color: #102033;
   }
   [data-testid="stHeader"], [data-testid="stToolbar"] { display: none !important; }
@@ -57,7 +57,7 @@ st.markdown(
   h1, h2, h3, h4, p, span, label, li, div { color: #102033; }
   .hero {
     border: 1px solid rgba(212,175,55,.45);
-    background: linear-gradient(120deg, rgba(16,42,67,.94), rgba(24,78,92,.82) 55%, rgba(92,68,28,.55));
+    background: linear-gradient(120deg, #1a3a52, #2a5a72 55%, #3a6a82);
     border-radius: 26px; padding: 22px 24px; margin-bottom: 14px;
     box-shadow: 0 18px 40px rgba(8,20,32,.28);
     animation: rise .7s ease;

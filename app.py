@@ -600,7 +600,7 @@ def compute_probs(hourly, api_times, name, coords, dt):
         storm = float(np.clip(storm, 0, 88))
         # Ensure rain probability accompanies thunderstorm probability
         # More sensitive to model precipitation, especially for approaching systems
-        if precip_prob >= 15:
+        if precip_prob >= 8:
             drizzle = max(drizzle, precip_prob * 0.8)
         elif precip_prob >= 5:
             drizzle = max(drizzle, precip_prob * 0.5)
@@ -960,7 +960,7 @@ if not df.empty:
     checks = [
         ("Fog Probability", 0, 3, "تحذير ضباب", "Fog warning", "تدني الرؤية", "reduced visibility"),  # threshold handled per sector
         ("Storm Probability", 78, 2, "تحذير عواصف", "Storm warning", "عواصف رعدية وأمطار", "thunderstorms and rain"),
-        ("Shamal Index", 60, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
+        ("Shamal Index", 48, 6, "تحذير غبار", "Dust warning", "غبار مثار", "raised dust"),
         ("Wind", 45, 6, "تحذير رياح", "Wind warning", "رياح نشطة", "fresh winds"),
         ("Drizzle Prob", 65, 6, "تحذير أمطار", "Rain warning", "احتمال أمطار", "a chance of rain"),
     ]

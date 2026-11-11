@@ -1336,10 +1336,9 @@ def layer_map(kind: str, radar_url: str = "") -> str:
         max_zoom = 8
     if kind == "Satellite":
         # More reliable live satellite (NASA GIBS VIIRS)
-        # True color + Infrared option
-        ir_url = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_Brightness_Temp_BandI5_Day/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg"
+        # Clean single satellite layer (similar to NCM style)
         sat_url = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg"
-        overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.75, maxZoom: 8, maxNativeZoom: 8}}).addTo(map); L.tileLayer('{ir_url}', {{opacity: 0.45, maxZoom: 8, maxNativeZoom: 8}}).addTo(map);"
+        overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.85, maxZoom: 9, maxNativeZoom: 9}}).addTo(map);"
         max_zoom = 8
     return f"""
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>

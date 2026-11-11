@@ -1335,8 +1335,8 @@ def layer_map(kind: str, radar_url: str = "") -> str:
         overlay = f"L.tileLayer({json.dumps(radar_url)}, {{opacity: 0.9, maxZoom: 8, maxNativeZoom: 7}}).addTo(map);"
         max_zoom = 8
     if kind == "Satellite":
-        # Live infrared satellite with clouds
-        sat_url = "https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png"
+        # More reliable live satellite (NASA GIBS VIIRS)
+        sat_url = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg"
         overlay = f"L.tileLayer('{sat_url}', {{opacity: 0.9, maxZoom: 8, maxNativeZoom: 8}}).addTo(map);"
         max_zoom = 8
     return f"""

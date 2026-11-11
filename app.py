@@ -601,16 +601,14 @@ def compute_probs(hourly, api_times, name, coords, dt):
         # Ensure rain probability accompanies thunderstorm probability
         # More sensitive to model precipitation, especially for approaching systems
         # Broader rain detection for scattered activity across UAE
-        if east_hajar or central_inland or (24.0 <= coords["lat"] <= 25.6 and 55.0 <= coords["lon"] <= 56.5):
-            rain_factor = 0.85
-        else:
-            rain_factor = 0.6
-        if precip_prob >= 5:
+        # Very broad rain response for scattered UAE activity
+        rain_factor = 0.8 if coords["lon"] >= 54.5 else 0.55
+        if precip_prob >= 3:
             drizzle = max(drizzle, precip_prob * rain_factor)
-        elif precip_prob >= 2:
-            drizzle = max(drizzle, precip_prob * 0.4)
+        elif precip_prob >= 1:
+            drizzle = max(drizzle, precip_prob * 0.35)
         else:
-            drizzle = min(drizzle, 3)
+            drizzle = min(drizzle, 2)
         if storm >= 50 and precip_prob >= 10:
             drizzle = max(drizzle, storm * 0.4)
         drizzle = float(np.clip(drizzle, 0, 90))

@@ -1857,9 +1857,12 @@ with tab5:
         off_range = wave_range_text(min(go0, oo0), max(go1, oo1))
         coast_state = sea_words(max(gc1, oc1))
         off_state = sea_words(max(go1, oo1))
+        # Cleaner NCM-style bulletin
+        sky_clean = sky_full.strip("، ").strip()
+        wind_clean = wind_detail.replace("والرياح ", "").replace("الرياح ", "").strip("، ")
         text = tr(
-            f"الطقس {sky_full}، والرياح {wind_detail.replace('الرياح ', '').strip()}، والبحر في الخليج العربي وبحر عمان {coast_state} قرب الساحل ({coast_range}) و{off_state} في العمق ({off_range}).",
-            f"{sky_full.capitalize()} overall, {wind_detail}. Arabian Gulf and Gulf of Oman {coast_state} near the coast ({coast_range}) and {off_state} offshore ({off_range}).",
+            f"{sky_clean}. الرياح {wind_clean}. البحر في الخليج العربي وبحر عمان {coast_state} قرب الساحل ({coast_range}) و{off_state} في العمق ({off_range}).",
+            f"{sky_clean}. Wind {wind_clean}. Arabian Gulf and Gulf of Oman {coast_state} near the coast ({coast_range}) and {off_state} offshore ({off_range}).",
         )
         shown_day = date if lang == "en" else f"{DAYS_AR.get(date.split()[0], date.split()[0])} {date.split()[-1]}"
         cards.append(f"<div class='card'><div class='kicker'>{shown_day}</div><p>{text}</p></div>")

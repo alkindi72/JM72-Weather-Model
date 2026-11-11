@@ -310,7 +310,9 @@ def heat_band(apparent: float) -> str:
 
 def ops_note(row: pd.Series) -> str:
     notes = []
-    if row["Storm Probability"] >= 55:
+    if row["Drizzle Prob"] >= 35:
+        notes.append(tr("أمطار متفرقة", "Scattered rain"))
+    if row["Storm Probability"] >= 45:
         notes.append(tr("طيران: راقب خلايا رعدية", "Aviation: watch storms"))
     if row["Fog Probability"] >= 50:
         notes.append(tr("طرق: تدني رؤية", "Roads: low visibility"))

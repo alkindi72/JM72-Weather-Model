@@ -1481,6 +1481,8 @@ with tab2:
         if field in ("Radar", "Satellite"):
             if field == "Satellite":
                 st.caption(tr("صورة أقمار حية (بدون شريط أيام)", "Live satellite (no day timeline)"))
+                # Force better satellite source
+                sat_url = "https://tilecache.rainviewer.com/v2/satellite/0/256/{z}/{x}/{y}/0/0_0.png"
                 if st.button(tr("تحسين بالذكاء الاصطناعي", "Enhance with AI"), key="ai_sat"):
                     st.session_state.ai_sat_enhanced = True
                     st.rerun()
@@ -2194,7 +2196,7 @@ with tab7:
         for place, payload in dust.items():
             values = [v for v in (payload.get("hourly") or {}).get("dust") or [] if v is not None]
             pm = [v for v in (payload.get("hourly") or {}).get("pm10") or [] if v is not None]
-            dust_rows.append({tr("الموقع", "Place"): place, tr("أعلى غبار", "Peak dust"): round(max(values or [0]), 1), "PM10": round(max(pm or [0]), 1)})
+            dust_rows.append({tr("الموقع", "Place"): place, tr("أعلى غبار (µg/m³)", "Peak dust (µg/m³)"): round(max(values or [0]), 1), "PM10 (µg/m³)": round(max(pm or [0]), 1)})
         st.dataframe(pd.DataFrame(dust_rows), use_container_width=True, hide_index=True)
     else:
         st.warning(tr(f"تعذر جلب الغبار: {dust}", f"Dust unavailable: {dust}"))

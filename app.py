@@ -310,7 +310,7 @@ def heat_band(apparent: float) -> str:
 
 def ops_note(row: pd.Series) -> str:
     notes = []
-    if row["Storm Probability"] >= 65:
+    if row["Storm Probability"] >= 55:
         notes.append(tr("طيران: راقب خلايا رعدية", "Aviation: watch storms"))
     if row["Fog Probability"] >= 50:
         notes.append(tr("طرق: تدني رؤية", "Roads: low visibility"))
@@ -561,16 +561,16 @@ def compute_probs(hourly, api_times, name, coords, dt):
         se_wind = 90 <= wind_dir <= 170  # SE to S
         nw_wind = wind_dir >= 300 or wind_dir <= 40  # NW
         if east_hajar:
-            cape_score = max(0, (cape - 250) / 14.0)
-            orographic = 12 if cape >= 320 else 0
-            storm = cape_score + max(0, (moisture - 50) * 0.5) + precip_prob * 0.45 + orographic
-            if cape >= 380 and moisture >= 55:
-                storm = max(storm, 35 + cape / 22 + precip_prob * 0.35)
-            # Strict wind direction: SE raises, NW strongly suppresses
+            cape_score = max(0, (cape - 200) / 11.0)
+            orographic = 18 if cape >= 280 else 8
+            storm = cape_score + max(0, (moisture - 46) * 0.65) + precip_prob * 0.55 + orographic
+            if cape >= 320 and moisture >= 50:
+                storm = max(storm, 42 + cape / 18 + precip_prob * 0.45)
+            # Stronger SE boost for eastern orographic storms
             if se_wind:
-                storm *= 1.25
+                storm *= 1.4
             elif nw_wind:
-                storm *= 0.3
+                storm *= 0.22
         elif central_inland:
             cape_score = max(0, (cape - 340) / 18.0)
             storm = cape_score + max(0, (moisture - 54) * 0.35) + precip_prob * 0.3
@@ -805,6 +805,13 @@ def detect_western_system(df: pd.DataFrame) -> pd.DataFrame:
 
 df = detect_western_system(df)
 
+# Suppress western dust warnings when strong eastern convective activity is present
+if not df.empty and "Storm Probability" in df.columns and "Shamal Index" in df.columns:
+    east_storm = df[df["Sector"].isin(["الجبال الشرقية", "الساحل الشرقي"])]["Storm Probability"].max()
+    if east_storm >= 55:
+        west_mask = df["Sector"].isin(["الظفرة", "أبوظبي"])
+        df.loc[west_mask, "Shamal Index"] = (df.loc[west_mask, "Shamal Index"] * 0.45).clip(0, 100).round()
+
 # More accurate rain layer
 def accurate_rain_layer(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty or "Drizzle Prob" not in df.columns:
@@ -857,7 +864,7 @@ st.markdown(
   </div>
     <div class="kicker">71WM · WEATHER MODEL</div>
     <h1>{tr("لوحة القيادة الجوية", "Weather command deck")}</h1>
-  <div class="sub">{tr(f"قراءة موحّدة للعواصف، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Storms, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
+  <div class="sub">{tr(f"قراءة موحّدة للأمطار الرعدية، الضباب، الكوس، الشمال، والإجهاد الحراري على {len(STATIONS)} محطة.", f"Thunderstorm rain, fog, Al-Kous, shamal and heat stress across {len(STATIONS)} stations.")}</div>
   <span class="pill">{tr("مباشر", "Live")} <span class="pulse"></span> {uae_now.strftime('%H:%M')}</span>
   <span class="pill" style="background:{risk_color};color:#fff;">{tr("التحذيرات", "Warnings")} {risk}% · {status}</span>
   <span class="pill">{tr("دورة النموذج", "Model cycle")} GFS {cycle}</span>
@@ -874,7 +881,7 @@ if not ok:
 
 c1, c2, c3, c4, c5 = st.columns(5)
 cards = [
-    (tr("عواصف", "Storms"), safe_max(now_df["Storm Probability"]) if not now_df.empty else 0, "%"),
+    (tr("أمطار رعدية", "Thunderstorm rain"), safe_max(now_df["Storm Probability"]) if not now_df.empty else 0, "%"),
     (tr("ضباب", "Fog"), safe_max(now_df["Fog Probability"]) if not now_df.empty else 0, "%"),
     (tr("كوس / رذاذ", "Al-Kous / drizzle"), max(safe_max(now_df["AlKous Prob"]) if not now_df.empty else 0, safe_max(now_df["Drizzle Prob"]) if not now_df.empty else 0), "%"),
     (tr("غبار الشمال", "Shamal dust"), safe_max(now_df["Shamal Index"]) if not now_df.empty else 0, "%"),
@@ -1412,7 +1419,7 @@ with tab2:
         daily = daily.sort_values("ord")
         daily["day"] = daily["DateOnly"].map(lambda v: f"{DAYS_AR.get(v.split()[0], v.split()[0])} {v.split()[-1]}" if lang == "ar" else v)
         names = {
-            "Storm Probability": tr("عواصف", "Storms"),
+            "Storm Probability": tr("أمطار رعدية", "Thunderstorm rain"),
             "Fog Probability": tr("ضباب", "Fog"),
             "Shamal Index": tr("شمال وغبار", "Shamal dust"),
             "Drizzle Prob": tr("رذاذ", "Drizzle"),
@@ -1639,7 +1646,7 @@ with tab4:
             tr("الرطوبة", "Humidity"): table["Humidity"].map(lambda v: f"{v:.0f}%"),
             tr("الرياح", "Wind"): table["Wind"].map(lambda v: f"{v:.0f} {unit}"),
             tr("الهبات", "Gusts"): table["Gust"].map(lambda v: f"{v:.0f} {unit}"),
-            tr("عواصف", "Storms"): table["Storm Probability"].map(lambda v: f"{v:.0f}%"),
+            tr("أمطار رعدية", "Thunderstorm rain"): table["Storm Probability"].map(lambda v: f"{v:.0f}%"),
             tr("ضباب", "Fog"): table["Fog Probability"].map(lambda v: f"{v:.0f}%"),
             tr("سحب الكوس", "Al-Kous"): table["AlKous Prob"].map(lambda v: f"{v:.0f}%"),
             tr("رذاذ", "Drizzle"): table["Drizzle Prob"].map(lambda v: f"{v:.0f}%"),

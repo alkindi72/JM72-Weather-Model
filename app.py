@@ -600,12 +600,17 @@ def compute_probs(hourly, api_times, name, coords, dt):
         storm = float(np.clip(storm, 0, 88))
         # Ensure rain probability accompanies thunderstorm probability
         # More sensitive to model precipitation, especially for approaching systems
-        if precip_prob >= 8:
-            drizzle = max(drizzle, precip_prob * 0.8)
-        elif precip_prob >= 5:
-            drizzle = max(drizzle, precip_prob * 0.5)
+        # Regional rain sensitivity
+        if east_hajar or central_inland:
+            rain_factor = 0.9
         else:
-            drizzle = min(drizzle, 5)
+            rain_factor = 0.65
+        if precip_prob >= 6:
+            drizzle = max(drizzle, precip_prob * rain_factor)
+        elif precip_prob >= 3:
+            drizzle = max(drizzle, precip_prob * 0.45)
+        else:
+            drizzle = min(drizzle, 4)
         if storm >= 50 and precip_prob >= 10:
             drizzle = max(drizzle, storm * 0.4)
         drizzle = float(np.clip(drizzle, 0, 90))
